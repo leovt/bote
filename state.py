@@ -156,7 +156,9 @@ def setup_duel(name1, deck1, name2, deck2):
 
     return game
 
-def run_game():
+def run_game(_game):
+    global game
+    game = _game #set global state TODO: remove global
     while True:
         if game.priority_player:
             state_based_actions()
@@ -339,23 +341,3 @@ def player_action(player):
 
 def shuffle_library(player):
     random.shuffle(player.library)
-
-from abilities import firesource_ability
-
-TEST_DECK = (
-    [ArtCard(RuleCard('Firesource',
-                      {'source', 'basic'},
-                      {'firesource'},
-                      [firesource_ability]))
-    ]*20 +
-    [ArtCard(RuleCard("Goblin Raiders",
-                      {'creature'},
-                      {'goblin'},
-                      strength = 1,
-                      toughness = 1,
-                      cost = energy.RED,
-                      ))
-    ]*40)
-
-game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
-run_game()
