@@ -74,7 +74,7 @@ class Spell:
     controller: object
     card: object
 
-    def resolve(self):
+    def resolve(self, game):
         permanent = Permanent(self.card, self.controller)
         game.battlefield.add(permanent)
 
@@ -82,7 +82,7 @@ class Spell:
         return f'cast {self.card.name} @{self.controller.name}'
 
 
-def cast_spell(player, card):
+def cast_spell(game, player, card):
     player.hand.remove(card)
     player.energy_pool.pay(card.cost)
     game.stack.append(Spell(player, card))
@@ -156,30 +156,28 @@ def setup_duel(name1, deck1, name2, deck2):
 
     return game
 
-def run_game(_game):
-    global game
-    game = _game #set global state TODO: remove global
+def run_game(game):
     while True:
         if game.priority_player:
-            state_based_actions()
-            while check_triggers():
-                state_based_actions()
+            state_based_actions(game)
+            while check_triggers(game):
+                state_based_actions(game)
 
             if game.priority_player.has_passed:
                 if game.stack:
                     tos = game.stack.pop()
-                    tos.resolve()
-                    open_priority()
+                    tos.resolve(game)
+                    open_priority(game)
                 else:
                     game.priority_player = None
             else:
-                passed = player_action(game.priority_player)
+                passed = player_action(game, game.priority_player)
                 if passed:
                     game.priority_player.has_passed = True
                     game.priority_player = game.priority_player.next_in_turn
                 else:
                     #todo: elif handling other actions
-                    open_priority()
+                    open_priority(game)
 
         else:
             for player in game.players:
@@ -189,26 +187,26 @@ def run_game(_game):
                 game.step = STEP.UNTAP
             else:
                 game.step = NEXT_STEP[game.step]
-            turn_based_actions()
+            turn_based_actions(game)
 
-def turn_based_actions():
+def turn_based_actions(game):
     if game.step == STEP.UNTAP:
         for permanent in game.battlefield:
             if permanent.controller is game.active_player:
                 permanent.tapped = False
     elif game.step == STEP.DRAW:
         draw_card(game.active_player)
-        open_priority()
+        open_priority(game)
     elif game.step == STEP.CLEANUP:
         discard_excess_cards()
     else:
-        open_priority()
+        open_priority(game)
 
 def lose_the_game(player):
     print(f'player {player.name} loses the game')
     assert False, 'not implemented'
 
-def destroy(object):
+def destroy(game, object):
     if object.has_regenerated or object.regenerates():
         object.tapped = True
         object.damage.clear()
@@ -216,14 +214,14 @@ def destroy(object):
         object.attacking = False
         object.blocking = False
     else:
-        put_in_graveyard(object)
+        put_in_graveyard(game, object)
 
-def put_in_graveyard(object):
+def put_in_graveyard(game, object):
     if object.card:
         object.card.owner.graveyard.add(object.card)
         game.battlefield.discard(object)
 
-def state_based_actions():
+def state_based_actions(game):
     for player in game.players:
         if player.life <= 0:
             lose_the_game(player)
@@ -231,21 +229,19 @@ def state_based_actions():
         if player.has_drawn_from_empty_library:
             lose_the_game(player)
     for creature in {c for c in game.battlefield.creatures if c.toughness <= 0}:
-        put_in_graveyard(creature)
+        put_in_graveyard(game, creature)
     for creature in {c for c in game.battlefield.creatures
                      if c.total_damage_received >= c.toughness}:
-        destroy(creature)
+        destroy(game, creature)
     for aura in game.battlefield.auras:
         if aura.attachment not in game.battlefield:
-            destroy(aura)
+            destroy(game, aura)
 
 
-
-
-def check_triggers():
+def check_triggers(game):
     pass
 
-def open_priority():
+def open_priority(game):
     for p in game.players:
         p.has_passed = False
     game.priority_player = game.active_player
@@ -259,7 +255,7 @@ def draw_card(player):
     else:
         player.has_drawn_from_empty_library = True
 
-def print_player_view(player):
+def print_player_view(game, player):
     print('=' * 80)
     print(f'It is the {game.step} of {game.active_player.name}s turn.')
     print('Players:')
@@ -296,15 +292,15 @@ def print_player_view(player):
 def can_play_source(player):
     return True
 
-def play_source(player, card):
+def play_source(game, player, card):
     perm = Permanent(card, player)
     player.hand.discard(card)
     game.battlefield.add(perm)
 
-def player_action(player):
+def player_action(game, player):
     ACTION_PERFORMED = False
     PASSED = True
-    print_player_view(player)
+    print_player_view(game, player)
     choices = ['Pass Priority']
     actions = [None]
 
@@ -314,12 +310,12 @@ def player_action(player):
         if can_play_source(player):
             for source in player.hand.sources:
                 choices.append(f'play {source.name}')
-                actions.append([(play_source, (player, source))])
+                actions.append([(play_source, (game, player, source))])
 
         for card in player.hand.creatures:
             if player.energy_pool.can_pay(card.cost):
                 choices.append(f'cast {card.name}')
-                actions.append([(cast_spell, (player, card))])
+                actions.append([(cast_spell, (game, player, card))])
 
     for permanent in game.battlefield.controlled_by(player):
         for ability in permanent.abilities:
