@@ -4,7 +4,8 @@ import random
 import cli
 from enum import Enum
 import energy
-
+from cards import Card, ArtCard, RuleCard
+from abilities import ActivatableAbility
 
 class STEP(Enum):
     UNTAP = 11
@@ -67,100 +68,6 @@ class ObjectSet(set, ObjectView):
     pass
 
 
-@dataclass(eq=False, frozen=True)
-class RuleCard:
-    name: str
-    types: set
-    subtypes: set
-    abilities: list = field(default_factory=list)
-    cost: energy.Energy = energy.ZERO
-    token: bool = False
-    toughness: int = 0
-    strength: int = 0
-
-
-class EnergyCost:
-    def __init__(self, energy):
-        self.energy = energy
-
-    def can_pay(self, permanent, card):
-        if permanent:
-            player = permanent.controller
-        else:
-            player = card.owner
-
-        return player.energy_pool.can_pay(self.energy)
-
-    def pay(self, permanent, card):
-        if permanent:
-            player = permanent.controller
-        else:
-            player = card.owner
-
-        player.energy_pool.pay(self.energy)
-
-    def __str__(self):
-        return str(self.energy)
-
-class TapCost:
-    def can_pay(self, permanent, card):
-        return permanent and not permanent.tapped
-
-    def pay(self, permanent, card):
-        permanent.tapped = True
-
-    def __str__(self):
-        return '{T}'
-
-@dataclass
-class ActivatableAbility:
-    cost: list
-    effect: object
-    is_energy_ability: bool=False
-
-    def __str__(self):
-        return '%s: activate ability' % ', '.join(str(x) for x in self.cost)
-
-def add_energy_effect(energy):
-    def _add_energy_effect(controller):
-        controller.energy_pool.add(energy)
-    return _add_energy_effect
-
-firesource_ability = ActivatableAbility(
-    cost = [TapCost()],
-    effect = add_energy_effect(energy.RED),
-    is_energy_ability = True
-)
-
-@dataclass(eq=False, frozen=True)
-class ArtCard:
-    rule_card: object
-    language: object = None
-    image: object = None
-    artist: object = None
-
-TEST_DECK = (
-    [ArtCard(RuleCard('Firesource',
-                      {'source', 'basic'},
-                      {'firesource'},
-                      [firesource_ability]))
-    ]*20 +
-    [ArtCard(RuleCard("Goblin Raiders",
-                      {'creature'},
-                      {'goblin'},
-                      strength = 1,
-                      toughness = 1,
-                      cost = energy.RED,
-                      ))
-    ]*40)
-
-@dataclass(eq=False, frozen=True)
-class Card:
-    art_card: object
-    owner: object
-
-    def __getattr__(self, attribute):
-        return getattr(self.art_card.rule_card, attribute)
 
 @dataclass(eq=False)
 class Spell:
@@ -433,6 +340,22 @@ def player_action(player):
 def shuffle_library(player):
     random.shuffle(player.library)
 
+from abilities import firesource_ability
+
+TEST_DECK = (
+    [ArtCard(RuleCard('Firesource',
+                      {'source', 'basic'},
+                      {'firesource'},
+                      [firesource_ability]))
+    ]*20 +
+    [ArtCard(RuleCard("Goblin Raiders",
+                      {'creature'},
+                      {'goblin'},
+                      strength = 1,
+                      toughness = 1,
+                      cost = energy.RED,
+                      ))
+    ]*40)
 
 game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
 run_game()
