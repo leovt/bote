@@ -31,3 +31,6 @@ class Card:
 
     def __getattr__(self, attribute):
         return getattr(self.art_card.rule_card, attribute)
+
+    def __str__(self):
+        return f'{self.name} @{self.owner}'

@@ -130,6 +130,9 @@ class Player:
     has_passed: bool = False
     has_drawn_from_empty_library: bool = False
 
+    def __str__(self):
+        return self.name
+
 @dataclass
 class Game:
     players: list
@@ -138,6 +141,9 @@ class Game:
     priority_player: Player
     stack: list
     step = STEP.PRECOMBAT_MAIN
+
+    def __str__(self):
+        return '<Game>'
 
 def make_library(deck, player):
     return [Card(x, player) for x in deck]
