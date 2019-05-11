@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 import energy
 
+from event import Event
 
 class EnergyCost:
     def __init__(self, energy):
@@ -21,6 +22,7 @@ class EnergyCost:
         else:
             player = card.owner
 
+        yield Event('pay_energy', player, energy)
         player.energy_pool.pay(self.energy)
 
     def __str__(self):
@@ -31,6 +33,7 @@ class TapCost:
         return permanent and not permanent.tapped
 
     def pay(self, permanent, card):
+        yield Event('tap', permanent)
         permanent.tapped = True
 
     def __str__(self):
@@ -47,6 +50,7 @@ class ActivatableAbility:
 
 def add_energy_effect(energy):
     def _add_energy_effect(controller):
+        yield Event('add_energy', controller, energy)
         controller.energy_pool.add(energy)
     return _add_energy_effect
 

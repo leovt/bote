@@ -6,6 +6,7 @@ from enum import Enum
 import energy
 from cards import Card, ArtCard, RuleCard
 from abilities import ActivatableAbility
+from event import Event
 
 class STEP(Enum):
     UNTAP = 11
@@ -84,8 +85,10 @@ class Spell:
 
 def cast_spell(game, player, card):
     player.hand.remove(card)
+    yield Event('pay_energy', player, energy)
     player.energy_pool.pay(card.cost)
     game.stack.append(Spell(player, card))
+    yield Event('cast_spell', player, card)
 
 
 @dataclass(eq=False)
@@ -136,11 +139,16 @@ class Player:
 @dataclass
 class Game:
     players: list
-    battlefield: ObjectSet
-    active_player: Player
-    priority_player: Player
-    stack: list
+    battlefield: ObjectSet = field(default_factory=ObjectSet)
+    active_player: Player = None
+    priority_player: Player = None
+    stack: list = field(default_factory=list)
     step = STEP.PRECOMBAT_MAIN
+    action_log: list = field(default_factory=list)
+
+    def log(self, event):
+        print(str(event)[:50])
+        self.action_log.append(event)
 
     def __str__(self):
         return '<Game>'
@@ -154,59 +162,82 @@ def setup_duel(name1, deck1, name2, deck2):
     p1.library = make_library(deck1, p1)
     p2.library = make_library(deck2, p2)
     p1.next_in_turn = p2
-    game = Game([p1, p2], ObjectSet(), p1, p1, [])
-    for player in game.players:
-        shuffle_library(player)
-        for _ in range(7):
-            draw_card(player)
-
+    game = Game([p1, p2])
     return game
 
+def start_game(game):
+    for player in game.players:
+        yield Event('shuffle_library', player)
+        shuffle_library(player)
+        for _ in range(7):
+            yield from draw_card(game, player)
+    p1 = game.players[0]
+    yield Event('active_player', p1)
+    game.active_player = p1
+    yield Event('step', STEP.PRECOMBAT_MAIN)
+    game.step = STEP.PRECOMBAT_MAIN
+    yield Event('priority', p1)
+    game.priority_player = p1
+
+
 def run_game(game):
+    for event in game_events(game):
+        game.log(event)
+        # todo:handle event
+
+
+def game_events(game):
+    yield from start_game(game)
     while True:
         if game.priority_player:
-            state_based_actions(game)
+            yield from state_based_actions(game)
             while check_triggers(game):
-                state_based_actions(game)
+                yield from state_based_actions(game)
 
             if game.priority_player.has_passed:
                 if game.stack:
+                    yield Event('resolve_tos')
                     tos = game.stack.pop()
                     tos.resolve(game)
-                    open_priority(game)
+                    yield from open_priority(game)
                 else:
                     game.priority_player = None
             else:
-                passed = player_action(game, game.priority_player)
-                if passed:
-                    game.priority_player.has_passed = True
+                yield from player_action(game, game.priority_player)
+                if game.priority_player.has_passed:
+                    yield Event('priority', game.priority_player.next_in_turn)
                     game.priority_player = game.priority_player.next_in_turn
                 else:
                     #todo: elif handling other actions
-                    open_priority(game)
+                    yield from open_priority(game)
 
         else:
             for player in game.players:
+                yield Event('clear_pool', player)
                 player.energy_pool.clear()
             if game.step == STEP.CLEANUP:
+                yield Event('active_player', game.active_player.next_in_turn)
                 game.active_player = game.active_player.next_in_turn
+                yield Event('step', STEP.UNTAP)
                 game.step = STEP.UNTAP
             else:
+                yield Event('step',  NEXT_STEP[game.step])
                 game.step = NEXT_STEP[game.step]
-            turn_based_actions(game)
+            yield from turn_based_actions(game)
 
 def turn_based_actions(game):
     if game.step == STEP.UNTAP:
         for permanent in game.battlefield:
             if permanent.controller is game.active_player:
+                yield Event('untap', permanent)
                 permanent.tapped = False
     elif game.step == STEP.DRAW:
-        draw_card(game.active_player)
-        open_priority(game)
+        yield from draw_card(game, game.active_player)
+        yield from open_priority(game)
     elif game.step == STEP.CLEANUP:
         discard_excess_cards()
     else:
-        open_priority(game)
+        yield from open_priority(game)
 
 def lose_the_game(player):
     print(f'player {player.name} loses the game')
@@ -214,34 +245,41 @@ def lose_the_game(player):
 
 def destroy(game, object):
     if object.has_regenerated or object.regenerates():
+        yield Event('untap', object)
         object.tapped = True
+        yield Event('clear_damage', object)
         object.damage.clear()
+        yield Event('has_regenerated', object)
         object.has_regenerated = False
+        yield Event('remove_from_combat', object)
         object.attacking = False
         object.blocking = False
     else:
-        put_in_graveyard(game, object)
+        yield from put_in_graveyard(game, object)
 
 def put_in_graveyard(game, object):
+    yield Event('put_in_graveyard', object)
     if object.card:
         object.card.owner.graveyard.add(object.card)
-        game.battlefield.discard(object)
+    game.battlefield.discard(object)
 
 def state_based_actions(game):
     for player in game.players:
         if player.life <= 0:
-            lose_the_game(player)
+            yield Event('lose', player)
+            yield from lose_the_game(player)
     for player in game.players:
         if player.has_drawn_from_empty_library:
-            lose_the_game(player)
+            yield Event('lose', player)
+            yield from lose_the_game(player)
     for creature in {c for c in game.battlefield.creatures if c.toughness <= 0}:
-        put_in_graveyard(game, creature)
+        yield from put_in_graveyard(game, creature)
     for creature in {c for c in game.battlefield.creatures
                      if c.total_damage_received >= c.toughness}:
-        destroy(game, creature)
+        yield from destroy(game, creature)
     for aura in game.battlefield.auras:
         if aura.attachment not in game.battlefield:
-            destroy(game, aura)
+            yield from destroy(game, aura)
 
 
 def check_triggers(game):
@@ -249,13 +287,16 @@ def check_triggers(game):
 
 def open_priority(game):
     for p in game.players:
+        yield Event('reset_pass', p)
         p.has_passed = False
     game.priority_player = game.active_player
+    yield Event('priority', game.active_player)
 
 def discard_excess_cards():
     pass
 
-def draw_card(player):
+def draw_card(game, player):
+    yield Event('draw_card', player)
     if player.library:
         player.hand.add(player.library.pop())
     else:
@@ -299,6 +340,7 @@ def can_play_source(player):
     return True
 
 def play_source(game, player, card):
+    yield Event('play_source', player, card)
     perm = Permanent(card, player)
     player.hand.discard(card)
     game.battlefield.add(perm)
@@ -333,13 +375,14 @@ def player_action(game, player):
                         act.append((ability.effect, (player,)))
                         actions.append(act)
 
+    #yield Event('ask_player_action', player)
     answer = cli.ask_choice(f'{player.name} has priority; select an action:', choices)
     if answer==0:
-        return PASSED
-
-    for func, arguments in actions[answer]:
-        func(*arguments)
-    return ACTION_PERFORMED
+        yield Event('passed', player)
+        player.has_passed = True
+    else:
+        for func, arguments in actions[answer]:
+            yield from func(*arguments)
 
 def shuffle_library(player):
     random.shuffle(player.library)
