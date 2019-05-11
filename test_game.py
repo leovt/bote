@@ -1,3 +1,6 @@
+import traceback
+import pdb
+
 from abilities import firesource_ability
 from cards import ArtCard, RuleCard
 from state import setup_duel, run_game
@@ -22,5 +25,5 @@ try:
     game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
     run_game(game)
 except:
-    import pdb
+    traceback.print_exc()
     pdb.post_mortem()
