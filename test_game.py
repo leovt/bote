@@ -18,5 +18,9 @@ TEST_DECK = (
                       ))
     ]*40)
 
-game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
-run_game(game)
+try:
+    game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
+    run_game(game)
+except:
+    import pdb
+    pdb.post_mortem()
