@@ -22,8 +22,7 @@ class EnergyCost:
         else:
             player = card.owner
 
-        yield Event('pay_energy', player, energy)
-        player.energy_pool.pay(self.energy)
+        yield Event('pay_energy', player, self.energy)
 
     def __str__(self):
         return str(self.energy)

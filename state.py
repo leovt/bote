@@ -85,8 +85,7 @@ class Spell:
 
 def cast_spell(game, player, card):
     player.hand.remove(card)
-    yield Event('pay_energy', player, energy)
-    player.energy_pool.pay(card.cost)
+    yield Event('pay_energy', player, card.cost)
     game.stack.append(Spell(player, card))
     yield Event('cast_spell', player, card)
 
@@ -150,6 +149,16 @@ class Game:
         print(str(event)[:50])
         self.action_log.append(event)
 
+    def handle(self, event):
+        self.log(event)
+        if event.event_id == 'pay_energy':
+            player, energy = event.args
+            assert player in self.players
+            player.energy_pool.pay(energy)
+        else:
+            pass
+            #assert False, f'unable to handle {event}'
+
     def __str__(self):
         return '<Game>'
 
@@ -182,7 +191,7 @@ def start_game(game):
 
 def run_game(game):
     for event in game_events(game):
-        game.log(event)
+        game.handle(event)
         # todo:handle event
 
 
