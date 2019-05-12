@@ -83,9 +83,7 @@ class Spell:
 
 
 def cast_spell(game, player, card):
-    player.hand.remove(card)
     yield Event('pay_energy', player, card.cost)
-    game.stack.append(Spell(player, card))
     yield Event('cast_spell', player, card)
 
 
@@ -201,6 +199,11 @@ class Game:
             player, card = event.args
             assert player in self.players
             player.hand.discard(card)
+        elif event.event_id == 'cast_spell':
+            player, card = event.args
+            assert player in self.players
+            player.hand.discard(card)
+            self.stack.append(Spell(player, card))
         elif event.event_id == 'resolve_tos':
             tos, = event.args
             tos_popped = self.stack.pop()
