@@ -220,8 +220,7 @@ class Game:
             for player in self.players:
                 player.has_passed = False
         else:
-            pass
-            #assert False, f'unable to handle {event}'
+            assert False, f'unable to handle {event}'
 
     def __str__(self):
         return '<Game>'
