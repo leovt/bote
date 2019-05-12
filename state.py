@@ -297,42 +297,34 @@ def lose_the_game(player):
     print(f'player {player.name} loses the game')
     assert False, 'not implemented'
 
-def destroy(game, object):
-    if object.has_regenerated or object.regenerates():
-        yield Event('tap', object)
-        yield Event('clear_damage', object)
-        object.damage.clear()
-        yield Event('has_regenerated', object)
-        object.has_regenerated = False
-        yield Event('remove_from_combat', object)
-        object.attacking = False
-        object.blocking = False
+def destroy(permanent):
+    if permanent.has_regenerated or permanent.regenerates():
+        yield Event('tap', permanent)
+        yield Event('clear_damage', permanent)
+        yield Event('has_regenerated', permanent)
+        yield Event('remove_from_combat', permanent)
     else:
-        yield from put_in_graveyard(game, object)
+        yield from put_in_graveyard(object)
 
-def put_in_graveyard(game, object):
-    yield Event('put_in_graveyard', object)
-    if object.card:
-        object.card.owner.graveyard.add(object.card)
-    game.battlefield.discard(object)
+def put_in_graveyard(permanent):
+    yield Event('exit_the_battlefield', permanent)
+    yield Event('put_in_graveyard', permanent.card)
 
 def state_based_actions(game):
     for player in game.players:
         if player.life <= 0:
             yield Event('lose', player)
-            yield from lose_the_game(player)
     for player in game.players:
         if player.has_drawn_from_empty_library:
             yield Event('lose', player)
-            yield from lose_the_game(player)
     for creature in {c for c in game.battlefield.creatures if c.toughness <= 0}:
-        yield from put_in_graveyard(game, creature)
+        yield from put_in_graveyard(creature)
     for creature in {c for c in game.battlefield.creatures
                      if c.total_damage_received >= c.toughness}:
-        yield from destroy(game, creature)
+        yield from destroy(creature)
     for aura in game.battlefield.auras:
         if aura.attachment not in game.battlefield:
-            yield from destroy(game, aura)
+            yield from destroy(aura)
 
 
 def check_triggers(game):
