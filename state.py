@@ -248,9 +248,17 @@ def start_game(game):
     yield Event('priority', p1)
 
 def run_game(game):
-    for event in game_events(game):
-        game.handle(event)
-        # todo:handle event
+    event_stream = game_events(game)
+    event = next(event_stream)
+    while True:
+        if event.event_id == 'ask_player_action':
+            player, choices = event.args
+            assert player in game.players
+            answer = cli.ask_choice(f'{player.name} has priority; select an action:', choices)
+            event = event_stream.send(answer)
+        else:
+            game.handle(event)
+            event = next(event_stream)
 
 
 def game_events(game):
@@ -421,8 +429,7 @@ def player_action(game, player):
                         act.append((ability.effect, (player,)))
                         actions.append(act)
 
-    #yield Event('ask_player_action', player)
-    answer = cli.ask_choice(f'{player.name} has priority; select an action:', choices)
+    answer = yield Event('ask_player_action', player, choices)
     if answer==0:
         yield Event('passed', player)
     else:
