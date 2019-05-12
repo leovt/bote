@@ -49,7 +49,6 @@ class ActivatableAbility:
 def add_energy_effect(energy):
     def _add_energy_effect(controller):
         yield Event('add_energy', controller, energy)
-        controller.energy_pool.add(energy)
     return _add_energy_effect
 
 firesource_ability = ActivatableAbility(

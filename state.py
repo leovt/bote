@@ -154,6 +154,10 @@ class Game:
             player, energy = event.args
             assert player in self.players
             player.energy_pool.pay(energy)
+        elif event.event_id == 'add_energy':
+            player, energy = event.args
+            assert player in self.players
+            player.energy_pool.add(energy)
         elif event.event_id == 'draw_card':
             player, card = event.args
             assert player in self.players
