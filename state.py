@@ -181,6 +181,13 @@ class Game:
             player, = event.args
             assert player in self.players
             self.priority_player = player
+        elif event.event_id == 'play_source':
+            player, card = event.args
+            assert player in self.players
+            perm = Permanent(card, player)
+            player.hand.discard(card)
+            self.battlefield.add(perm)
+
         else:
             pass
             #assert False, f'unable to handle {event}'
@@ -365,9 +372,6 @@ def can_play_source(player):
 
 def play_source(game, player, card):
     yield Event('play_source', player, card)
-    perm = Permanent(card, player)
-    player.hand.discard(card)
-    game.battlefield.add(perm)
 
 def player_action(game, player):
     ACTION_PERFORMED = False
