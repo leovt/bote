@@ -75,9 +75,8 @@ class Spell:
     controller: object
     card: object
 
-    def resolve(self, game):
-        permanent = Permanent(self.card, self.controller)
-        game.battlefield.add(permanent)
+    def resolve(self):
+        yield Event('enter_the_battlefield', self.card, self.controller)
 
     def __str__(self):
         return f'cast {self.card.name} @{self.controller.name}'
@@ -181,13 +180,19 @@ class Game:
             player, = event.args
             assert player in self.players
             self.priority_player = player
+        elif event.event_id == 'enter_the_battlefield':
+            card, controller = event.args
+            assert controller in self.players
+            permanent = Permanent(card, controller)
+            self.battlefield.add(permanent)
         elif event.event_id == 'play_source':
             player, card = event.args
             assert player in self.players
-            perm = Permanent(card, player)
             player.hand.discard(card)
-            self.battlefield.add(perm)
-
+        elif event.event_id == 'resolve_tos':
+            tos, = event.args
+            tos_popped = self.stack.pop()
+            assert tos_popped == tos
         else:
             pass
             #assert False, f'unable to handle {event}'
@@ -233,9 +238,9 @@ def game_events(game):
 
             if game.priority_player.has_passed:
                 if game.stack:
-                    yield Event('resolve_tos')
-                    tos = game.stack.pop()
-                    tos.resolve(game)
+                    tos = game.stack[-1]
+                    yield Event('resolve_tos', tos)
+                    yield from tos.resolve()
                     yield from open_priority(game)
                 else:
                     game.priority_player = None
@@ -372,6 +377,7 @@ def can_play_source(player):
 
 def play_source(game, player, card):
     yield Event('play_source', player, card)
+    yield Event('enter_the_battlefield', card, player)
 
 def player_action(game, player):
     ACTION_PERFORMED = False
