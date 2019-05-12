@@ -184,6 +184,10 @@ class Game:
             player, = event.args
             assert player in self.players
             self.priority_player = player
+        elif event.event_id == 'passed':
+            player, = event.args
+            assert player in self.players
+            player.has_passed = True
         elif event.event_id == 'enter_the_battlefield':
             card, controller = event.args
             assert controller in self.players
@@ -205,6 +209,9 @@ class Game:
             permanent, = event.args
             assert permanent in self.battlefield
             permanent.tapped = True
+        elif event.event_id == 'reset_pass':
+            for player in self.players:
+                player.has_passed = False
         else:
             pass
             #assert False, f'unable to handle {event}'
@@ -332,9 +339,7 @@ def check_triggers(game):
     pass
 
 def open_priority(game):
-    for p in game.players:
-        yield Event('reset_pass', p)
-        p.has_passed = False
+    yield Event('reset_pass')
     yield Event('priority', game.active_player)
 
 def discard_excess_cards():
@@ -422,7 +427,6 @@ def player_action(game, player):
     answer = cli.ask_choice(f'{player.name} has priority; select an action:', choices)
     if answer==0:
         yield Event('passed', player)
-        player.has_passed = True
     else:
         for func, arguments in actions[answer]:
             yield from func(*arguments)
