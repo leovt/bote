@@ -165,7 +165,10 @@ class Game:
             player, = event.args
             assert player in self.players
             player.has_drawn_from_empty_library = True
-
+        elif event.event_id == 'shuffle_library':
+            player, = event.args
+            assert player in self.players
+            random.shuffle(player.library)
 
         else:
             pass
@@ -189,7 +192,6 @@ def setup_duel(name1, deck1, name2, deck2):
 def start_game(game):
     for player in game.players:
         yield Event('shuffle_library', player)
-        shuffle_library(player)
         for _ in range(7):
             yield from draw_card(player)
     p1 = game.players[0]
@@ -404,6 +406,3 @@ def player_action(game, player):
     else:
         for func, arguments in actions[answer]:
             yield from func(*arguments)
-
-def shuffle_library(player):
-    random.shuffle(player.library)
