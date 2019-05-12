@@ -33,7 +33,6 @@ class TapCost:
 
     def pay(self, permanent, card):
         yield Event('tap', permanent)
-        permanent.tapped = True
 
     def __str__(self):
         return '{T}'

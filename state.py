@@ -197,6 +197,14 @@ class Game:
             tos, = event.args
             tos_popped = self.stack.pop()
             assert tos_popped == tos
+        elif event.event_id == 'untap':
+            permanent, = event.args
+            assert permanent in self.battlefield
+            permanent.tapped = False
+        elif event.event_id == 'tap':
+            permanent, = event.args
+            assert permanent in self.battlefield
+            permanent.tapped = True
         else:
             pass
             #assert False, f'unable to handle {event}'
@@ -270,7 +278,6 @@ def turn_based_actions(game):
         for permanent in game.battlefield:
             if permanent.controller is game.active_player:
                 yield Event('untap', permanent)
-                permanent.tapped = False
     elif game.step == STEP.DRAW:
         yield from draw_card(game.active_player)
         yield from open_priority(game)
@@ -285,8 +292,7 @@ def lose_the_game(player):
 
 def destroy(game, object):
     if object.has_regenerated or object.regenerates():
-        yield Event('untap', object)
-        object.tapped = True
+        yield Event('tap', object)
         yield Event('clear_damage', object)
         object.damage.clear()
         yield Event('has_regenerated', object)
