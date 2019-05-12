@@ -176,6 +176,10 @@ class Game:
             step, = event.args
             assert isinstance(step, STEP)
             self.step = step
+        elif event.event_id == 'clear_pool':
+            player, = event.args
+            assert player in self.players
+            player.energy_pool.clear()
         elif event.event_id == 'priority':
             player, = event.args
             assert player in self.players
@@ -254,7 +258,6 @@ def game_events(game):
         else:
             for player in game.players:
                 yield Event('clear_pool', player)
-                player.energy_pool.clear()
             if game.step == STEP.CLEANUP:
                 yield Event('active_player', game.active_player.next_in_turn)
                 yield Event('step', STEP.UNTAP)
