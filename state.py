@@ -169,7 +169,18 @@ class Game:
             player, = event.args
             assert player in self.players
             random.shuffle(player.library)
-
+        elif event.event_id == 'active_player':
+            player, = event.args
+            assert player in self.players
+            self.active_player = player
+        elif event.event_id == 'step':
+            step, = event.args
+            assert isinstance(step, STEP)
+            self.step = step
+        elif event.event_id == 'priority':
+            player, = event.args
+            assert player in self.players
+            self.priority_player = player
         else:
             pass
             #assert False, f'unable to handle {event}'
@@ -196,12 +207,8 @@ def start_game(game):
             yield from draw_card(player)
     p1 = game.players[0]
     yield Event('active_player', p1)
-    game.active_player = p1
     yield Event('step', STEP.PRECOMBAT_MAIN)
-    game.step = STEP.PRECOMBAT_MAIN
     yield Event('priority', p1)
-    game.priority_player = p1
-
 
 def run_game(game):
     for event in game_events(game):
@@ -229,9 +236,7 @@ def game_events(game):
                 yield from player_action(game, game.priority_player)
                 if game.priority_player.has_passed:
                     yield Event('priority', game.priority_player.next_in_turn)
-                    game.priority_player = game.priority_player.next_in_turn
                 else:
-                    #todo: elif handling other actions
                     yield from open_priority(game)
 
         else:
@@ -240,12 +245,9 @@ def game_events(game):
                 player.energy_pool.clear()
             if game.step == STEP.CLEANUP:
                 yield Event('active_player', game.active_player.next_in_turn)
-                game.active_player = game.active_player.next_in_turn
                 yield Event('step', STEP.UNTAP)
-                game.step = STEP.UNTAP
             else:
                 yield Event('step',  NEXT_STEP[game.step])
-                game.step = NEXT_STEP[game.step]
             yield from turn_based_actions(game)
 
 def turn_based_actions(game):
@@ -312,7 +314,6 @@ def open_priority(game):
     for p in game.players:
         yield Event('reset_pass', p)
         p.has_passed = False
-    game.priority_player = game.active_player
     yield Event('priority', game.active_player)
 
 def discard_excess_cards():
