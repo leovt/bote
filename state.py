@@ -155,6 +155,18 @@ class Game:
             player, energy = event.args
             assert player in self.players
             player.energy_pool.pay(energy)
+        elif event.event_id == 'draw_card':
+            player, card = event.args
+            assert player in self.players
+            card_popped = player.library.pop()
+            assert card_popped == card
+            player.hand.add(card)
+        elif event.event_id == 'draw_empty':
+            player, = event.args
+            assert player in self.players
+            player.has_drawn_from_empty_library = True
+
+
         else:
             pass
             #assert False, f'unable to handle {event}'
@@ -179,7 +191,7 @@ def start_game(game):
         yield Event('shuffle_library', player)
         shuffle_library(player)
         for _ in range(7):
-            yield from draw_card(game, player)
+            yield from draw_card(player)
     p1 = game.players[0]
     yield Event('active_player', p1)
     game.active_player = p1
@@ -241,7 +253,7 @@ def turn_based_actions(game):
                 yield Event('untap', permanent)
                 permanent.tapped = False
     elif game.step == STEP.DRAW:
-        yield from draw_card(game, game.active_player)
+        yield from draw_card(game.active_player)
         yield from open_priority(game)
     elif game.step == STEP.CLEANUP:
         discard_excess_cards()
@@ -304,12 +316,12 @@ def open_priority(game):
 def discard_excess_cards():
     pass
 
-def draw_card(game, player):
-    yield Event('draw_card', player)
+def draw_card(player):
     if player.library:
-        player.hand.add(player.library.pop())
+        card = player.library[-1]
+        yield Event('draw_card', player, card)
     else:
-        player.has_drawn_from_empty_library = True
+        yield Event('draw_empty', player)
 
 def print_player_view(game, player):
     print('=' * 80)
