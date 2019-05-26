@@ -56,3 +56,31 @@ firesource_ability = ActivatableAbility(
     effect = add_energy_effect(energy.RED),
     is_energy_ability = True
 )
+
+def parse_cost(string):
+    components = string.split(',')
+    cost = []
+    for c in components:
+        c = c.strip()
+        if c == '{T}':
+            cost.append(TapCost())
+        elif energy.Energy.parse(c) is not None:
+            cost.append(EnergyCost(energy.Energy.parse(c)))
+        else:
+            assert False
+    return cost
+
+def parse_effect(string):
+    def _effect(controller):
+        for line in string.splitlines():
+            tokens = line.split()
+            args = []
+            for token in tokens:
+                if token == '$controller':
+                    args.append(controller)
+                elif energy.Energy.parse(token):
+                    args.append(energy.Energy.parse(token))
+                else:
+                    args.append(token)
+            yield Event(*args)
+    return _effect
