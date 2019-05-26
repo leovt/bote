@@ -132,6 +132,10 @@ class Player:
     def __str__(self):
         return self.name
 
+class Namespace(dict):
+    __setattr__ = dict.__setitem__
+    __getattr__ = dict.__getitem__
+
 @dataclass
 class Game:
     players: list
@@ -224,6 +228,33 @@ class Game:
 
     def __str__(self):
         return '<Game>'
+
+    def player_view(self, player=None):
+        view = Namespace({
+            'players': {id(pl): Namespace({
+                    'name': pl.name,
+                    'life': pl.life,
+                    'hand_size': len(pl.hand),
+                    'energy_pool': str(pl.energy_pool.energy),
+                    'next_player': id(pl.next_in_turn)})
+                for pl in self.players},
+            'stack': [str(item) for item in self.stack],
+            'battlefield': {id(perm): Namespace({
+                    'name': perm.card.name,
+                    'card': id(perm.card.art_card),
+                    'controller': id(perm.controller)})
+                for perm in self.battlefield},
+            'active_player': id(self.active_player),
+            'step': str(self.step)})
+        if player:
+            view['you'] = Namespace({
+                'id': id(player),
+                'hand': [Namespace(
+                    id = id(card.art_card),
+                    name = card.name)
+                    for card in player.hand]
+            })
+        return view
 
 def make_library(deck, player):
     return [Card(x, player) for x in deck]
@@ -358,38 +389,31 @@ def draw_card(player):
     else:
         yield Event('draw_empty', player)
 
-def print_player_view(game, player):
+def print_player_view(view):
     print('=' * 80)
-    print(f'It is the {game.step} of {game.active_player.name}s turn.')
+    print(f'It is the {view.step} of {view.players[view.active_player].name}s turn.')
     print('Players:')
-    np = player.next_in_turn
-    while True:
-        print(f'    {np.name}: {np.life} life; {len(np.hand)} cards in hand, {np.energy_pool.energy} in pool')
-        if np is player:
-            break
-        np = np.next_in_turn
+    for p in view.players.values():
+        print(f'    {p.name}: {p.life} life; {p.hand_size} cards in hand, {p.energy_pool} in pool')
     print('-' * 80)
-    if game.stack:
+    if view.stack:
         print('Stack')
-        for item in reversed(game.stack):
+        for item in reversed(view.stack):
             print(f'    {item}')
         print('-' * 80)
     print('Battlefield')
-    np = player.next_in_turn
-    while True:
-        print('    Controlled by', np.name)
+    for pid, p in view.players.items():
+        print('    Controlled by', p.name)
         nothing = True
-        for obj in game.battlefield.controlled_by(np):
-            print('       ', obj)
-            nothing = False
+        for obj in view.battlefield.values():
+            if obj.controller == pid:
+                print('       ', obj.name)
+                nothing = False
         if nothing:
             print('        nothing')
-        if np is player:
-            break
-        np = np.next_in_turn
     print('-' * 80)
     print('Your hand:')
-    for card in player.hand:
+    for card in view.you.hand:
         print('   ', card.name)
 
 def can_play_source(player):
@@ -402,7 +426,7 @@ def play_source(game, player, card):
 def player_action(game, player):
     ACTION_PERFORMED = False
     PASSED = True
-    print_player_view(game, player)
+    print_player_view(game.player_view(player))
     choices = ['Pass Priority']
     actions = [None]
 
