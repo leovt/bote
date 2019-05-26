@@ -1,4 +1,5 @@
 from operator import add, sub
+import re
 
 class Energy(tuple):
     def __new__(cls, total=None, red=0, yellow=0, blue=0, green=0, white=0):
@@ -57,6 +58,40 @@ class Energy(tuple):
 
     def __str__(self):
         return ''.join('{%s}' % x for x in self.decompose())
+
+    @staticmethod
+    def parse(string):
+        match = re.match(r'(?:\{(\d+|R|Y|B|G|W)\})+', string)
+        if not match:
+            return None
+        total = 0
+        red = 0
+        yellow = 0
+        blue = 0
+        green = 0
+        white = 0
+        for group in match.groups():
+            if group == 'R':
+                red += 1
+                total += 1
+            elif group == 'Y':
+                yellow += 1
+                total += 1
+            elif group == 'B':
+                blue += 1
+                total += 1
+            elif group == 'G':
+                green += 1
+                total += 1
+            elif group == 'W':
+                white += 1
+                total += 1
+            else:
+                total += int(group)
+        return Energy(total, red, yellow, blue, green, white)
+
+
+
 
 
 class EnergyPool:
