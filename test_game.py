@@ -1,29 +1,16 @@
 import traceback
 import pdb
 
-from abilities import firesource_ability
-from cards import ArtCard, RuleCard
+from cards import ArtCard, rule_cards
 from state import setup_duel, run_game
-import energy
 
 TEST_DECK = (
-    [ArtCard(RuleCard('Firesource',
-                      {'source', 'basic'},
-                      {'firesource'},
-                      [firesource_ability]))
-    ]*20 +
-    [ArtCard(RuleCard("Goblin Raiders",
-                      {'creature'},
-                      {'goblin'},
-                      strength = 1,
-                      toughness = 1,
-                      cost = energy.RED,
-                      ))
-    ]*40)
+    [ArtCard(rule_cards[101])] * 20 +
+    [ArtCard(rule_cards[102])] * 40)
 
 try:
     game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
     run_game(game)
-except:
+except Exception:
     traceback.print_exc()
     pdb.post_mortem()
