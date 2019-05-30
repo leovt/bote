@@ -93,6 +93,8 @@ class Permanent:
     controller: object
     tapped: bool = False
     damage: list = field(default_factory=list)
+    attacking: bool = False
+    blocking: bool = False
 
     @property
     def types(self):
@@ -223,6 +225,10 @@ class Game:
         elif event.event_id == 'reset_pass':
             for player in self.players:
                 player.has_passed = False
+        elif event.event_id == 'attack':
+            attacker, player = event.args
+            assert player in self.players
+            attacker.attacking = player
         else:
             assert False, f'unable to handle {event}'
 
@@ -287,6 +293,11 @@ def run_game(game):
             assert player in game.players
             answer = cli.ask_choice(f'{player.name} has priority; select an action:', choices)
             event = event_stream.send(answer)
+        elif event.event_id == 'ask_player_multiple':
+            player, choices = event.args
+            assert player in game.players
+            answer = cli.ask_multiple(f'{player.name} has priority; select:', choices)
+            event = event_stream.send(answer)
         else:
             game.handle(event)
             event = next(event_stream)
@@ -335,6 +346,15 @@ def turn_based_actions(game):
         yield from open_priority(game)
     elif game.step == STEP.CLEANUP:
         discard_excess_cards()
+    elif game.step == STEP.DECLARE_ATTACKERS:
+        candidates = list(game.battlefield.creatures.controlled_by(game.active_player))
+        choices = [c.card.name for c in candidates]
+        attackers_chosen = yield Event('ask_player_multiple', game.active_player, choices)
+        if attackers_chosen:
+            for i in attackers_chosen:
+                yield Event('attack', candidates[i], game.active_player.next_in_turn)
+        else:
+            yield Event('step', STEP.END_OF_COMBAT)
     else:
         yield from open_priority(game)
 
