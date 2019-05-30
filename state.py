@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 import random
+from collections import defaultdict
 import cli
 from enum import Enum
 import energy
@@ -57,6 +58,9 @@ class ObjectView:
 
     def controlled_by(self, player):
         return self.filter(lambda x: x.controller is player)
+
+    def attacking(self, player):
+        return self.filter(lambda x: x.attacking is player)
 
 class ObjectIterator(ObjectView):
     def __init__(self, iterable):
@@ -229,6 +233,11 @@ class Game:
             attacker, player = event.args
             assert player in self.players
             attacker.attacking = player
+        elif event.event_id == 'block':
+            attacker, blockers = event.args
+            attacker.blockers = blockers
+            for b in blockers:
+                b.blocking = attacker
         else:
             assert False, f'unable to handle {event}'
 
@@ -355,6 +364,36 @@ def turn_based_actions(game):
                 yield Event('attack', candidates[i], game.active_player.next_in_turn)
         else:
             yield Event('step', STEP.END_OF_COMBAT)
+    elif game.step == STEP.DECLARE_BLOCKERS:
+        for player in game.players:
+            attackers = list(game.battlefield.attacking(player))
+            if not attackers:
+                continue
+            candidates = list(game.battlefield.creatures.controlled_by(player))
+            if not candidates:
+                continue
+            blocking = {}
+            blocked_by = defaultdict(list)
+            for attacker in attackers:
+                choices = [f'block {attacker.card.name} with {c.card.name}' for c in candidates]
+                blockers = yield Event('ask_player_multiple', player, choices)
+                for b in blockers:
+                    blocking[candidates[b]] = attacker
+                    blocked_by[attacker].append(candidates[b])
+                candidates = [c for c in candidates if c not in blocking]
+
+            # if an attacker is blocked by multiple blockers its controller
+            # selects the order of the blockers
+            for attacker, blockers in blocked_by.items():
+                if len(blockers) > 1:
+                    blocker_order = []
+                    while len(blocker_order) != len(blockers):
+                        blocker_order = yield Event('ask_player_multiple', attacker.controller, [b.card.name for b in blockers])
+                    blockers[:] = [blockers[b] for b in blocker_order]
+
+            for attacker, blockers in blocked_by.items():
+                yield Event('block', attacker, blockers)
+        yield from open_priority(game)
     else:
         yield from open_priority(game)
 

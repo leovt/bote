@@ -33,8 +33,8 @@ def ask_multiple(question, choices):
         ans = ans.strip()
         if not ans:
             return set()
-        ans = {int(a.strip())-1 for a in ans.split(',')}
-        if all(0 <= a < len(choices) for a in ans):
+        ans = [int(a.strip())-1 for a in ans.split(',')]
+        if all(0 <= a < len(choices) for a in ans) and len(set(ans)) == len(ans):
             return ans
         else:
             raise ValueError()
