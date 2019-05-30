@@ -46,17 +46,6 @@ class ActivatableAbility:
     def __str__(self):
         return '%s: activate ability' % ', '.join(str(x) for x in self.cost)
 
-def add_energy_effect(energy):
-    def _add_energy_effect(controller):
-        yield Event('add_energy', controller, energy)
-    return _add_energy_effect
-
-firesource_ability = ActivatableAbility(
-    cost = [TapCost()],
-    effect = add_energy_effect(energy.RED),
-    is_energy_ability = True
-)
-
 def parse_cost(string):
     components = string.split(',')
     cost = []
