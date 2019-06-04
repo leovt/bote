@@ -91,6 +91,10 @@ def cast_spell(game, player, card):
     yield Event('cast_spell', player, card)
 
 
+@dataclass
+class Damage:
+    value: int
+
 @dataclass(eq=False)
 class Permanent:
     card: object
@@ -99,6 +103,7 @@ class Permanent:
     damage: list = field(default_factory=list)
     attacking: bool = False
     blocking: bool = False
+    blockers: list = field(default_factory=list)
 
     @property
     def types(self):
@@ -194,7 +199,7 @@ class Game:
             player.energy_pool.clear()
         elif event.event_id == 'priority':
             player, = event.args
-            assert player in self.players
+            assert player in self.players or player is None
             self.priority_player = player
         elif event.event_id == 'passed':
             player, = event.args
@@ -238,6 +243,18 @@ class Game:
             attacker.blockers = blockers
             for b in blockers:
                 b.blocking = attacker
+        elif event.event_id == 'damage':
+            permanent, d = event.args
+            permanent.damage.append(Damage(d))
+        elif event.event_id == 'player_damage':
+            player, d = event.args
+            player.life -= d
+        elif event.event_id == 'remove_from_combat':
+            permanent, = event.args
+            assert permanent in self.battlefield
+            permanent.attacking = False
+            permanent.blocking = False
+            permanent.blockers.clear()
         else:
             assert False, f'unable to handle {event}'
 
@@ -311,6 +328,15 @@ def run_game(game):
             game.handle(event)
             event = next(event_stream)
 
+def end_of_step(game):
+    for player in game.players:
+        yield Event('clear_pool', player)
+    yield Event('priority', None)
+    if game.step == STEP.CLEANUP:
+        yield Event('active_player', game.active_player.next_in_turn)
+        yield Event('step', STEP.UNTAP)
+    else:
+        yield Event('step', NEXT_STEP[game.step])
 
 def game_events(game):
     yield from start_game(game)
@@ -327,22 +353,14 @@ def game_events(game):
                     yield from tos.resolve()
                     yield from open_priority(game)
                 else:
-                    game.priority_player = None
+                    yield from end_of_step(game)
             else:
                 yield from player_action(game, game.priority_player)
                 if game.priority_player.has_passed:
                     yield Event('priority', game.priority_player.next_in_turn)
                 else:
                     yield from open_priority(game)
-
         else:
-            for player in game.players:
-                yield Event('clear_pool', player)
-            if game.step == STEP.CLEANUP:
-                yield Event('active_player', game.active_player.next_in_turn)
-                yield Event('step', STEP.UNTAP)
-            else:
-                yield Event('step',  NEXT_STEP[game.step])
             yield from turn_based_actions(game)
 
 def turn_based_actions(game):
@@ -350,11 +368,12 @@ def turn_based_actions(game):
         for permanent in game.battlefield:
             if permanent.controller is game.active_player:
                 yield Event('untap', permanent)
+        yield from end_of_step(game)
     elif game.step == STEP.DRAW:
         yield from draw_card(game.active_player)
         yield from open_priority(game)
     elif game.step == STEP.CLEANUP:
-        discard_excess_cards()
+        yield from end_of_step(game)
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = list(game.battlefield.creatures.controlled_by(game.active_player))
         choices = [c.card.name for c in candidates]
@@ -362,6 +381,7 @@ def turn_based_actions(game):
         if attackers_chosen:
             for i in attackers_chosen:
                 yield Event('attack', candidates[i], game.active_player.next_in_turn)
+            yield from open_priority(game)
         else:
             yield Event('step', STEP.END_OF_COMBAT)
     elif game.step == STEP.DECLARE_BLOCKERS:
@@ -393,6 +413,28 @@ def turn_based_actions(game):
 
             for attacker, blockers in blocked_by.items():
                 yield Event('block', attacker, blockers)
+        yield from open_priority(game)
+    elif game.step == STEP.FIRST_STRIKE_DAMAGE:
+        # TODO: do not skip this step if any attacker or blocker has first strike.
+        yield Event('step', STEP.SECOND_STRIKE_DAMAGE)
+    elif game.step == STEP.SECOND_STRIKE_DAMAGE:
+        for attacker in game.battlefield.filter(lambda x:x.attacking):
+            remaining_strength = attacker.strength
+            for b, blocker in enumerate(attacker.blockers):
+                if b == len(attacker.blockers)-1:
+                    # TODO: trample
+                    damage = remaining_strength
+                else:
+                    damage = min(remaining_strength, blocker.strength)
+                remaining_strength -= damage
+                yield Event('damage', blocker, damage)
+                yield Event('damage', attacker, blocker.strength)
+            if remaining_strength:
+                yield Event('player_damage', attacker.attacking, remaining_strength)
+        yield from open_priority(game)
+    elif game.step == STEP.POSTCOMBAT_MAIN:
+        for permanent in game.battlefield:
+            yield Event('remove_from_combat', permanent)
         yield from open_priority(game)
     else:
         yield from open_priority(game)
