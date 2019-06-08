@@ -210,6 +210,12 @@ class Game:
             assert controller in self.players
             permanent = Permanent(card, controller)
             self.battlefield.add(permanent)
+        elif event.event_id == 'exit_the_battlefield':
+            permanent, = event.args
+            self.battlefield.remove(permanent)
+        elif event.event_id == 'put_in_graveyard':
+            card, = event.args
+            card.owner.graveyard.add(card)
         elif event.event_id == 'play_source':
             player, card = event.args
             assert player in self.players
@@ -444,13 +450,13 @@ def lose_the_game(player):
     assert False, 'not implemented'
 
 def destroy(permanent):
-    if permanent.has_regenerated or permanent.regenerates():
+    if False: #permanent.has_regenerated or permanent.regenerates():
         yield Event('tap', permanent)
         yield Event('clear_damage', permanent)
         yield Event('has_regenerated', permanent)
         yield Event('remove_from_combat', permanent)
     else:
-        yield from put_in_graveyard(object)
+        yield from put_in_graveyard(permanent)
 
 def put_in_graveyard(permanent):
     yield Event('exit_the_battlefield', permanent)
