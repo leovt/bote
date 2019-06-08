@@ -274,7 +274,11 @@ class Game:
                     'life': pl.life,
                     'hand_size': len(pl.hand),
                     'energy_pool': str(pl.energy_pool.energy),
-                    'next_player': id(pl.next_in_turn)})
+                    'next_player': id(pl.next_in_turn),
+                    'graveyard': [Namespace(
+                        id = id(card.art_card),
+                        name = card.name)
+                        for card in player.graveyard]})
                 for pl in self.players},
             'stack': [str(item) for item in self.stack],
             'battlefield': {id(perm): Namespace({
@@ -502,6 +506,10 @@ def print_player_view(view):
     print('Players:')
     for p in view.players.values():
         print(f'    {p.name}: {p.life} life; {p.hand_size} cards in hand, {p.energy_pool} in pool')
+        if p.graveyard:
+            print('        Graveyard:')
+            for card in p.graveyard:
+                print(f'            {card.name}')
     print('-' * 80)
     if view.stack:
         print('Stack')
