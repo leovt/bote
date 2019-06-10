@@ -278,7 +278,7 @@ class Game:
                     'graveyard': [Namespace(
                         id = id(card.art_card),
                         name = card.name)
-                        for card in player.graveyard]})
+                        for card in pl.graveyard]})
                 for pl in self.players},
             'stack': [str(item) for item in self.stack],
             'battlefield': {id(perm): Namespace({
