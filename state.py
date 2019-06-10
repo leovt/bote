@@ -325,14 +325,14 @@ def run_game(game):
     event = next(event_stream)
     while True:
         if event.event_id == 'ask_player_action':
-            player, choices = event.args
+            player, question, choices = event.args
             assert player in game.players
-            answer = cli.ask_choice(f'{player.name} has priority; select an action:', choices)
+            answer = cli.ask_choice(question, choices)
             event = event_stream.send(answer)
         elif event.event_id == 'ask_player_multiple':
-            player, choices = event.args
+            player, question, choices = event.args
             assert player in game.players
-            answer = cli.ask_multiple(f'{player.name} has priority; select:', choices)
+            answer = cli.ask_multiple(question, choices)
             event = event_stream.send(answer)
         else:
             game.handle(event)
@@ -387,7 +387,7 @@ def turn_based_actions(game):
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = list(game.battlefield.creatures.controlled_by(game.active_player))
         choices = [c.card.name for c in candidates]
-        attackers_chosen = yield Event('ask_player_multiple', game.active_player, choices)
+        attackers_chosen = yield Event('ask_player_multiple', game.active_player, 'choose attackers', choices)
         if attackers_chosen:
             for i in attackers_chosen:
                 yield Event('attack', candidates[i], game.active_player.next_in_turn)
@@ -406,7 +406,7 @@ def turn_based_actions(game):
             blocked_by = defaultdict(list)
             for attacker in attackers:
                 choices = [f'block {attacker.card.name} with {c.card.name}' for c in candidates]
-                blockers = yield Event('ask_player_multiple', player, choices)
+                blockers = yield Event('ask_player_multiple', player, f'choose blockers for {attacker.card.name}', choices)
                 for b in blockers:
                     blocking[candidates[b]] = attacker
                     blocked_by[attacker].append(candidates[b])
@@ -418,7 +418,7 @@ def turn_based_actions(game):
                 if len(blockers) > 1:
                     blocker_order = []
                     while len(blocker_order) != len(blockers):
-                        blocker_order = yield Event('ask_player_multiple', attacker.controller, [b.card.name for b in blockers])
+                        blocker_order = yield Event('ask_player_multiple', attacker.controller, 'choose damage order for multiple blockers', [b.card.name for b in blockers])
                     blockers[:] = [blockers[b] for b in blocker_order]
 
             for attacker, blockers in blocked_by.items():
@@ -568,7 +568,7 @@ def player_action(game, player):
                         act.append((ability.effect, (player,)))
                         actions.append(act)
 
-    answer = yield Event('ask_player_action', player, choices)
+    answer = yield Event('ask_player_action', player, f'{player.name} has priority; select an action:', choices)
     if answer==0:
         yield Event('passed', player)
     else:
