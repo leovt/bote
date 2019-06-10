@@ -14,22 +14,17 @@ def choices_text(question, choices):
         [f'{i:{number_width}d}: {choice}'
          for i, choice in enumerate(choices, 1)])
 
-def ask_choice(question, choices):
+def ask_choice(question, choices, multiple):
     text = choices_text(question, choices)
 
-    def parse(answer):
+    def parse_single(answer):
         ans = int(answer)
         if 1 <= ans <= len(choices):
             return ans-1
         else:
             raise ValueError()
 
-    return ask(text, parse, '>')
-
-def ask_multiple(question, choices):
-    text = choices_text(question, choices)
-
-    def parse(ans):
+    def parse_multiple(ans):
         ans = ans.strip()
         if not ans:
             return set()
@@ -39,14 +34,19 @@ def ask_multiple(question, choices):
         else:
             raise ValueError()
 
-    return ask(text, parse, 'Enter choices separated by comma >')
+    if multiple:
+        parse = parse_multiple
+    else:
+        parse = parse_single
+
+    return ask(text, parse, '>')
 
 
 def test():
     CHOICES = ['Apples', 'Pears', 'Tomatoes']
-    ans = ask_choice('Please choose a fruit:', CHOICES)
+    ans = ask_choice('Please choose a fruit:', CHOICES, False)
     print(f'You chose {CHOICES[ans]}.')
-    ans = ask_multiple('Please choose some fruit', CHOICES)
+    ans = ask_choice('Please choose some fruit', CHOICES, True)
     ans = {CHOICES[x] for x in ans}
     print(f'You chose {ans}.')
 

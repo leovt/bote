@@ -320,19 +320,19 @@ def start_game(game):
     yield Event('step', STEP.PRECOMBAT_MAIN)
     yield Event('priority', p1)
 
-def run_game(game):
+def run_game(game, ask_choice):
     event_stream = game_events(game)
     event = next(event_stream)
     while True:
         if event.event_id == 'ask_player_action':
             player, question, choices = event.args
             assert player in game.players
-            answer = cli.ask_choice(question, choices)
+            answer = cli.ask_choice(question, choices, False)
             event = event_stream.send(answer)
         elif event.event_id == 'ask_player_multiple':
             player, question, choices = event.args
             assert player in game.players
-            answer = cli.ask_multiple(question, choices)
+            answer = cli.ask_choice(question, choices, True)
             event = event_stream.send(answer)
         else:
             game.handle(event)

@@ -1,5 +1,6 @@
 import traceback
 import pdb
+import cli
 
 from cards import ArtCard, rule_cards
 from state import setup_duel, run_game
@@ -10,7 +11,7 @@ TEST_DECK = (
 
 try:
     game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
-    run_game(game)
+    run_game(game, cli.ask_choice)
 except:
     traceback.print_exc()
     pdb.post_mortem()
