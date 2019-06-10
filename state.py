@@ -155,11 +155,11 @@ class Game:
     priority_player: Player = None
     stack: list = field(default_factory=list)
     step = STEP.PRECOMBAT_MAIN
-    action_log: list = field(default_factory=list)
+    event_log: list = field(default_factory=list)
 
     def log(self, event):
         print(str(event)[:50])
-        self.action_log.append(event)
+        self.event_log.append(event)
 
     def handle(self, event):
         self.log(event)
