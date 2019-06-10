@@ -11,6 +11,6 @@ TEST_DECK = (
 try:
     game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
     run_game(game)
-except Exception:
+except:
     traceback.print_exc()
     pdb.post_mortem()
