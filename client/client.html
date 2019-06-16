@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+<head>
+</head>
+<body>
+  <main>
+    <div class="player-header">Opponent</div>
+    <div class="library">Library</div>
+    <div class="battlefield">BF</div>
+    <div class="combat-area">Combat</div>
+    <div class="player-header">Player</div>
+    <div class="library">Library</div>
+    <div class="battlefield">BF</div>
+    <div class="log">
+      <ul>
+        <li>Event</li>
+        <li>Event</li>
+        <li>Event</li>
+        <li>Event</li>
+      </ul>
+    </div>
+    <div class="preview" id="preview">
+      Card Preview
+    </div>
+    <div class="hand">
+      <img class='card' src="goblin_raiders.png" />
+      <img class='card' src="goblin_raiders.png" />
+      <img class='card' src="goblin_raiders.png" />
+      <img class='card' src="firesource.png" />
+      <img class='card' src="firesource.png" />
+      <img class='card' src="firesource.png" />
+      <img class='card' src="firesource.png" />
+    </div>
+  </main>
+</body>
+<script>
+document.onmouseover= function(e){
+   e=window.event? event.srcElement: e.target;
+   if(e.className && e.className.indexOf('card')!=-1){
+     p = document.getElementById('preview');
+     p.style.backgroundImage = "url('" + e.src + "')";
+   }
+}
+</script>
+</html>

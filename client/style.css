@@ -1,0 +1,58 @@
+main {
+  display: grid;
+  grid-template-columns: 1fr 5fr 1fr;
+  grid-template-rows: 1fr 4fr 1fr 4fr 2fr;
+}
+
+div {
+  border-width: medium;
+  border-style: solid;
+}
+
+.player-header {
+  background-color: #aaa;
+  grid-column: 1/3;
+}
+
+.log {
+  grid-column: 3;
+  grid-row: 1/3;
+}
+
+.preview {
+  grid-column: 3;
+  grid-row: 3/5;
+}
+
+.battlefield {
+  .background-color: #684;
+}
+
+.combat-area {
+  display: none;
+}
+
+.hand {
+  grid-column: 1/4;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li:nth-child(even) {
+  background-color: #ccc;
+}
+
+.card {
+  height: 50px;
+  margin: 10px;
+
+}
+
+.preview {
+  background-repeat: no-repeat;
+  background-size: contain;
+}
