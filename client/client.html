@@ -20,9 +20,7 @@
         <li>Event</li>
       </ul>
     </div>
-    <div class="preview" id="preview">
-      Card Preview
-    </div>
+    <div class="preview" id="preview"></div>
     <div class="hand">
       <img class='card' src="goblin_raiders.png" />
       <img class='card' src="goblin_raiders.png" />
@@ -41,6 +39,13 @@ document.onmouseover= function(e){
      p = document.getElementById('preview');
      p.style.backgroundImage = "url('" + e.src + "')";
    }
+}
+document.onmouseout= function(e){
+    e=window.event? event.srcElement: e.target;
+    if(e.className && e.className.indexOf('card')!=-1){
+      p = document.getElementById('preview');
+      p.style.backgroundImage = "none";
+    }
 }
 </script>
 </html>
