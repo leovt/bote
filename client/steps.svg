@@ -15,8 +15,11 @@ viewBox="-100.5 -100.5 201 201"  >
   .combat {
     fill: #8c8;
   }
+  #indicator{
+    transition: transform 0.7s ease-out;
+  }
 </style>
-<path d="M0,10 A10 10 0 0 1 0,-10 L43 0Z" transform="rotate(97.5)"/>
+<path d="M0,10 A10 10 0 0 1 0,-10 L43 0Z" id="indicator" style="transform: rotate(172.5deg);"/>
 
 <g transform="rotate(165)">
   <path d="M100,0 A100 100 0 0 1 96.59258,25.88190 L48.29629,12.94095 50,0Z" class="segment" />

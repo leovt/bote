@@ -5,14 +5,12 @@
 </head>
 <body>
   <main>
-    <div class="player-header">Opponent</div>
-    <div class="library">Library</div>
-    <div class="battlefield">BF</div>
-    <div class="combat-area">Combat</div>
-    <div class="player-header">Player</div>
-    <div class="library">Library</div>
-    <div class="battlefield">BF</div>
-    <div class="log">
+    <div class="player-header" id="opp-hdr">Opponent</div>
+    <div class="battlefield" id="opp-bf">BF</div>
+    <object type="image/svg+xml" data="steps.svg" id="stepindicator"></object>
+    <div class="player-header" id="pl-hdr">Player</div>
+    <div class="battlefield" id="pl-bf">BF  <input type="button" value="Click me" onclick="moveind()"> </div>
+    <div id="log">
       <ul>
         <li>Event</li>
         <li>Event</li>
@@ -20,8 +18,8 @@
         <li>Event</li>
       </ul>
     </div>
-    <div class="preview" id="preview"></div>
-    <div class="hand">
+    <div id="preview"></div>
+    <div id="hand">
       <img class='card' src="goblin_raiders.png" />
       <img class='card' src="goblin_raiders.png" />
       <img class='card' src="goblin_raiders.png" />
@@ -31,6 +29,7 @@
       <img class='card' src="firesource.png" />
     </div>
   </main>
+  <div id="combat-area">Combat</div>
 </body>
 <script>
 document.onmouseover= function(e){
@@ -46,6 +45,14 @@ document.onmouseout= function(e){
       p = document.getElementById('preview');
       p.style.backgroundImage = "none";
     }
+}
+indicator_position = 172.5;
+function moveind(){
+  indicator_position -= 15;
+  var a = document.getElementById("stepindicator");
+  var svgDoc = a.contentDocument;
+  var svgItem = svgDoc.getElementById("indicator");
+  svgItem.setAttribute("style", "transform: rotate(" + indicator_position + "deg);");
 }
 </script>
 </html>
