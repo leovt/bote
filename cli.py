@@ -14,7 +14,7 @@ def choices_text(question, choices):
         [f'{i:{number_width}d}: {choice}'
          for i, choice in enumerate(choices, 1)])
 
-def ask_choice(question, choices, multiple):
+def ask_choice(player, question, choices, multiple):
     text = choices_text(question, choices)
 
     def parse_single(answer):

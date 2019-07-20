@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 import random
 from collections import defaultdict
-import cli
 from enum import Enum
 import energy
 from cards import Card, ArtCard, RuleCard
@@ -156,6 +155,7 @@ class Game:
     stack: list = field(default_factory=list)
     step = STEP.PRECOMBAT_MAIN
     event_log: list = field(default_factory=list)
+    question = None
 
     def log(self, event):
         print(str(event)[:50])
@@ -163,7 +163,17 @@ class Game:
 
     def handle(self, event):
         self.log(event)
-        if event.event_id == 'pay_energy':
+        if event.event_id == 'ask_player_action':
+            player, question, choices = event.args
+            assert player in self.players
+            self.question = (player, question, choices, False)
+            self.answer = None
+        elif event.event_id == 'ask_player_multiple':
+            player, question, choices = event.args
+            assert player in self.players
+            self.question = (player, question, choices, True)
+            self.answer = None
+        elif event.event_id == 'pay_energy':
             player, energy = event.args
             assert player in self.players
             player.energy_pool.pay(energy)
@@ -322,21 +332,11 @@ def start_game(game):
 
 def run_game(game, ask_choice):
     event_stream = game_events(game)
-    event = next(event_stream)
-    while True:
-        if event.event_id == 'ask_player_action':
-            player, question, choices = event.args
-            assert player in game.players
-            answer = cli.ask_choice(question, choices, False)
-            event = event_stream.send(answer)
-        elif event.event_id == 'ask_player_multiple':
-            player, question, choices = event.args
-            assert player in game.players
-            answer = cli.ask_choice(question, choices, True)
-            event = event_stream.send(answer)
-        else:
-            game.handle(event)
-            event = next(event_stream)
+    for event in event_stream:
+        game.handle(event)
+        if game.question:
+            game.answer = ask_choice(*game.question)
+            game.question = None
 
 def end_of_step(game):
     for player in game.players:
@@ -387,7 +387,8 @@ def turn_based_actions(game):
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = list(game.battlefield.creatures.controlled_by(game.active_player))
         choices = [c.card.name for c in candidates]
-        attackers_chosen = yield Event('ask_player_multiple', game.active_player, 'choose attackers', choices)
+        yield Event('ask_player_multiple', game.active_player, 'choose attackers', choices)
+        attackers_chosen = game.answer
         if attackers_chosen:
             for i in attackers_chosen:
                 yield Event('attack', candidates[i], game.active_player.next_in_turn)
@@ -406,7 +407,8 @@ def turn_based_actions(game):
             blocked_by = defaultdict(list)
             for attacker in attackers:
                 choices = [f'block {attacker.card.name} with {c.card.name}' for c in candidates]
-                blockers = yield Event('ask_player_multiple', player, f'choose blockers for {attacker.card.name}', choices)
+                yield Event('ask_player_multiple', player, f'choose blockers for {attacker.card.name}', choices)
+                blockers = game.answer
                 for b in blockers:
                     blocking[candidates[b]] = attacker
                     blocked_by[attacker].append(candidates[b])
@@ -418,7 +420,8 @@ def turn_based_actions(game):
                 if len(blockers) > 1:
                     blocker_order = []
                     while len(blocker_order) != len(blockers):
-                        blocker_order = yield Event('ask_player_multiple', attacker.controller, 'choose damage order for multiple blockers', [b.card.name for b in blockers])
+                        yield Event('ask_player_multiple', attacker.controller, 'choose damage order for multiple blockers', [b.card.name for b in blockers])
+                        blocker_order = game.answer
                     blockers[:] = [blockers[b] for b in blocker_order]
 
             for attacker, blockers in blocked_by.items():
@@ -561,14 +564,13 @@ def player_action(game, player):
     for permanent in game.battlefield.controlled_by(player):
         for ability in permanent.abilities:
             if isinstance(ability, ActivatableAbility):
-                if all(cost.can_pay(permanent, permanent.card)
-                    for cost in ability.cost):
-                        choices.append(f'activate {permanent.card.name}:{ability}')
-                        act = [(cost.pay, (permanent, permanent.card)) for cost in ability.cost]
-                        act.append((ability.effect, (player,)))
-                        actions.append(act)
-
-    answer = yield Event('ask_player_action', player, f'{player.name} has priority; select an action:', choices)
+                if all(cost.can_pay(permanent, permanent.card) for cost in ability.cost):
+                    choices.append(f'activate {permanent.card.name}:{ability}')
+                    act = [(cost.pay, (permanent, permanent.card)) for cost in ability.cost]
+                    act.append((ability.effect, (player,)))
+                    actions.append(act)
+    yield Event('ask_player_action', player, f'{player.name} has priority; select an action:', choices)
+    answer = game.answer
     if answer==0:
         yield Event('passed', player)
     else:
