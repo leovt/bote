@@ -34,9 +34,32 @@ def answer(game_id):
         flask.abort(409)
 
     # TODO: check the correct player is answering etc
-    game.answer = flask.request.json['answer']
+    print('posting an answer')
+    print(flask.request.data)
+    if flask.request.json is None:
+        flask.abort(415)
+
+    try:
+        answer = flask.request.json['answer']
+    except:
+        flask.abort(400)
+
+    number_of_choices = len(game.question[2])
+
+    if game.question[3]:
+        # multiple choice
+        if  not (isinstance(answer, list) and
+            all(isinstance(x, int) for x in answer) and
+            all(0 <= x < number_of_choices)):
+            return('invalid answer', 400)
+    else:
+        if not (isinstance(answer, int) and 0 <= answer < number_of_choices):
+            return ('invalid answer', 400)
+
     game.question = None
+    game.answer = answer
     advance_game_state(game)
+    return ('', 204)
 
 @app.route('/<game_id>/state')
 def game_state(game_id):
