@@ -1,10 +1,17 @@
 import flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from forms import LoginForm
 from config import Config
+from flask_login import UserMixin, LoginManager, current_user, login_user, logout_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = flask.Flask('__name__',
                   static_folder='client')
 app.config.from_object(Config)
+db = SQLAlchemy(app)
+login_mgr = LoginManager(app)
+Migrate(app, db)
 
 @app.route('/')
 def hello():
@@ -12,15 +19,41 @@ def hello():
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
+    if current_user.is_authenticated:
+        return flask.redirect(flask.url_for('hello'))
     form = LoginForm()
     if form.validate_on_submit():
-        flask.flash('Login requested for user {}, remember_me={}'.format(
-            form.username.data, form.remember_me.data))
+        user = User.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flask.flash('Invalid username or password')
+            return flask.redirect(flask.url_for('login'))
+        login_user(user, remember=form.remember_me.data)
         return flask.redirect('/')
     return flask.render_template('login.html', title='Sign-In', form=form)
 
+@app.route('/logout')
+def logout():
+    logout_user()
+    return flask.redirect(flask.url_for('hello'))
 
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    email = db.Column(db.String(120), index=True, unique=True)
+    password_hash = db.Column(db.String(128))
 
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+@login_mgr.user_loader
+def load_user(uid):
+    return User.query.get(int(uid))
 
 
 games = {}
