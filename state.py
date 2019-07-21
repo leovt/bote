@@ -306,6 +306,18 @@ class Game:
                     name = card.name)
                     for card in player.hand]
             })
+        if self.question:
+            (q_player, question, choices, multiple) = self.question
+            view['question'] = Namespace({
+                'player_id': id(player),
+                'question': question,
+            })
+            if player is q_player or True: #TODO: remove or True
+                view['question'].update({
+                    'choices': choices,
+                    'multiple': multiple,
+                })
+
         return view
 
 def make_library(deck, player):
