@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <ul id="log"></ul>
+  <button onclick="send_answer()">Answer</button>
+</body>
+<script>
+log_count = 0;
+
+function log_refresh () {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.addEventListener("load", function () {
+    result = JSON.parse(httpRequest.responseText)
+    var list = document.getElementById('log');
+    for (var key in result) {
+      log_count += 1;
+      console.log(result[key].event_id)
+      var entry = document.createElement('li');
+      entry.appendChild(document.createTextNode(JSON.stringify(result[key])));
+      list.appendChild(entry);
+    }
+    setTimeout(log_refresh, 1000);
+  })
+  httpRequest.open("GET", `/test/log?first=${log_count}`);
+  httpRequest.send()
+}
+log_refresh();
+
+function send_answer () {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.open("POST", `/test/answer`);
+  httpRequest.setRequestHeader('Content-Type', 'application/json');
+  httpRequest.send(JSON.stringify({"answer":0}));
+  httpRequest.send()
+}
+
+</script>
+</html>

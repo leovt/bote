@@ -124,4 +124,11 @@ def game_log(game_id):
     if not game:
         flask.abort(404)
 
-    return flask.jsonify(game.event_log)
+    try:
+        first = int(flask.request.args.get('first', 0))
+    except ValueError:
+        flask.abort(400)
+    if first<0:
+        flask.abort(400)
+
+    return flask.jsonify(dict(enumerate((e.as_dict() for e in game.event_log[first:]), first)))
