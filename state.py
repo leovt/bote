@@ -7,6 +7,7 @@ import energy
 from cards import Card, ArtCard, RuleCard
 from abilities import ActivatableAbility
 from event import Event
+from tools import Namespace
 
 class STEP(Enum):
     UNTAP = 11
@@ -142,9 +143,6 @@ class Player:
     def __str__(self):
         return self.name
 
-class Namespace(dict):
-    __setattr__ = dict.__setitem__
-    __getattr__ = dict.__getitem__
 
 @dataclass
 class Game:
