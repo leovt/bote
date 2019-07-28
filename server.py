@@ -93,17 +93,10 @@ def answer(game_id):
     except:
         flask.abort(400)
 
-    number_of_choices = len(game.question[2])
+    player = game.question.player # TODO: get the submitting player
 
-    if game.question[3]:
-        # multiple choice
-        if  not (isinstance(answer, list) and
-            all(isinstance(x, int) for x in answer) and
-            all(0 <= x < number_of_choices)):
-            return('invalid answer', 400)
-    else:
-        if not (isinstance(answer, int) and 0 <= answer < number_of_choices):
-            return ('invalid answer', 400)
+    if not game.set_answer(player, answer):
+        return('invalid answer', 400)
 
     game.question = None
     game.answer = answer

@@ -308,7 +308,7 @@ class Game:
 
     def set_answer(self, player, answer):
         if self.question is not None and self.answer is None:
-            if self.question.validate(answer):
+            if self.question.validate(player, answer):
                 self.answer = answer
                 return True
         return False
