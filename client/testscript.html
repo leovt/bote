@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <body>
-  <ul id="log"></ul>
+  <ul id="log" style="overflow:scroll; height:300px;"></ul>
+  <button onclick="log_refresh()">Refresh</button>
   <button onclick="send_answer()">Answer</button>
 </body>
 <script>
@@ -19,12 +20,10 @@ function log_refresh () {
       entry.appendChild(document.createTextNode(JSON.stringify(result[key])));
       list.appendChild(entry);
     }
-    setTimeout(log_refresh, 1000);
   })
   httpRequest.open("GET", `/test/log?first=${log_count}`);
   httpRequest.send()
 }
-log_refresh();
 
 function send_answer () {
   var httpRequest = new XMLHttpRequest();

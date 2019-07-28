@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from forms import LoginForm
 from config import Config
-from flask_login import UserMixin, LoginManager, current_user, login_user, logout_user
+from flask_login import UserMixin, LoginManager, current_user, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = flask.Flask('__name__',
@@ -75,6 +75,7 @@ def advance_game_state(game):
 advance_game_state(games['test'])
 
 @app.route('/<game_id>/answer', methods=["POST"])
+@login_required
 def answer(game_id):
     game = games.get(game_id)
     if not game:
@@ -82,7 +83,13 @@ def answer(game_id):
     if game.answer is not None or game.question is None:
         flask.abort(409)
 
-    # TODO: check the correct player is answering etc
+    for p in game.players:
+        if p.name == current_user.username:
+            player = p
+            break
+    else:
+        flask.abort(403)
+
     print('posting an answer')
     print(flask.request.data)
     if flask.request.json is None:
@@ -92,8 +99,6 @@ def answer(game_id):
         answer = flask.request.json['answer']
     except:
         flask.abort(400)
-
-    player = game.question.player # TODO: get the submitting player
 
     if not game.set_answer(player, answer):
         return('invalid answer', 400)
