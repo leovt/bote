@@ -7,6 +7,7 @@ import energy
 from cards import Card, ArtCard, RuleCard
 from abilities import ActivatableAbility
 from event import Event
+from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace
 
 class STEP(Enum):
@@ -154,6 +155,7 @@ class Game:
     step = STEP.PRECOMBAT_MAIN
     event_log: list = field(default_factory=list)
     question = None
+    answer = None
 
     def log(self, event):
         print(str(event)[:50])
@@ -161,15 +163,10 @@ class Game:
 
     def handle(self, event):
         self.log(event)
-        if event.event_id == 'ask_player_action':
-            player, question, choices = event.args
-            assert player in self.players
-            self.question = (player, question, choices, False)
-            self.answer = None
-        elif event.event_id == 'ask_player_multiple':
-            player, question, choices = event.args
-            assert player in self.players
-            self.question = (player, question, choices, True)
+        if event.event_id == 'question':
+            question, = event.args
+            assert question.player in self.players
+            self.question = question
             self.answer = None
         elif event.event_id == 'pay_energy':
             player, energy = event.args
@@ -305,18 +302,16 @@ class Game:
                     for card in player.hand]
             })
         if self.question:
-            (q_player, question, choices, multiple) = self.question
-            view['question'] = Namespace({
-                'player_id': id(player),
-                'question': question,
-            })
-            if player is q_player or True: #TODO: remove or True
-                view['question'].update({
-                    'choices': choices,
-                    'multiple': multiple,
-                })
+            view['question'] = self.question.serialize_for(player)
 
         return view
+
+    def set_answer(self, player, answer):
+        if self.question is not None and self.answer is None:
+            if self.question.validate(answer):
+                self.answer = answer
+                return True
+        return False
 
 def make_library(deck, player):
     return [Card(x, player) for x in deck]
@@ -340,13 +335,6 @@ def start_game(game):
     yield Event('step', STEP.PRECOMBAT_MAIN)
     yield Event('priority', p1)
 
-def run_game(game, ask_choice):
-    event_stream = game_events(game)
-    for event in event_stream:
-        game.handle(event)
-        if game.question:
-            game.answer = ask_choice(*game.question)
-            game.question = None
 
 def end_of_step(game):
     for player in game.players:
@@ -397,7 +385,8 @@ def turn_based_actions(game):
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = list(game.battlefield.creatures.controlled_by(game.active_player))
         choices = [c.card.name for c in candidates]
-        yield Event('ask_player_multiple', game.active_player, 'choose attackers', choices)
+        question = DeclareAttackers(game.active_player, choices)
+        yield Event('question', question)
         attackers_chosen = game.answer
         if attackers_chosen:
             for i in attackers_chosen:
@@ -415,24 +404,29 @@ def turn_based_actions(game):
                 continue
             blocking = {}
             blocked_by = defaultdict(list)
-            for attacker in attackers:
-                choices = [f'block {attacker.card.name} with {c.card.name}' for c in candidates]
-                yield Event('ask_player_multiple', player, f'choose blockers for {attacker.card.name}', choices)
-                blockers = game.answer
-                for b in blockers:
-                    blocking[candidates[b]] = attacker
-                    blocked_by[attacker].append(candidates[b])
-                candidates = [c for c in candidates if c not in blocking]
+            question = DeclareBlockers(player, [{'candidate': cand,
+                                                 'attackers': ['none'] + attackers}
+                                                 for cand in candidates])
+            yield Event('question', question)
+
+            for cand, attacker in zip(candidates, game.answer):
+                if attacker > 0:
+                    attacker = attackers[attacker-1]
+                    blocking[cand] = attacker
+                    blocked_by[attacker].append(cand)
 
             # if an attacker is blocked by multiple blockers its controller
             # selects the order of the blockers
-            for attacker, blockers in blocked_by.items():
-                if len(blockers) > 1:
-                    blocker_order = []
-                    while len(blocker_order) != len(blockers):
-                        yield Event('ask_player_multiple', attacker.controller, 'choose damage order for multiple blockers', [b.card.name for b in blockers])
-                        blocker_order = game.answer
-                    blockers[:] = [blockers[b] for b in blocker_order]
+            ambigous = [(attacker, blockers)
+                for attacker, blockers in blocked_by.items
+                if len(blockers) > 1]
+            question = OrderBlockers(player, [{'attacker': attacker,
+                                                'blockers': blockers}
+                                                for attacker, blockers in ambigous])
+            yield Event('question', question)
+            blocker_order = game.answer
+            for (attacker, blockers), order in zip(ambigous, game.answer):
+                blockers[:] = [blockers[b] for b in blocker_order]
 
             for attacker, blockers in blocked_by.items():
                 yield Event('block', attacker, blockers)
@@ -579,7 +573,8 @@ def player_action(game, player):
                     act = [(cost.pay, (permanent, permanent.card)) for cost in ability.cost]
                     act.append((ability.effect, (player,)))
                     actions.append(act)
-    yield Event('ask_player_action', player, f'{player.name} has priority; select an action:', choices)
+    question = ChooseAction(player, choices)
+    yield Event('question', question)
     answer = game.answer
     if answer==0:
         yield Event('passed', player)
