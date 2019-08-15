@@ -33,8 +33,10 @@ class Card:
         return getattr(self.art_card.rule_card, attribute)
 
     def __str__(self):
-        return f'{self.name} @{self.owner}'
+        return self.art_card.rule_card.name
 
+    def __repr__(self):
+        return f'<Card name={self.name} owner={self.owner.name}>'
 
 def load_db():
     global rule_cards
