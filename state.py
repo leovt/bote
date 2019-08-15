@@ -2,11 +2,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 import random
 from collections import defaultdict
-from enum import Enum
 import energy
 from cards import Card, ArtCard, RuleCard
 from abilities import ActivatableAbility
-from event import Event
+from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace
 
@@ -81,15 +80,15 @@ class Spell:
     card: object
 
     def resolve(self):
-        yield Event('enter_the_battlefield', self.card, self.controller)
+        yield EnterTheBattlefieldEvent(self.card, self.controller.name)
 
     def __str__(self):
         return f'cast {self.card.name} @{self.controller.name}'
 
 
 def cast_spell(game, player, card):
-    yield Event('pay_energy', player, card.cost)
-    yield Event('cast_spell', player, card)
+    yield PayEnergyEvent(player.name, card.cost)
+    yield CastSpellEvent(player.name, card)
 
 
 @dataclass
@@ -144,6 +143,13 @@ class Player:
     def __str__(self):
         return self.name
 
+    def serialize_for(self, player):
+        return {
+            'name': self.name,
+        }
+
+class EndOfGameException(Exception):
+    pass
 
 @dataclass
 class Game:
@@ -158,116 +164,122 @@ class Game:
     answer = None
 
     def log(self, event):
-        print(str(event)[:50])
+        print(event)
         self.event_log.append(event)
+
+    def get_player(self, name):
+        # todo: replace players by a map
+        for player in self.players:
+            if player.name == name:
+                return player
 
     def handle(self, event):
         self.log(event)
-        if event.event_id == 'question':
-            question, = event.args
-            assert question.player in self.players
-            self.question = question
-            self.answer = None
-        elif event.event_id == 'pay_energy':
-            player, energy = event.args
-            assert player in self.players
-            player.energy_pool.pay(energy)
-        elif event.event_id == 'add_energy':
-            player, energy = event.args
-            assert player in self.players
-            player.energy_pool.add(energy)
-        elif event.event_id == 'draw_card':
-            player, card = event.args
-            assert player in self.players
-            card_popped = player.library.pop()
-            assert card_popped == card
-            player.hand.add(card)
-        elif event.event_id == 'draw_empty':
-            player, = event.args
-            assert player in self.players
-            player.has_drawn_from_empty_library = True
-        elif event.event_id == 'shuffle_library':
-            player, = event.args
-            assert player in self.players
-            random.shuffle(player.library)
-        elif event.event_id == 'active_player':
-            player, = event.args
-            assert player in self.players
-            self.active_player = player
-        elif event.event_id == 'step':
-            step, = event.args
-            assert isinstance(step, STEP)
-            self.step = step
-        elif event.event_id == 'clear_pool':
-            player, = event.args
-            assert player in self.players
-            player.energy_pool.clear()
-        elif event.event_id == 'priority':
-            player, = event.args
-            assert player in self.players or player is None
-            self.priority_player = player
-        elif event.event_id == 'passed':
-            player, = event.args
-            assert player in self.players
-            player.has_passed = True
-        elif event.event_id == 'enter_the_battlefield':
-            card, controller = event.args
-            assert controller in self.players
-            permanent = Permanent(card, controller)
-            self.battlefield.add(permanent)
-        elif event.event_id == 'exit_the_battlefield':
-            permanent, = event.args
-            self.battlefield.remove(permanent)
-        elif event.event_id == 'put_in_graveyard':
-            card, = event.args
-            card.owner.graveyard.add(card)
-        elif event.event_id == 'play_source':
-            player, card = event.args
-            assert player in self.players
-            player.hand.discard(card)
-        elif event.event_id == 'cast_spell':
-            player, card = event.args
-            assert player in self.players
-            player.hand.discard(card)
-            self.stack.append(Spell(player, card))
-        elif event.event_id == 'resolve_tos':
-            tos, = event.args
-            tos_popped = self.stack.pop()
-            assert tos_popped == tos
-        elif event.event_id == 'untap':
-            permanent, = event.args
-            assert permanent in self.battlefield
-            permanent.tapped = False
-        elif event.event_id == 'tap':
-            permanent, = event.args
-            assert permanent in self.battlefield
-            permanent.tapped = True
-        elif event.event_id == 'reset_pass':
-            for player in self.players:
-                player.has_passed = False
-        elif event.event_id == 'attack':
-            attacker, player = event.args
-            assert player in self.players
-            attacker.attacking = player
-        elif event.event_id == 'block':
-            attacker, blockers = event.args
-            attacker.blockers = blockers
-            for b in blockers:
-                b.blocking = attacker
-        elif event.event_id == 'damage':
-            permanent, d = event.args
-            permanent.damage.append(Damage(d))
-        elif event.event_id == 'player_damage':
-            player, d = event.args
-            player.life -= d
-        elif event.event_id == 'remove_from_combat':
-            permanent, = event.args
-            assert permanent in self.battlefield
-            permanent.attacking = False
-            permanent.blocking = False
-            permanent.blockers.clear()
-        else:
-            assert False, f'unable to handle {event}'
+        handler = getattr(self, f'handle_{event.__class__.__name__}')
+        handler(event)
+
+    def handle_QuestionEvent(self, event):
+        self.question = event.question
+        self.answer = None
+
+    def handle_PayEnergyEvent(self, event):
+        player = self.get_player(event.player)
+        player.energy_pool.pay(event.energy)
+
+    def handle_AddEnergyEvent(self, event):
+        player = self.get_player(event.player)
+        event.player.energy_pool.add(event.energy)
+
+    def handle_DrawCardEvent(self, event):
+        player = self.get_player(event.player)
+        card_popped = player.library.pop()
+        assert card_popped is event.card
+        player.hand.add(card_popped)
+
+    def handle_DrawEmptyEvent(self, event):
+        player = self.get_player(event.player)
+        player.has_drawn_from_empty_library = True
+
+    def handle_ShuffleLibraryEvent(self, event):
+        player = self.get_player(event.player)
+        random.shuffle(player.library)
+
+    def handle_ActivePlayerEvent(self, event):
+        player = self.get_player(event.player)
+        self.active_player = player
+
+    def handle_StepEvent(self, event):
+        self.step = event.step
+
+    def handle_ClearPoolEvent(self, event):
+        player = self.get_player(event.player)
+        player.energy_pool.clear()
+
+    def handle_PriorityEvent(self, event):
+        self.priority_player = self.get_player(event.player)
+
+    def handle_PassedEvent(self, event):
+        player = self.get_player(event.player)
+        player.has_passed = True
+
+    def handle_EnterTheBattlefieldEvent(self, event):
+        controller = self.get_player(event.controller)
+        permanent = Permanent(event.card, controller)
+        self.battlefield.add(permanent)
+
+    def handle_ExitTheBattlefieldEvent(self, event):
+        self.battlefield.remove(event.permanent)
+
+    def handle_PutInGraveyardEvent(self, event):
+        event.card.owner.graveyard.add(event.card)
+
+    def handle_PlaySourceEvent(self, event):
+        player = self.get_player(event.player)
+        player.hand.discard(event.card)
+
+    def handle_CastSpellEvent(self, event):
+        player = self.get_player(event.player)
+        assert player in self.players
+        player.hand.discard(event.card)
+        self.stack.append(Spell(player, event.card))
+
+    def handle_ResolveEvent(self, event):
+        tos_popped = self.stack.pop()
+        assert tos_popped == event.tos
+
+    def handle_UntapEvent(self, event):
+        event.permanent.tapped = False
+
+    def handle_TapEvent(self, event):
+        event.permanent.tapped = True
+
+    def handle_ResetPassEvent(self, event):
+        for player in self.players:
+            player.has_passed = False
+
+    def handle_AttackEvent(self, event):
+        player = self.get_player(event.player)
+        event.attacker.attacking = player
+
+    def handle_BlockEvent(self, event):
+        event.attacker.blockers = event.blockers
+        for b in event.blockers:
+            b.blocking = event.attacker
+
+    def handle_DamageEvent(self, event):
+        event.permanent.damage.append(Damage(event.damage))
+
+    def handle_PlayerDamageEvent(self, event):
+        player = self.get_player(event.player)
+        player.life -= event.damage
+
+    def handle_RemoveFromCombatEvent(self, event):
+        event.permanent.attacking = False
+        event.permanent.blocking = False
+        event.permanent.blockers.clear()
+
+    def handle_PlayerLosesEvent(self, event):
+        pass
 
     def __str__(self):
         return '<Game>'
@@ -327,55 +339,58 @@ def setup_duel(name1, deck1, name2, deck2):
 
 def start_game(game):
     for player in game.players:
-        yield Event('shuffle_library', player)
+        yield ShuffleLibraryEvent(player.name)
         for _ in range(7):
             yield from draw_card(player)
     p1 = game.players[0]
-    yield Event('active_player', p1)
-    yield Event('step', STEP.PRECOMBAT_MAIN)
-    yield Event('priority', p1)
-
+    yield ActivePlayerEvent(p1.name)
+    yield StepEvent(STEP.PRECOMBAT_MAIN)
+    yield PriorityEvent(p1.name)
 
 def end_of_step(game):
     for player in game.players:
-        yield Event('clear_pool', player)
-    yield Event('priority', None)
+        yield ClearPoolEvent(player.name)
+    yield PriorityEvent(None)
     if game.step == STEP.CLEANUP:
-        yield Event('active_player', game.active_player.next_in_turn)
-        yield Event('step', STEP.UNTAP)
+        yield ActivePlayerEvent(game.active_player.next_in_turn.name)
+        yield StepEvent(STEP.UNTAP)
     else:
-        yield Event('step', NEXT_STEP[game.step])
+        yield StepEvent(NEXT_STEP[game.step])
 
 def game_events(game):
     yield from start_game(game)
-    while True:
-        if game.priority_player:
-            yield from state_based_actions(game)
-            while check_triggers(game):
+    try:
+        while True:
+            if game.priority_player:
                 yield from state_based_actions(game)
+                while check_triggers(game):
+                    yield from state_based_actions(game)
 
-            if game.priority_player.has_passed:
-                if game.stack:
-                    tos = game.stack[-1]
-                    yield Event('resolve_tos', tos)
-                    yield from tos.resolve()
-                    yield from open_priority(game)
-                else:
-                    yield from end_of_step(game)
-            else:
-                yield from player_action(game, game.priority_player)
                 if game.priority_player.has_passed:
-                    yield Event('priority', game.priority_player.next_in_turn)
+                    if game.stack:
+                        tos = game.stack[-1]
+                        yield ResolveEvent(tos)
+                        yield from tos.resolve()
+                        yield from open_priority(game)
+                    else:
+                        yield from end_of_step(game)
                 else:
-                    yield from open_priority(game)
-        else:
-            yield from turn_based_actions(game)
+                    yield from player_action(game, game.priority_player)
+                    if game.priority_player.has_passed:
+                        yield PriorityEvent(game.priority_player.next_in_turn.name)
+                    else:
+                        yield from open_priority(game)
+            else:
+                yield from turn_based_actions(game)
+    except EndOfGameException:
+        return
+
 
 def turn_based_actions(game):
     if game.step == STEP.UNTAP:
         for permanent in game.battlefield:
             if permanent.controller is game.active_player:
-                yield Event('untap', permanent)
+                yield UntapEvent(permanent)
         yield from end_of_step(game)
     elif game.step == STEP.DRAW:
         yield from draw_card(game.active_player)
@@ -386,14 +401,14 @@ def turn_based_actions(game):
         candidates = list(game.battlefield.creatures.controlled_by(game.active_player))
         choices = [c.card.name for c in candidates]
         question = DeclareAttackers(game.active_player, choices)
-        yield Event('question', question)
+        yield QuestionEvent(question)
         attackers_chosen = game.answer
         if attackers_chosen:
             for i in attackers_chosen:
-                yield Event('attack', candidates[i], game.active_player.next_in_turn)
+                yield AttackEvent(candidates[i], game.active_player.next_in_turn.name)
             yield from open_priority(game)
         else:
-            yield Event('step', STEP.END_OF_COMBAT)
+            yield StepEvent(STEP.END_OF_COMBAT)
     elif game.step == STEP.DECLARE_BLOCKERS:
         for player in game.players:
             attackers = list(game.battlefield.attacking(player))
@@ -405,35 +420,36 @@ def turn_based_actions(game):
             blocking = {}
             blocked_by = defaultdict(list)
             question = DeclareBlockers(player, [{'candidate': cand,
-                                                 'attackers': ['none'] + attackers}
+                                                 'attackers': attackers}
                                                  for cand in candidates])
-            yield Event('question', question)
+            yield QuestionEvent(question)
 
-            for cand, attacker in zip(candidates, game.answer):
-                if attacker > 0:
-                    attacker = attackers[attacker-1]
-                    blocking[cand] = attacker
-                    blocked_by[attacker].append(cand)
+            for cand, attacker in game.answer.items():
+                spec = question.choices[cand]
+                blocker = spec['candidate']
+                attacker = spec['attackers'][attacker]
+                blocking[blocker] = attacker
+                blocked_by[attacker].append(blocker)
 
             # if an attacker is blocked by multiple blockers its controller
             # selects the order of the blockers
-            ambigous = [(attacker, blockers)
-                for attacker, blockers in blocked_by.items
-                if len(blockers) > 1]
-            question = OrderBlockers(player, [{'attacker': attacker,
-                                                'blockers': blockers}
-                                                for attacker, blockers in ambigous])
-            yield Event('question', question)
-            blocker_order = game.answer
-            for (attacker, blockers), order in zip(ambigous, game.answer):
-                blockers[:] = [blockers[b] for b in blocker_order]
+            ambigous = [{'attacker': attacker,
+                         'blockers': blockers}
+                        for attacker, blockers in blocked_by.items()
+                        if len(blockers) > 1]
+            if ambigous:
+                question = OrderBlockers(player, ambigous)
+                yield QuestionEvent(question)
+                for amb, block_order in zip(ambigous, game.answer):
+                    blockers = amb['blockers']
+                    blockers[:] = [blockers[b] for b in block_order]
 
             for attacker, blockers in blocked_by.items():
-                yield Event('block', attacker, blockers)
+                yield BlockEvent(attacker, blockers)
         yield from open_priority(game)
     elif game.step == STEP.FIRST_STRIKE_DAMAGE:
         # TODO: do not skip this step if any attacker or blocker has first strike.
-        yield Event('step', STEP.SECOND_STRIKE_DAMAGE)
+        yield StepEvent(STEP.SECOND_STRIKE_DAMAGE)
     elif game.step == STEP.SECOND_STRIKE_DAMAGE:
         for attacker in game.battlefield.filter(lambda x:x.attacking):
             remaining_strength = attacker.strength
@@ -444,14 +460,14 @@ def turn_based_actions(game):
                 else:
                     damage = min(remaining_strength, blocker.strength)
                 remaining_strength -= damage
-                yield Event('damage', blocker, damage)
-                yield Event('damage', attacker, blocker.strength)
+                yield DamageEvent(blocker, damage)
+                yield DamageEvent(attacker, blocker.strength)
             if remaining_strength:
-                yield Event('player_damage', attacker.attacking, remaining_strength)
+                yield PlayerDamageEvent(attacker.attacking.name, remaining_strength)
         yield from open_priority(game)
     elif game.step == STEP.POSTCOMBAT_MAIN:
         for permanent in game.battlefield:
-            yield Event('remove_from_combat', permanent)
+            yield RemoveFromCombatEvent(permanent)
         yield from open_priority(game)
     else:
         yield from open_priority(game)
@@ -470,16 +486,20 @@ def destroy(permanent):
         yield from put_in_graveyard(permanent)
 
 def put_in_graveyard(permanent):
-    yield Event('exit_the_battlefield', permanent)
-    yield Event('put_in_graveyard', permanent.card)
+    yield ExitTheBattlefieldEvent(permanent)
+    yield PutInGraveyardEvent(permanent.card)
 
 def state_based_actions(game):
     for player in game.players:
         if player.life <= 0:
-            yield Event('lose', player)
+            yield PlayerLosesEvent(player)
+            # TODO: losing should not end the game if it is a multiplayer game
+            raise EndOfGameException
     for player in game.players:
         if player.has_drawn_from_empty_library:
-            yield Event('lose', player)
+            yield PlayerLosesEvent(player)
+            # TODO: losing should not end the game if it is a multiplayer game
+            raise EndOfGameException
     for creature in {c for c in game.battlefield.creatures if c.toughness <= 0}:
         yield from put_in_graveyard(creature)
     for creature in {c for c in game.battlefield.creatures
@@ -494,8 +514,8 @@ def check_triggers(game):
     pass
 
 def open_priority(game):
-    yield Event('reset_pass')
-    yield Event('priority', game.active_player)
+    yield ResetPassEvent()
+    yield PriorityEvent(game.active_player.name)
 
 def discard_excess_cards():
     pass
@@ -503,9 +523,9 @@ def discard_excess_cards():
 def draw_card(player):
     if player.library:
         card = player.library[-1]
-        yield Event('draw_card', player, card)
+        yield DrawCardEvent(player.name, card)
     else:
-        yield Event('draw_empty', player)
+        yield DrawEmptyEvent(player.name)
 
 def print_player_view(view):
     print('=' * 80)
@@ -542,13 +562,12 @@ def can_play_source(player):
     return True
 
 def play_source(game, player, card):
-    yield Event('play_source', player, card)
-    yield Event('enter_the_battlefield', card, player)
+    yield PlaySourceEvent(player.name, card)
+    yield EnterTheBattlefieldEvent(card, player.name)
 
 def player_action(game, player):
     ACTION_PERFORMED = False
     PASSED = True
-    print_player_view(game.player_view(player))
     choices = ['Pass Priority']
     actions = [None]
 
@@ -574,10 +593,10 @@ def player_action(game, player):
                     act.append((ability.effect, (player,)))
                     actions.append(act)
     question = ChooseAction(player, choices)
-    yield Event('question', question)
+    yield QuestionEvent(question)
     answer = game.answer
     if answer==0:
-        yield Event('passed', player)
+        yield PassedEvent(player.name)
     else:
         for func, arguments in actions[answer]:
             yield from func(*arguments)

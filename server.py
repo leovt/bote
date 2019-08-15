@@ -129,4 +129,4 @@ def game_log(game_id):
     if first<0:
         flask.abort(400)
 
-    return flask.jsonify(dict(enumerate((e.as_dict() for e in game.event_log[first:]), first)))
+    return flask.jsonify(dict(enumerate((e.serialize_for(player) for e in game.event_log[first:]), first)))

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 import energy
 
-from event import Event
+from event import Event, PayEnergyEvent, TapEvent
 
 class EnergyCost:
     def __init__(self, energy):
@@ -22,7 +22,7 @@ class EnergyCost:
         else:
             player = card.owner
 
-        yield Event('pay_energy', player, self.energy)
+        yield PayEnergyEvent(player.name, self.energy)
 
     def __str__(self):
         return str(self.energy)
@@ -32,7 +32,7 @@ class TapCost:
         return permanent and not permanent.tapped
 
     def pay(self, permanent, card):
-        yield Event('tap', permanent)
+        yield TapEvent(permanent)
 
     def __str__(self):
         return '{T}'
@@ -71,5 +71,5 @@ def parse_effect(string):
                     args.append(energy.Energy.parse(token))
                 else:
                     args.append(token)
-            yield Event(*args)
+            yield Event.from_id(*args)
     return _effect
