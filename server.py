@@ -122,6 +122,16 @@ def game_log(game_id):
     if not game:
         flask.abort(404)
 
+    if current_user.is_anonymous:
+        player = None
+    else:
+        for p in game.players:
+            if p.name == current_user.username:
+                player = p
+                break
+        else:
+            player = None
+
     try:
         first = int(flask.request.args.get('first', 0))
     except ValueError:
