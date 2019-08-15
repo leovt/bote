@@ -20,7 +20,7 @@ class ChooseAction(Question):
             player=self.player.name,
         )
         if player is self.player:
-            ret.choices = [choice.serialize() for choice in self.choices]
+            ret.choices = [str(choice) for choice in self.choices]
         return ret
 
 class DeclareAttackers(Question):
@@ -38,7 +38,7 @@ class DeclareAttackers(Question):
         return Namespace(
             question = 'DeclareAttackers',
             player = self.player.name,
-            choices = [choice.serialize() for choice in self.choices]
+            choices = [str(choice) for choice in self.choices]
         )
 
 class DeclareBlockers(Question):
@@ -48,18 +48,18 @@ class DeclareBlockers(Question):
 
     def validate(self, player, answer):
         return (player is self.player and
-                isinstance(answer, list) and
-                len(answer) == self.choices and
-                all(isinstance(ans, list) and
-                    all(isinstance(a, int) and 0 <= a < len(choice) for a in ans) and
-                    len(ans) == len(set(ans))
-                    for ans, choice in zip(answer, self.choices)) )
+                isinstance(answer, dict) and
+                len(answer) <= len(self.choices) and
+                all(isinstance(k, int) and 0 <= k < len(self.choices) and
+                    isinstance(v, int) and 0 <= v < len(self.choices[k]['attackers'])
+                for k,v in answer.items()))
 
     def serialize_for(self, _unused):
         return Namespace(
             question = 'DeclareBlockers',
             player = self.player.name,
-            choices = [choice.serialize() for choice in self.choices]
+            choices = [{str(key): [x.name for x in values] for key, values in choice}
+                       for choice in self.choices]
         )
 
 class OrderBlockers(Question):
@@ -70,14 +70,16 @@ class OrderBlockers(Question):
     def validate(self, player, answer):
         return (player is self.player and
                 isinstance(answer, list) and
-                len(answer) == self.choices and
+                len(answer) == len(self.choices) and
                 all(isinstance(ans, list) and
-                    all(0 <= a < len(choice) for a in ans)
+                    all(isinstance(a, int) and 0 <= a < len(choice['blockers'])
+                        for a in ans)
+                    and len(set(ans)) == len(choice['blockers'])
                     for ans, choice in zip(answer, self.choices)) )
 
     def serialize_for(self, _unused):
         return Namespace(
             question = 'OrderBlockers',
             player = self.player.name,
-            choices = [choice.serialize() for choice in self.choices]
+            choices = [str(choice) for choice in self.choices]
         )

@@ -7,6 +7,7 @@ def ask(text, parse, prompt):
             except ValueError:
                 pass
 
+
 def choices_text(question, choices):
     number_width = len(str(len(choices))) # width of number
     return '\n'.join(
@@ -14,41 +15,47 @@ def choices_text(question, choices):
         [f'{i:{number_width}d}: {choice}'
          for i, choice in enumerate(choices, 1)])
 
-def ask_choice(player, question, choices, multiple):
-    text = choices_text(question, choices)
 
-    def parse_single(answer):
-        ans = int(answer)
-        if 1 <= ans <= len(choices):
-            return ans-1
-        else:
-            raise ValueError()
+def ask_question(question):
+    text = choices_text(question.__class__.__name__, question.choices)
 
-    def parse_multiple(ans):
-        ans = ans.strip()
-        if not ans:
-            return set()
-        ans = [int(a.strip())-1 for a in ans.split(',')]
-        if all(0 <= a < len(choices) for a in ans) and len(set(ans)) == len(ans):
+    def parse(ans):
+        return int(ans)-1
+
+    if question.__class__.__name__ == 'DeclareAttackers':
+        if not question.choices:
+            return []
+        def parse(ans):
+            return [int(a)-1 for a in ans.split(',') if a]
+    elif question.__class__.__name__ == 'DeclareBlockers':
+        letters = 'abcdefghijklmnopqrstuvwxyz'
+        text = ('For each potential blocker choose which attacker to block '
+                'in the form 2:a, 3:c\n')
+        text += '\n'.join(
+            f'{b}: {ch["candidate"]} can block\n'
+            + '\n'.join(f'    {letters[a]}: {attacker}'
+                        for a, attacker in enumerate(ch['attackers']))
+            for b, ch in enumerate(question.choices, 1)
+        )
+        def parse(ans):
+            ret = {}
+            for chunk in ans.split(','):
+                chunk=chunk.strip()
+                if not chunk:
+                    continue
+                b, a = chunk.split(':')
+                b = int(b.strip()) - 1
+                a = letters.index(a.strip())
+                if b in ret:
+                    raise ValueError
+                ret[b] = a
+            return ret
+
+    def parse_and_validate(ans):
+        ans = parse(ans)
+        if question.validate(question.player, ans):
             return ans
-        else:
-            raise ValueError()
+        print(repr(ans), 'is not valid.')
+        raise ValueError
 
-    if multiple:
-        parse = parse_multiple
-    else:
-        parse = parse_single
-
-    return ask(text, parse, '>')
-
-
-def test():
-    CHOICES = ['Apples', 'Pears', 'Tomatoes']
-    ans = ask_choice('Please choose a fruit:', CHOICES, False)
-    print(f'You chose {CHOICES[ans]}.')
-    ans = ask_choice('Please choose some fruit', CHOICES, True)
-    ans = {CHOICES[x] for x in ans}
-    print(f'You chose {ans}.')
-
-if __name__ == '__main__':
-    test()
+    return ask(text, parse_and_validate, f'{question.__class__.__name__}>')
