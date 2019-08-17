@@ -4,9 +4,21 @@
   <ul id="log" style="overflow:scroll; height:300px;"></ul>
   <button onclick="log_refresh()">Refresh</button>
   <button onclick="send_answer()">Answer</button>
+  <select id="question"></select>
 </body>
 <script>
 log_count = 0;
+
+function create() {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.addEventListener("load", function () {
+    game_uri = httpRequest.getResponseHeader('Location');
+  });
+  httpRequest.open("POST", `/create`);
+  httpRequest.send();
+}
+
+create();
 
 function log_refresh () {
   var httpRequest = new XMLHttpRequest();
@@ -21,16 +33,15 @@ function log_refresh () {
       list.appendChild(entry);
     }
   })
-  httpRequest.open("GET", `/test/log?first=${log_count}`);
+  httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
   httpRequest.send()
 }
 
 function send_answer () {
   var httpRequest = new XMLHttpRequest();
-  httpRequest.open("POST", `/test/answer`);
+  httpRequest.open("POST", `${game_uri}/answer`);
   httpRequest.setRequestHeader('Content-Type', 'application/json');
   httpRequest.send(JSON.stringify({"answer":0}));
-  httpRequest.send()
 }
 
 </script>

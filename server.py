@@ -5,6 +5,7 @@ from forms import LoginForm
 from config import Config
 from flask_login import UserMixin, LoginManager, current_user, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+import tools
 
 app = flask.Flask('__name__',
                   static_folder='client')
@@ -65,14 +66,22 @@ TEST_DECK = (
     [ArtCard(rule_cards[101])] * 20 +
     [ArtCard(rule_cards[102])] * 40)
 
-games['test'] = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
-games['test'].events = game_events(games['test'])
-
 def advance_game_state(game):
     while not game.question:
         event = next(game.events)
         game.handle(event)
-advance_game_state(games['test'])
+
+
+@app.route('/create', methods=["POST"])
+@login_required
+def create_game():
+    game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
+    game.events = game_events(game)
+    game_id = tools.random_id()
+    advance_game_state(game)
+    games[game_id] = game
+    return "", 201, {'location': '/'+game_id}
+
 
 @app.route('/<game_id>/answer', methods=["POST"])
 @login_required
