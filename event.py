@@ -55,8 +55,8 @@ class DrawCardEvent(Event):
 
     def serialize_for(self, player):
         d = {'event_id': self.__class__.__name__,
-             'player': self.player.name}
-        if self.player is player:
+             'player': self.player}
+        if self.player == player.name:
             d['card'] = {'id': id(self.card.art_card),
                          'name': self.card.name}
         return d
