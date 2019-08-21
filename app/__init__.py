@@ -14,3 +14,4 @@ Migrate(app, db)
 
 from app import routes
 from app import game_routes
+from app import card_routes

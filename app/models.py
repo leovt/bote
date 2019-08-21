@@ -40,6 +40,7 @@ class TypeTranslation(db.Model):
 
 class RuleCardName(db.Model):
     lang_id = db.Column(db.String(2), db.ForeignKey('language.lang_id'), primary_key=True)
+    language = db.relationship('Language')
     card_id = db.Column(db.Integer, db.ForeignKey('card.card_id'), primary_key=True)
     card_name = db.Column(db.String(50))
 
@@ -52,10 +53,19 @@ card_type = db.Table('card_type',
 
 class Card(db.Model):
     card_id = db.Column(db.Integer, primary_key=True)
+    names = db.relationship('RuleCardName')
     is_token = db.Column(db.Boolean)
     types = db.relationship("Type", secondary=card_type)
     strength = db.Column(db.Integer)
     toughness = db.Column(db.Integer)
+
+    def name(self, lang_pref=''):
+        lang_pref += ',en'
+        for lang in lang_pref.lower().split(','):
+            for trans in self.names:
+                if trans.lang_id == lang.strip()[:2]:
+                    return trans.card_name
+        return self.names.first().card_name
 
 
 class ArtCard(db.Model):

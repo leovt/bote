@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{name}}</h1>
+    <h2>Names</h2>
+    <dl>
+      {% for trans in card.names %}
+      <dt>{{trans.language.name}}</dt><dd>{{trans.card_name}}</dd>
+      {% endfor %}
+    </dl>
+{% endblock %}
