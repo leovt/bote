@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: f417d5f20573
-Revises: e44fd749a593
-Create Date: 2019-08-21 21:12:01.622853
+Revision ID: 3a15c3079db2
+Revises: 
+Create Date: 2019-08-25 00:02:54.484635
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'f417d5f20573'
-down_revision = 'e44fd749a593'
+revision = '3a15c3079db2'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -34,10 +34,27 @@ def upgrade():
     sa.Column('type_id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('type_id')
     )
+    op.create_table('user',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('username', sa.String(length=64), nullable=True),
+    sa.Column('email', sa.String(length=120), nullable=True),
+    sa.Column('password_hash', sa.String(length=128), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('user', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_user_email'), ['email'], unique=True)
+        batch_op.create_index(batch_op.f('ix_user_username'), ['username'], unique=True)
+
     op.create_table('art_card',
     sa.Column('art_id', sa.Integer(), nullable=False),
     sa.Column('card_id', sa.Integer(), nullable=True),
+    sa.Column('lang_id', sa.String(length=2), nullable=True),
+    sa.Column('image_name', sa.String(length=200), nullable=True),
+    sa.Column('frame_type', sa.String(length=200), nullable=True),
+    sa.Column('flavour_text', sa.String(length=200), nullable=True),
+    sa.Column('attribution', sa.String(length=200), nullable=True),
     sa.ForeignKeyConstraint(['card_id'], ['card.card_id'], ),
+    sa.ForeignKeyConstraint(['lang_id'], ['language.lang_id'], ),
     sa.PrimaryKeyConstraint('art_id')
     )
     op.create_table('card_type',
@@ -72,6 +89,11 @@ def downgrade():
     op.drop_table('rule_card_name')
     op.drop_table('card_type')
     op.drop_table('art_card')
+    with op.batch_alter_table('user', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_user_username'))
+        batch_op.drop_index(batch_op.f('ix_user_email'))
+
+    op.drop_table('user')
     op.drop_table('type')
     op.drop_table('language')
     op.drop_table('card')

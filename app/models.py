@@ -67,9 +67,15 @@ class Card(db.Model):
                     return trans.card_name
         return self.names.first().card_name
 
-
 class ArtCard(db.Model):
     art_id = db.Column(db.Integer, primary_key=True)
     card_id = db.Column(db.Integer, db.ForeignKey('card.card_id'))
-    #...Image
-    #...Flavour Text
+    card = db.relationship('Card')
+    lang_id = db.Column(db.String(2), db.ForeignKey('language.lang_id'))
+    image_name = db.Column(db.String(200))
+    frame_type = db.Column(db.String(200))
+    flavour_text = db.Column(db.String(200))
+    attribution = db.Column(db.String(200))
+
+    def name(self):
+        return self.card.names.filter(lang_id=self.lang_id).first().card_name
