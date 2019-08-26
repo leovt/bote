@@ -4,8 +4,6 @@ from flask_login import login_required, current_user
 from app import app
 import cards
 
-from app.models import Card, ArtCard
-
 
 IMAGE_PREFIX = '/client/'
 
