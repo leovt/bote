@@ -1,16 +1,14 @@
+import sys
 import traceback
 import pdb
 import random
 
-from cards import ArtCard, rule_cards
 from state import setup_duel, game_events
+from dummy_deck import TEST_DECK
 
-import sys
+
 sys.setrecursionlimit(50)
 
-TEST_DECK = (
-    [ArtCard(rule_cards[101])] * 20 +
-    [ArtCard(rule_cards[102])] * 40)
 
 def run_game(game):
     event_stream = game_events(game)

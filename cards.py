@@ -1,11 +1,24 @@
 from dataclasses import dataclass, field
-import sqlite3
+import functools
+import yaml
 import energy
 from abilities import ActivatableAbility, parse_cost, parse_effect
 
+def instance_loader(loader):
+    cache = {}
+    @functools.wraps(loader)
+    def cached_loader(instance_id):
+        if instance_id in cache:
+            return cache[instance_id]
+        instance = loader(instance_id)
+        cache[instance_id] = instance
+        return instance
+    cached_loader._cache = cache
+    return cached_loader
+
 @dataclass(eq=False, frozen=True)
 class RuleCard:
-    name: str
+    card_id: int
     types: set
     subtypes: set
     abilities: list = field(default_factory=list)
@@ -14,14 +27,47 @@ class RuleCard:
     toughness: int = 0
     strength: int = 0
 
+    @property
+    def name(self):
+        ''' return the english name (for debug purpose only) '''
+        return _cards[self.card_id]['names']['en']
+
+    @staticmethod
+    @instance_loader
+    def get_by_id(card_id):
+        spec = _cards[card_id]
+        abilities = []
+        for ab_spec in spec.get('abilities', []):
+            if 'cost' in ab_spec:
+                abilities.append(
+                    ActivatableAbility(parse_cost(ab_spec['cost']),
+                                       parse_effect(ab_spec['effect']),
+                                       ab_spec.get('energy_ability', False)))
+            else:
+                assert False, 'Abilities other than activatable not implemented'
+
+        return RuleCard(
+            card_id = spec['card_id'],
+            types = {spec['type']},
+            subtypes = spec.get('subtypes', {}),
+            cost = energy.Energy.parse(spec.get('cost', '')),
+            toughness = spec.get('toughness', 0),
+            strength = spec.get('strength', 0),
+            token = spec.get('token', False),
+            abilities = abilities)
 
 
 @dataclass(eq=False, frozen=True)
 class ArtCard:
+    art_id: int
     rule_card: object
-    language: object = None
-    image: object = None
-    artist: object = None
+
+    @staticmethod
+    @instance_loader
+    def get_by_id(card_id):
+        spec = _art_cards[card_id]
+        return ArtCard(art_id=spec['art_id'],
+                       rule_card=RuleCard.get_by_id(spec['card_id']))
 
 
 @dataclass(eq=False, frozen=True)
@@ -38,26 +84,30 @@ class Card:
     def __repr__(self):
         return f'<Card name={self.name} owner={self.owner.name}>'
 
-def load_db():
-    global rule_cards
-    rule_cards = {}
-    with sqlite3.connect('cards.sqlite') as con:
-        cur = con.cursor()
-        cur.execute('select * from RuleCard')
-        cur_list = con.cursor()
-        for (id, name, cost, token, strength, toughness) in cur:
-            print(id, name)
-            cur_list.execute('select name from CardTypes where card_id=?', (id,))
-            types = [x[0] for x in cur_list]
-            cur_list.execute('select name from CardSubtypes where card_id=?', (id,))
-            subtypes = [x[0] for x in cur_list]
-            cur_list.execute('select cost, effect, energy_ability from ActivatableAbility where card_id=?', (id,))
-            abilities = [ActivatableAbility(parse_cost(c), parse_effect(e), bool(ea))
-                         for (c, e, ea) in cur_list]
-            rule_cards[id] = RuleCard(name, types, subtypes, abilities,
-                                        energy.Energy.parse(cost) if cost else None,
-                                        bool(token),
-                                        toughness,
-                                        strength)
 
-load_db()
+def load_yaml():
+    with open('cards.yaml', encoding='utf8') as stream:
+        data = yaml.safe_load(stream)
+
+    types = data['types']
+    cards = {}
+    art_cards = {}
+
+    for card_id, card in data['cards'].items():
+        assert id not in cards
+        card['card_id'] = card_id
+        cards[card_id] = card
+        typespec = types[card['type']]
+        for subtype in cards.get('subtypes', []):
+            assert subtype in typespec['subtypes']
+
+        for art_id, art in card.get('art', {}).items():
+            assert art_id not in art_cards
+            art['art_id'] = art_id
+            art['card_id'] = card_id
+            art_cards[art_id] = art
+
+    return types, cards, art_cards
+
+_types, _cards, _art_cards = load_yaml()
+del load_yaml
