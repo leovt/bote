@@ -1,0 +1,43 @@
+cards:
+  101:
+    names:
+      en: Goblin Raiders
+      de: Goblin Plünderer
+      ko: 고블린 침략자
+    strength: 1
+    toughness: 1
+    token: No
+    type: Creature
+    subtypes:
+      - Goblin
+
+    art:
+      10101:
+        image: goblin.png
+        attribution: Leonhard Vogt, 2019
+        frame: red
+        flavour:
+          en: They would be scary if they were not so disorganized.
+          de: Wären sie organisiert könnten sie tatsächlich gefährlich werden.
+
+  102:
+    names:
+      en: Source of Fire
+      de: Feuerquelle
+      ko: 불원
+    type: Source
+    token: No
+    subtypes:
+      - Basic
+    abilities:
+      - "{T}: add_energy $controller {R}"
+
+    art:
+      10201:
+        image: firesource1.png
+        attribution: Leonhard Vogt, 2019
+        frame: brown
+      10202:
+        image: firesource2.png
+        attribution: Leonhard Vogt, 2019
+        frame: brown
