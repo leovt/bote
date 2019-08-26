@@ -5,7 +5,7 @@ from flask_login import LoginManager
 
 from app.config import Config
 
-app = Flask(__name__, static_folder='client')
+app = Flask(__name__, static_folder='../client', static_url_path='/client')
 
 app.config.from_object(Config)
 db = SQLAlchemy(app)

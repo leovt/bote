@@ -85,6 +85,20 @@ class Card:
         return f'<Card name={self.name} owner={self.owner.name}>'
 
 
+def art_card_spec(art_id):
+    card = _art_cards.get(art_id)
+    if not card:
+        return None
+    return dict(card)
+
+
+def card_spec(card_id):
+    card = _cards.get(card_id)
+    if not card:
+        return None
+    return dict(card)
+
+
 def load_yaml():
     with open('cards.yaml', encoding='utf8') as stream:
         data = yaml.safe_load(stream)
