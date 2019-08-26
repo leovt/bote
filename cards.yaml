@@ -1,3 +1,18 @@
+types:
+  Creature:
+    de: Kreatur
+    en: Creature
+    ko: 생물
+    subtypes:
+      Goblin:
+        en: Goblin
+        de: Goblin
+        ko: 고블린
+  Source:
+    de: Quelle
+    en: Source
+    ko: 원
+
 cards:
   101:
     names:
@@ -27,8 +42,6 @@ cards:
       ko: 불원
     type: Source
     token: No
-    subtypes:
-      - Basic
     abilities:
       - "{T}: add_energy $controller {R}"
 
