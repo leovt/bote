@@ -1,14 +1,10 @@
 import traceback
 import pdb
+
 import cli
-from question import Question
-
-from cards import ArtCard, rule_cards
 from state import setup_duel, game_events
+from dummy_deck import TEST_DECK
 
-TEST_DECK = (
-    [ArtCard(rule_cards[101])] * 20 +
-    [ArtCard(rule_cards[102])] * 40)
 
 def print_player_view(view):
     print('=' * 80)

@@ -1,14 +1,14 @@
 types:
-  Creature:
+  creature:
     de: Kreatur
     en: Creature
     ko: 생물
     subtypes:
-      Goblin:
+      goblin:
         en: Goblin
         de: Goblin
         ko: 고블린
-  Source:
+  source:
     de: Quelle
     en: Source
     ko: 원
@@ -21,10 +21,11 @@ cards:
       ko: 고블린 침략자
     strength: 1
     toughness: 1
+    cost: '{R}'
     token: No
-    type: Creature
+    type: creature
     subtypes:
-      - Goblin
+      - goblin
 
     art:
       10101:
@@ -40,10 +41,12 @@ cards:
       en: Source of Fire
       de: Feuerquelle
       ko: 불원
-    type: Source
+    type: source
     token: No
     abilities:
-      - "{T}: add_energy $controller {R}"
+      - cost: "{T}"
+        effect: "add_energy $controller {R}"
+        energy_ability: Yes
 
     art:
       10201:

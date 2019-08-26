@@ -2,16 +2,13 @@ from flask import abort, jsonify, request
 from flask_login import login_required, current_user
 
 from app import app
+from state import setup_duel, game_events
+import tools
+from dummy_deck import TEST_DECK
+
 
 games = {}
 
-from cards import ArtCard, rule_cards
-from state import setup_duel, game_events
-import tools
-
-TEST_DECK = (
-    [ArtCard(rule_cards[101])] * 20 +
-    [ArtCard(rule_cards[102])] * 40)
 
 def advance_game_state(game):
     while not game.question:
