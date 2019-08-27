@@ -29,7 +29,9 @@
        x="21"
        y="225" />
        <foreignObject x="21" y="225" width="240" height="145">
-         <html:p class="attributes">{{attributes}}</html:p>
+         {% for attr in attributes %}
+         <html:p class="attribute">{{attr}}</html:p>
+         {% endfor %}
          <html:p class="flavour">{{flavour}}</html:p>
       </foreignObject>
     <text id="stats"

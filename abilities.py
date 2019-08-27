@@ -73,3 +73,30 @@ def parse_effect(string):
                     args.append(token)
             yield Event.from_id(*args)
     return _effect
+
+
+def describe_effect(script, lang):
+    if lang not in ('en', 'de', 'ko'):
+        lang = 'en'
+
+    lines = []
+    for line in script.splitlines():
+        tokens = line.split()
+        if tokens[0] == 'add_energy':
+            if tokens[1] == '$controller':
+                lines.append({
+                    'en': f'Add {tokens[2]} to your energy pool.',
+                    'de': f'Erhöhe deinen Energievorrat um {tokens[2]}.',
+                    'ko': f'당신의 에너지 저장고에 {tokens[2]}를 덧붙이세요.',
+                }[lang])
+            elif tokens[1] == '$target_player':
+                lines.append({
+                    'en': f'Add {tokens[2]} to target players energy pool.',
+                    'de': f'Erhöhe den Energievorrat eines Spielers deiner Wahl um {tokens[2]}.',
+                    'ko': f'선택한 플레이어의 에너지 저장고에 {tokens[2]}를 덧붙이세요.',
+                }[lang])
+            else:
+                assert False, f'bad argument {tokens[1]}.'
+        else:
+            assert False, f'Text for {tokens[0]} not implemented.'
+    return ' '.join(lines)

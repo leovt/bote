@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 
 from app import app
 import cards
+from abilities import describe_effect
 
 
 IMAGE_PREFIX = '/client/'
@@ -46,4 +47,5 @@ def art_svg(art_id, lang):
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
         attribution = art_card['attribution'],
         image_url = IMAGE_PREFIX + art_card['image'],
+        attributes = [f"{a['cost']}: {describe_effect(a['effect'], lang)}" for a in card.get('abilities', [])],
     )
