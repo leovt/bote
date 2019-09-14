@@ -17,9 +17,9 @@ function log_refresh () {
       if (result[key].event_id == 'QuestionEvent') {
         question = result[key].question;
         document.getElementById('answer').setAttribute('style', '');
+        var choices = document.getElementById('choices');
+        choices.innerHTML = "";
         if (question.question == 'ChooseAction'){
-          var choices = document.getElementById('choices');
-          choices.innerHTML = "";
           for (var action in result[key].question.choices) {
             var opt = document.createElement('input');
             opt.setAttribute('value', action);
@@ -37,6 +37,20 @@ function log_refresh () {
           }
         }
         else if (question.question == 'DeclareAttackers') {
+          choices.innerHTML = "";
+          for (var action in result[key].question.choices) {
+            var opt = document.createElement('input');
+            opt.setAttribute('value', action);
+            opt.setAttribute('id', 'attacker-' + action);
+            opt.setAttribute('name', 'attacker');
+            opt.setAttribute('type', 'checkbox');
+            choices.appendChild(opt);
+            var lbl = document.createElement('label');
+            lbl.setAttribute('for', 'attacker-' + action);
+            lbl.appendChild(document.createTextNode(result[key].question.choices[action]));
+            choices.appendChild(lbl);
+            choices.appendChild(document.createElement('br'));
+          }
         }
       }
       list.appendChild(entry);
@@ -60,6 +74,15 @@ function send_answer () {
       if (radios[i].checked) {
         answer = +radios[i].value;
         break;
+      }
+    }
+  }
+  if (question.question == 'DeclareAttackers'){
+    answer = [];
+    var attackers = document.getElementsByName('attacker');
+    for (var i = 0, length = attackers.length; i < length; i++) {
+      if (attackers[i].checked) {
+        answer.push(+attackers[i].value);
       }
     }
   }
