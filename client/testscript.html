@@ -21,12 +21,5 @@ function create() {
 
 create();
 
-function send_answer () {
-  var httpRequest = new XMLHttpRequest();
-  httpRequest.open("POST", `${game_uri}/answer`);
-  httpRequest.setRequestHeader('Content-Type', 'application/json');
-  httpRequest.send(JSON.stringify({"answer":0}));
-}
-
 </script>
 </html>

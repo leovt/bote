@@ -43,17 +43,15 @@ def answer(game_id):
     else:
         abort(403)
 
-    print('posting an answer')
-    print(request.data)
     if request.json is None:
         abort(415)
 
     try:
-        ans = flask.request.json['answer']
-    except:
+        ans = request.json['answer']
+    except KeyError:
         abort(400)
 
-    if not game.set_answer(player, answer):
+    if not game.set_answer(player, ans):
         return('invalid answer', 400)
 
     game.question = None

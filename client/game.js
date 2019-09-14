@@ -30,3 +30,12 @@ function log_refresh () {
   httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
   httpRequest.send()
 }
+
+
+function send_answer () {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.open("POST", `${game_uri}/answer`);
+  httpRequest.setRequestHeader('Content-Type', 'application/json');
+  var answer = +document.getElementById('question').value;
+  httpRequest.send(JSON.stringify({"answer": answer}));
+}
