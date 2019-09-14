@@ -36,10 +36,8 @@ def answer(game_id):
     if game.answer is not None or game.question is None:
         abort(409)
 
-    for p in game.players:
-        if p.name == current_user.username:
-            player = p
-            break
+    if game.question.player.name == current_user.username:
+        player = game.question.player
     else:
         abort(403)
 
