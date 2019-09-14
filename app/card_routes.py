@@ -1,4 +1,4 @@
-from flask import abort, jsonify, request, render_template
+from flask import abort, jsonify, request, render_template, redirect, url_for
 
 from app import app
 import cards
@@ -32,6 +32,17 @@ def get_lang(names, lang):
     if name:
         return name
     return next(names.values())
+    
+
+@app.route('/card/svg/<art_id>')
+def art_svg_redirect(art_id):
+    art_card = cards.art_card_spec(int(art_id))
+    if not art_card:
+        abort(404)
+    card = cards.card_spec(art_card['card_id'])
+    languages = {k:k for k in card['names']}
+    lang = get_lang(languages, request.headers.get('accept-language', '')[:2])
+    return redirect(url_for('art_svg', art_id=art_id, lang=lang))
 
 
 @app.route('/card/svg/<art_id>/<lang>')

@@ -57,8 +57,10 @@ class DrawCardEvent(Event):
         d = {'event_id': self.__class__.__name__,
              'player': self.player}
         if self.player == player.name:
-            d['card'] = {'id': id(self.card.art_card),
-                         'name': self.card.name}
+            d['card'] = {'art_id': self.card.art_card.art_id,
+                         'name': self.card.name,
+                         'url': f'/card/svg/{self.card.art_card.art_id}',
+                        }
         return d
 
 @event_id('draw_empty')
