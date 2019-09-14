@@ -9,6 +9,35 @@ from dummy_deck import TEST_DECK
 
 sys.setrecursionlimit(50)
 
+def random_answer(question):
+    if question.__class__.__name__ == "ChooseAction":
+        return random.randrange(len(question.choices))
+
+    if question.__class__.__name__ == "DeclareAttackers":
+        if not question.choices:
+            return []
+        else:
+            answer = list(range(len(question.choices)))
+            random.shuffle(answer)
+            return answer[:random.randrange(len(answer))]
+
+    if question.__class__.__name__ == "DeclareBlockers":
+        answer = {}
+        for i, ch in enumerate(question.choices):
+            if random.random() > 0.7:
+                answer[i] = random.randrange(len(ch['attackers']))
+        return answer
+
+    elif question.__class__.__name__ == "OrderBlockers":
+        answer = []
+        for ch in question.choices:
+            ans = list(range(len(ch['blockers'])))
+            random.shuffle(ans)
+            answer.append(ans)
+        return answer
+
+    assert False, question
+
 
 def run_game(game):
     event_stream = game_events(game)
@@ -16,41 +45,9 @@ def run_game(game):
         game.handle(event)
         if game.question:
             player = game.question.player
-
-            if game.question.__class__.__name__ == "ChooseAction":
-                ret = game.set_answer(player, random.randrange(len(game.question.choices)))
-                assert ret, 'random answer is not valid'
-
-            elif game.question.__class__.__name__ == "DeclareAttackers":
-                if not game.question.choices:
-                    ret = game.set_answer(player, [])
-                    assert ret, 'random answer is not valid'
-                else:
-                    answer = list(range(len(game.question.choices)))
-                    random.shuffle(answer)
-                    ret = game.set_answer(player, answer[:random.randrange(len(answer))])
-                    assert ret, 'random answer is not valid'
-
-            elif game.question.__class__.__name__ == "DeclareBlockers":
-                answer = {}
-                for i, ch in enumerate(game.question.choices):
-                    if random.random() > 0.7:
-                        answer[i] = random.randrange(len(ch['attackers']))
-                ret = game.set_answer(player, answer)
-                assert ret, 'random answer is not valid'
-
-            elif game.question.__class__.__name__ == "OrderBlockers":
-                answer = []
-                for ch in game.question.choices:
-                    ans = list(range(len(ch['blockers'])))
-                    random.shuffle(ans)
-                    answer.append(ans)
-                ret = game.set_answer(player, answer)
-                assert ret, 'random answer is not valid'
-
-            else:
-                assert False, game.question
-
+            answer = random_answer(game.question)
+            ret = game.set_answer(player, answer)
+            assert ret, 'random answer is not valid'
             game.question = None
     print(f'Game produced {len(game.event_log)} events')
 
