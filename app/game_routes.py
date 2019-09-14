@@ -16,7 +16,7 @@ def advance_game_state(game):
         game.handle(event)
 
 
-@app.route('/create', methods=["POST"])
+@app.route('/game/create', methods=["POST"])
 @login_required
 def create_game():
     game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
@@ -24,10 +24,10 @@ def create_game():
     game_id = tools.random_id()
     advance_game_state(game)
     games[game_id] = game
-    return "", 201, {'location': '/'+game_id}
+    return "", 201, {'location': '/game/'+game_id}
 
 
-@app.route('/<game_id>/answer', methods=["POST"])
+@app.route('/game/<game_id>/answer', methods=["POST"])
 @login_required
 def answer(game_id):
     game = games.get(game_id)
@@ -61,7 +61,7 @@ def answer(game_id):
     advance_game_state(game)
     return ('', 204)
 
-@app.route('/<game_id>/state')
+@app.route('/game/<game_id>/state')
 def game_state(game_id):
     game = games.get(game_id)
     if not game:
@@ -69,7 +69,7 @@ def game_state(game_id):
 
     return jsonify(game.player_view())
 
-@app.route('/<game_id>/log')
+@app.route('/game/<game_id>/log')
 def game_log(game_id):
     game = games.get(game_id)
     if not game:

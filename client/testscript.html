@@ -14,7 +14,7 @@ function create() {
   httpRequest.addEventListener("load", function () {
     game_uri = httpRequest.getResponseHeader('Location');
   });
-  httpRequest.open("POST", `/create`);
+  httpRequest.open("POST", `/game/create`);
   httpRequest.send();
 }
 
