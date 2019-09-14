@@ -3,8 +3,10 @@
 <body>
   <ul id="log" style="overflow:scroll; height:300px;"></ul>
   <button onclick="log_refresh()">Refresh</button>
-  <button onclick="send_answer()">Answer</button>
-  <select id="question"></select>
+  <div id="answer" style="display: none;">
+    <div id="choices"></div>
+    <button onclick="send_answer()">Answer</button>
+  </div>
 </body>
 <script src="game.js"></script>
 <script>

@@ -15,13 +15,28 @@ function log_refresh () {
         entry.appendChild(img);
       }
       if (result[key].event_id == 'QuestionEvent') {
-        var menu = document.getElementById('question');
-        question.innerHTML = "";
-        for (var action in result[key].question.choices) {
-          var opt = document.createElement('option');
-          opt.setAttribute('value', action);
-          opt.appendChild(document.createTextNode(result[key].question.choices[action]));
-          question.appendChild(opt);
+        question = result[key].question;
+        document.getElementById('answer').setAttribute('style', '');
+        if (question.question == 'ChooseAction'){
+          var choices = document.getElementById('choices');
+          choices.innerHTML = "";
+          for (var action in result[key].question.choices) {
+            var opt = document.createElement('input');
+            opt.setAttribute('value', action);
+            opt.setAttribute('id', 'action-' + action);
+            opt.setAttribute('name', 'action');
+            opt.setAttribute('type', 'radio');
+            if (action==0)
+              opt.setAttribute('checked', '');
+            choices.appendChild(opt);
+            var lbl = document.createElement('label');
+            lbl.setAttribute('for', 'action-' + action);
+            lbl.appendChild(document.createTextNode(result[key].question.choices[action]));
+            choices.appendChild(lbl);
+            choices.appendChild(document.createElement('br'));
+          }
+        }
+        else if (question.question == 'DeclareAttackers') {
         }
       }
       list.appendChild(entry);
@@ -38,6 +53,16 @@ function send_answer () {
   httpRequest.open("POST", `${game_uri}/answer`);
   httpRequest.setRequestHeader('Content-Type', 'application/json');
   httpRequest.addEventListener("load", log_refresh);
-  var answer = +document.getElementById('question').value;
+  var answer;
+  if (question.question == 'ChooseAction'){
+    var radios = document.getElementsByName('action');
+    for (var i = 0, length = radios.length; i < length; i++) {
+      if (radios[i].checked) {
+        answer = +radios[i].value;
+        break;
+      }
+    }
+  }
   httpRequest.send(JSON.stringify({"answer": answer}));
+  document.getElementById('answer').setAttribute('style', 'display: none;');
 }
