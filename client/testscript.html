@@ -6,6 +6,7 @@
   <button onclick="send_answer()">Answer</button>
   <select id="question"></select>
 </body>
+<script src="game.js"></script>
 <script>
 log_count = 0;
 
@@ -19,23 +20,6 @@ function create() {
 }
 
 create();
-
-function log_refresh () {
-  var httpRequest = new XMLHttpRequest();
-  httpRequest.addEventListener("load", function () {
-    result = JSON.parse(httpRequest.responseText)
-    var list = document.getElementById('log');
-    for (var key in result) {
-      log_count += 1;
-      console.log(result[key].event_id)
-      var entry = document.createElement('li');
-      entry.appendChild(document.createTextNode(JSON.stringify(result[key])));
-      list.appendChild(entry);
-    }
-  })
-  httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
-  httpRequest.send()
-}
 
 function send_answer () {
   var httpRequest = new XMLHttpRequest();

@@ -60,4 +60,4 @@ def art_svg(art_id, lang):
         attribution = art_card['attribution'],
         image_url = IMAGE_PREFIX + art_card['image'],
         attributes = [f"{a['cost']}: {describe_effect(a['effect'], lang)}" for a in card.get('abilities', [])],
-    )
+    ), 200, {'Content-Type': 'image/svg+xml'}
