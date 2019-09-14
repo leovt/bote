@@ -4,8 +4,8 @@
     <h1>{{name}}</h1>
     <h2>Names</h2>
     <dl>
-      {% for trans in card.names %}
-      <dt>{{trans.language.name}}</dt><dd>{{trans.card_name}}</dd>
+      {% for trans in card.names.items() %}
+      <dt>{{trans[0]}}</dt><dd>{{trans[1]}}</dd>
       {% endfor %}
     </dl>
 {% endblock %}
