@@ -5,13 +5,25 @@ from app import app
 from state import setup_duel, game_events
 import tools
 from dummy_deck import TEST_DECK
+from aiplayers import random_answer
 
 
 games = {}
 
 
 def advance_game_state(game):
-    while not game.question:
+    while True:
+        if game.question:
+            if game.question.player.name == '__ai__random__':
+                player = game.question.player
+                answer = random_answer(game.question)
+                ret = game.set_answer(player, answer)
+                assert ret, f'random answer is not valid: {game.question}? {answer}.'
+                game.question = None
+                # todo: game.question = None is necessary, but this should not be necessary
+                # and somehow be handled in set_answer
+            else:
+                break
         event = next(game.events)
         game.handle(event)
 
@@ -19,7 +31,7 @@ def advance_game_state(game):
 @app.route('/game/create', methods=["POST"])
 @login_required
 def create_game():
-    game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
+    game = setup_duel('Leo', TEST_DECK, '__ai__random__', TEST_DECK)
     game.events = game_events(game)
     game_id = tools.random_id()
     advance_game_state(game)
