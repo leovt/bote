@@ -58,7 +58,8 @@ class DeclareBlockers(Question):
         return Namespace(
             question = 'DeclareBlockers',
             player = self.player.name,
-            choices = [{str(key): [x.name for x in values] for key, values in choice}
+            choices = [{'candidate': str(choice['candidate']),
+                        'attackers': [str(x) for x in choice['attackers']]}
                        for choice in self.choices]
         )
 
