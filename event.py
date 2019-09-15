@@ -9,9 +9,9 @@ class Event:
 
     def serialize_for(self, player):
         def try_serialize(value):
-            try:
+            if hasattr(value, 'serialize_for'):
                 return value.serialize_for(player)
-            except AttributeError:
+            else:
                 return str(value)
         d = {'event_id': self.__class__.__name__}
         d.update({
