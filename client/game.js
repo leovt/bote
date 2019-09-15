@@ -14,44 +14,8 @@ function log_refresh () {
         img.setAttribute('style', 'height:5em;');
         entry.appendChild(img);
       }
-      if (result[key].event_id == 'QuestionEvent') {
-        question = result[key].question;
-        document.getElementById('answer').setAttribute('style', '');
-        var choices = document.getElementById('choices');
-        choices.innerHTML = "";
-        if (question.question == 'ChooseAction'){
-          for (var action in result[key].question.choices) {
-            var opt = document.createElement('input');
-            opt.setAttribute('value', action);
-            opt.setAttribute('id', 'action-' + action);
-            opt.setAttribute('name', 'action');
-            opt.setAttribute('type', 'radio');
-            if (action==0)
-              opt.setAttribute('checked', '');
-            choices.appendChild(opt);
-            var lbl = document.createElement('label');
-            lbl.setAttribute('for', 'action-' + action);
-            lbl.appendChild(document.createTextNode(result[key].question.choices[action]));
-            choices.appendChild(lbl);
-            choices.appendChild(document.createElement('br'));
-          }
-        }
-        else if (question.question == 'DeclareAttackers') {
-          choices.innerHTML = "";
-          for (var action in result[key].question.choices) {
-            var opt = document.createElement('input');
-            opt.setAttribute('value', action);
-            opt.setAttribute('id', 'attacker-' + action);
-            opt.setAttribute('name', 'attacker');
-            opt.setAttribute('type', 'checkbox');
-            choices.appendChild(opt);
-            var lbl = document.createElement('label');
-            lbl.setAttribute('for', 'attacker-' + action);
-            lbl.appendChild(document.createTextNode(result[key].question.choices[action]));
-            choices.appendChild(lbl);
-            choices.appendChild(document.createElement('br'));
-          }
-        }
+      if (result[key].event_id == 'QuestionEvent' && result[key].question.choices) {
+        build_question_ui(result[key]);
       }
       list.appendChild(entry);
     }
@@ -61,6 +25,45 @@ function log_refresh () {
   httpRequest.send()
 }
 
+function build_question_ui(event){
+  question = event.question;
+  document.getElementById('answer').setAttribute('style', '');
+  var choices = document.getElementById('choices');
+  choices.innerHTML = "";
+  if (question.question == 'ChooseAction'){
+    for (var action in question.choices) {
+      var opt = document.createElement('input');
+      opt.setAttribute('value', action);
+      opt.setAttribute('id', 'action-' + action);
+      opt.setAttribute('name', 'action');
+      opt.setAttribute('type', 'radio');
+      if (action==0)
+        opt.setAttribute('checked', '');
+      choices.appendChild(opt);
+      var lbl = document.createElement('label');
+      lbl.setAttribute('for', 'action-' + action);
+      lbl.appendChild(document.createTextNode(question.choices[action]));
+      choices.appendChild(lbl);
+      choices.appendChild(document.createElement('br'));
+    }
+  }
+  else if (question.question == 'DeclareAttackers') {
+    choices.innerHTML = "";
+    for (var action in question.choices) {
+      var opt = document.createElement('input');
+      opt.setAttribute('value', action);
+      opt.setAttribute('id', 'attacker-' + action);
+      opt.setAttribute('name', 'attacker');
+      opt.setAttribute('type', 'checkbox');
+      choices.appendChild(opt);
+      var lbl = document.createElement('label');
+      lbl.setAttribute('for', 'attacker-' + action);
+      lbl.appendChild(document.createTextNode(question.choices[action]));
+      choices.appendChild(lbl);
+      choices.appendChild(document.createElement('br'));
+    }
+  }
+}
 
 function send_answer () {
   var httpRequest = new XMLHttpRequest();
