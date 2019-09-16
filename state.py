@@ -7,7 +7,7 @@ from cards import Card, ArtCard, RuleCard
 from abilities import ActivatableAbility
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
-from tools import Namespace
+from tools import Namespace, unique_identifiers
 
 class STEP(Enum):
     UNTAP = 11
@@ -162,6 +162,7 @@ class Game:
     event_log: list = field(default_factory=list)
     question = None
     answer = None
+    unique_ids: iter = field(default_factory=unique_identifiers)
 
     def log(self, event):
         print(event)
@@ -537,34 +538,44 @@ def play_source(game, player, card):
 def player_action(game, player):
     ACTION_PERFORMED = False
     PASSED = True
-    choices = ['Pass Priority']
-    actions = [None]
+    choices = {}
+    actions = {}
+
+    def add_choice(choice, action):
+        key = next(game.unique_ids)
+        choices[key] = choice
+        actions[key] = action
+
+    add_choice('Pass Priority', None)
 
     if (player is game.active_player and
         game.step in (STEP.PRECOMBAT_MAIN, STEP.POSTCOMBAT_MAIN) and
         not game.stack):
         if can_play_source(player):
             for source in player.hand.sources:
-                choices.append(f'play {source.name}')
-                actions.append([(play_source, (game, player, source))])
+                add_choice(f'play {source.name}', [
+                    (play_source, (game, player, source))
+                ])
 
         for card in player.hand.creatures:
             if player.energy_pool.can_pay(card.cost):
-                choices.append(f'cast {card.name}')
-                actions.append([(cast_spell, (game, player, card))])
+                add_choice(f'cast {card.name}', [
+                    (cast_spell, (game, player, card))
+                ])
 
     for permanent in game.battlefield.controlled_by(player):
         for ability in permanent.abilities:
             if isinstance(ability, ActivatableAbility):
                 if all(cost.can_pay(permanent, permanent.card) for cost in ability.cost):
-                    choices.append(f'activate {permanent.card.name}:{ability}')
-                    act = [(cost.pay, (permanent, permanent.card)) for cost in ability.cost]
-                    act.append((ability.effect, (player,)))
-                    actions.append(act)
+                    add_choice(f'activate {permanent.card.name}:{ability}', [
+                        (cost.pay, (permanent, permanent.card))
+                            for cost in ability.cost] + [
+                        (ability.effect, (player,))
+                    ])
     question = ChooseAction(player, choices)
     yield QuestionEvent(question)
     answer = game.answer
-    if answer==0:
+    if actions[answer] is None:
         yield PassedEvent(player.name)
     else:
         for func, arguments in actions[answer]:

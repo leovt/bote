@@ -17,10 +17,11 @@ def choices_text(question, choices):
 
 
 def ask_question(question):
-    text = choices_text(question.__class__.__name__, question.choices)
+
+    text = choices_text(question.__class__.__name__, list(question.choices.values()))
 
     def parse(ans):
-        return int(ans)-1
+        return list(question.choices.keys())[int(ans)-1]
 
     if question.__class__.__name__ == 'DeclareAttackers':
         if not question.choices:

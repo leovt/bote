@@ -2,7 +2,7 @@ import random
 
 def random_answer(question):
     if question.__class__.__name__ == "ChooseAction":
-        return random.randrange(len(question.choices))
+        return random.choice(list(question.choices))
 
     if question.__class__.__name__ == "DeclareAttackers":
         if not question.choices:

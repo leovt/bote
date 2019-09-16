@@ -11,8 +11,7 @@ class ChooseAction(Question):
 
     def validate(self, player, answer):
         return (player is self.player and
-                isinstance(answer, int) and
-                0 <= answer < len(self.choices))
+                answer in self.choices)
 
     def serialize_for(self, player=None):
         ret = Namespace(
