@@ -25,6 +25,25 @@ function log_refresh () {
   httpRequest.send()
 }
 
+function make_input_with_label(type, value, name, label, checked){
+  var span = document.createElement('span');
+  var input = document.createElement('input');
+  var input_id = `${name}-${value}`;
+  input.setAttribute('value', value);
+  input.setAttribute('id', input_id);
+  input.setAttribute('name', name);
+  input.setAttribute('type', type);
+  if (checked)
+    input.setAttribute('checked', '');
+  span.appendChild(input);
+
+  var lbl = document.createElement('label');
+  lbl.setAttribute('for', input_id);
+  lbl.appendChild(document.createTextNode(label));
+  span.appendChild(lbl);
+  return span;
+}
+
 function build_question_ui(event){
   question = event.question;
   document.getElementById('answer').setAttribute('style', '');
@@ -32,34 +51,26 @@ function build_question_ui(event){
   choices.innerHTML = "";
   if (question.question == 'ChooseAction'){
     for (var action in question.choices) {
-      var opt = document.createElement('input');
-      opt.setAttribute('value', action);
-      opt.setAttribute('id', 'action-' + action);
-      opt.setAttribute('name', 'action');
-      opt.setAttribute('type', 'radio');
-      if (action==0)
-        opt.setAttribute('checked', '');
-      choices.appendChild(opt);
-      var lbl = document.createElement('label');
-      lbl.setAttribute('for', 'action-' + action);
-      lbl.appendChild(document.createTextNode(question.choices[action]));
-      choices.appendChild(lbl);
+      choices.appendChild(make_input_with_label(
+        type = 'radio',
+        value = action,
+        name = 'action',
+        label = question.choices[action],
+        checked = (action==0)
+      ));
       choices.appendChild(document.createElement('br'));
     }
   }
   else if (question.question == 'DeclareAttackers') {
     choices.innerHTML = "";
     for (var action in question.choices) {
-      var opt = document.createElement('input');
-      opt.setAttribute('value', action);
-      opt.setAttribute('id', 'attacker-' + action);
-      opt.setAttribute('name', 'attacker');
-      opt.setAttribute('type', 'checkbox');
-      choices.appendChild(opt);
-      var lbl = document.createElement('label');
-      lbl.setAttribute('for', 'attacker-' + action);
-      lbl.appendChild(document.createTextNode(question.choices[action]));
-      choices.appendChild(lbl);
+      choices.appendChild(make_input_with_label(
+        type = 'checkbox',
+        value = action,
+        name = 'attacker',
+        label = question.choices[action],
+        checked = false
+      ));
       choices.appendChild(document.createElement('br'));
     }
   }
