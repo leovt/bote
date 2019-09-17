@@ -30,14 +30,14 @@ class DeclareAttackers(Question):
     def validate(self, player, answer):
         return (player is self.player and
                 isinstance(answer, list) and
-                all(isinstance(x, int) and 0 <= x < len(self.choices) for x in answer) and
+                all(x in self.choices for x in answer) and
                 len(answer) == len(set(answer)))
 
     def serialize_for(self, _unused):
         return Namespace(
             question = 'DeclareAttackers',
             player = self.player.name,
-            choices = [str(choice) for choice in self.choices]
+            choices = {key:str(choice) for key, choice in self.choices.items()}
         )
 
 class DeclareBlockers(Question):

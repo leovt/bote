@@ -7,7 +7,7 @@ def random_answer(question):
     if question.__class__.__name__ == "DeclareAttackers":
         if not question.choices:
             return []
-        answer = list(range(len(question.choices)))
+        answer = list(question.choices.keys())
         random.shuffle(answer)
         return answer[:random.randrange(len(answer))]
 

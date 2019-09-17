@@ -129,7 +129,7 @@ function send_answer () {
     var attackers = document.getElementsByName('attacker');
     for (var i = 0, length = attackers.length; i < length; i++) {
       if (attackers[i].checked) {
-        answer.push(+attackers[i].value);
+        answer.push(attackers[i].value);
       }
     }
   }

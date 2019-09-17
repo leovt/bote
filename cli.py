@@ -27,7 +27,8 @@ def ask_question(question):
         if not question.choices:
             return []
         def parse(ans):
-            return [int(a)-1 for a in ans.split(',') if a]
+            keys = list(question.choices.keys())
+            return [keys[int(a)-1] for a in ans.split(',') if a]
     elif question.__class__.__name__ == 'DeclareBlockers':
         letters = 'abcdefghijklmnopqrstuvwxyz'
         text = ('For each potential blocker choose which attacker to block '
