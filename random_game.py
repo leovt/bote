@@ -19,7 +19,7 @@ def run_game(game):
             ret = game.set_answer(player, answer)
             assert ret, 'random answer is not valid'
             game.question = None
-    print(f'Game produced {len(game.event_log)} events')
+    print(f'Game produced {len(game.event_log)} events, next id is {next(game.unique_ids)}.')
 
 try:
     import state
