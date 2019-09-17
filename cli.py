@@ -36,8 +36,8 @@ def ask_question(question):
         text += '\n'.join(
             f'{b}: {ch["candidate"]} can block\n'
             + '\n'.join(f'    {letters[a]}: {attacker}'
-                        for a, attacker in enumerate(ch['attackers']))
-            for b, ch in enumerate(question.choices, 1)
+                        for a, attacker in enumerate(ch['attackers'].values()))
+            for b, ch in enumerate(question.choices.values(), 1)
         )
         def parse(ans):
             ret = {}
@@ -46,8 +46,9 @@ def ask_question(question):
                 if not chunk:
                     continue
                 b, a = chunk.split(':')
-                b = int(b.strip()) - 1
+                b = list(question.choices.keys())[int(b.strip()) - 1]
                 a = letters.index(a.strip())
+                a = list(question.choices[b]['attackers'].keys())[a]
                 if b in ret:
                     raise ValueError
                 ret[b] = a

@@ -140,7 +140,7 @@ function send_answer () {
       for (var i = 0, length = attackers.length; i < length; i++) {
         if (attackers[i].checked) {
           if (attackers[i].value != 'noblock')
-            answer[+action] = +attackers[i].value;
+            answer[action] = attackers[i].value;
           break;
         }
       }

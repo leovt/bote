@@ -13,9 +13,9 @@ def random_answer(question):
 
     if question.__class__.__name__ == "DeclareBlockers":
         answer = {}
-        for i, ch in enumerate(question.choices):
+        for i, ch in question.choices.items():
             if random.random() > 0.7:
-                answer[i] = random.randrange(len(ch['attackers']))
+                answer[i] = random.choice(list(ch['attackers']))
         return answer
 
     if question.__class__.__name__ == "OrderBlockers":

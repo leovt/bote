@@ -413,17 +413,19 @@ def turn_based_actions(game):
             yield StepEvent(STEP.END_OF_COMBAT)
     elif game.step == STEP.DECLARE_BLOCKERS:
         for player in game.players:
-            attackers = list(game.battlefield.attacking(player))
+            attackers = {next(game.unique_ids): permanent for permanent in
+                game.battlefield.attacking(player)}
             if not attackers:
                 continue
-            candidates = list(game.battlefield.creatures.controlled_by(player))
+            candidates = {next(game.unique_ids): permanent for permanent in
+                game.battlefield.creatures.controlled_by(player)}
             if not candidates:
                 continue
             blocking = {}
             blocked_by = defaultdict(list)
-            question = DeclareBlockers(player, [{'candidate': cand,
-                                                 'attackers': attackers}
-                                                 for cand in candidates])
+            question = DeclareBlockers(player,
+                {key: {'candidate': cand, 'attackers': attackers}
+                 for key, cand in candidates.items()})
             yield QuestionEvent(question)
 
             for cand, attacker in game.answer.items():

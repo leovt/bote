@@ -48,18 +48,17 @@ class DeclareBlockers(Question):
     def validate(self, player, answer):
         return (player is self.player and
                 isinstance(answer, dict) and
-                len(answer) <= len(self.choices) and
-                all(isinstance(k, int) and 0 <= k < len(self.choices) and
-                    isinstance(v, int) and 0 <= v < len(self.choices[k]['attackers'])
-                for k,v in answer.items()))
+                all(k in self.choices and
+                    v in self.choices[k]['attackers']
+                    for k,v in answer.items()))
 
     def serialize_for(self, _unused):
-        return Namespace(
+        return dict(
             question = 'DeclareBlockers',
             player = self.player.name,
-            choices = [{'candidate': str(choice['candidate']),
-                        'attackers': [str(x) for x in choice['attackers']]}
-                       for choice in self.choices]
+            choices = {key: {'candidate': str(choice['candidate']),
+                             'attackers': {k: str(v) for k, v in choice['attackers'].items()}}
+                       for key, choice in self.choices.items()}
         )
 
 class OrderBlockers(Question):
