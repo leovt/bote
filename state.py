@@ -442,7 +442,7 @@ def turn_based_actions(game):
                         for attacker, blockers in blocked_by.items()
                         if len(blockers) > 1]
             if ambigous:
-                question = OrderBlockers(player, ambigous)
+                question = OrderBlockers(game.active_player, choices)
                 yield QuestionEvent(question)
                 for amb, block_order in zip(ambigous, game.answer):
                     blockers = amb['blockers']
