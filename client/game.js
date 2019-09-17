@@ -50,14 +50,16 @@ function build_question_ui(event){
   var choices = document.getElementById('choices');
   choices.innerHTML = "";
   if (question.question == 'ChooseAction'){
+    var first = true;
     for (var action in question.choices) {
       choices.appendChild(make_input_with_label(
         type = 'radio',
         value = action,
         name = 'action',
         label = question.choices[action],
-        checked = (action==0)
+        checked = first
       ));
+      first = false;
       choices.appendChild(document.createElement('br'));
     }
   }
@@ -117,7 +119,7 @@ function send_answer () {
     var radios = document.getElementsByName('action');
     for (var i = 0, length = radios.length; i < length; i++) {
       if (radios[i].checked) {
-        answer = +radios[i].value;
+        answer = radios[i].value;
         break;
       }
     }

@@ -19,7 +19,7 @@ class ChooseAction(Question):
             player=self.player.name,
         )
         if player is self.player:
-            ret.choices = [str(choice) for choice in self.choices]
+            ret.choices = {key:str(choice) for key, choice in self.choices.items()}
         return ret
 
 class DeclareAttackers(Question):
