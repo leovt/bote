@@ -19,11 +19,11 @@ def random_answer(question):
         return answer
 
     if question.__class__.__name__ == "OrderBlockers":
-        answer = []
-        for ch in question.choices:
-            ans = list(range(len(ch['blockers'])))
+        answer = {}
+        for key, ch in question.choices.items():
+            ans = list(ch['blockers'].keys())
             random.shuffle(ans)
-            answer.append(ans)
+            answer[key] = ans
         return answer
 
     assert False, question

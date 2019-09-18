@@ -44,6 +44,24 @@ function make_input_with_label(type, value, name, label, checked){
   return span;
 }
 
+function make_reorderable_listitem(value, label) {
+  var li = document.createElement('li');
+  li.setAttribute('id', value);
+
+  var btn_down = document.createElement('button');
+  btn_down.setAttribute('onclick', `reorderDown('${value}')`);
+  btn_down.appendChild(document.createTextNode('▼'));
+
+  var btn_up = document.createElement('button');
+  btn_up.setAttribute('onclick', `reorderUp('${value}')`);
+  btn_up.appendChild(document.createTextNode('▲'));
+
+  li.appendChild(btn_down);
+  li.appendChild(document.createTextNode(label));
+  li.appendChild(btn_up);
+  return li;
+}
+
 function build_question_ui(event){
   question = event.question;
   document.getElementById('answer').setAttribute('style', '');
@@ -100,6 +118,21 @@ function build_question_ui(event){
       choices.appendChild(document.createElement('br'));
     }
   }
+  else if (question.question == 'OrderBlockers') {
+    choices.innerHTML = "";
+    for (var action in question.choices) {
+      choices.appendChild(document.createTextNode(question.choices[action].attacker));
+      var list = document.createElement('ol');
+      list.setAttribute('id', action);
+      choices.appendChild(list);
+      for (var blocker in question.choices[action].blockers){
+        list.appendChild(make_reorderable_listitem(
+          value = blocker,
+          label = question.choices[action].blockers[blocker]
+        ));
+      }
+    }
+  }
   else {
     choices.innerHTML = "";
     choices.appendChild(document.createTextNode(JSON.stringify(question)));
@@ -146,5 +179,34 @@ function send_answer () {
       }
     }
   }
+  if (question.question == 'OrderBlockers'){
+    var choices = document.getElementById('choices');
+    answer = {};
+    var attackers = choices.getElementsByTagName('ol');
+    for (var i = 0, length = attackers.length; i < length; i++) {
+      var ans = [];
+      var blockers = attackers[i].getElementsByTagName('li');
+      for (var j = 0; j < blockers.length; j++) {
+        ans.push(blockers[j].id);
+      }
+      answer[attackers[i].id] = ans;
+    }
+  }
   httpRequest.send(JSON.stringify({"answer": answer}));
+}
+
+function reorderUp(item_id) {
+  var item = document.getElementById(item_id);
+  var prev = item.previousElementSibling;
+  if (prev) {
+    item.parentNode.insertBefore(item, prev);
+  }
+}
+
+function reorderDown(item_id) {
+  var item = document.getElementById(item_id);
+  var after = item.nextElementSibling;
+  if (after) {
+    after.parentNode.insertBefore(after, item);
+  }
 }

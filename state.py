@@ -437,16 +437,18 @@ def turn_based_actions(game):
 
             # if an attacker is blocked by multiple blockers its controller
             # selects the order of the blockers
-            ambigous = [{'attacker': attacker,
-                         'blockers': blockers}
-                        for attacker, blockers in blocked_by.items()
-                        if len(blockers) > 1]
+            ambigous = {next(game.unique_ids): item
+                        for item in blocked_by.items()
+                        if len(item[1]) > 1}
             if ambigous:
+                choices = {key: {'attacker': attacker,
+                                 'blockers': {next(game.unique_ids): b for b in blockers}}
+                           for key, (attacker, blockers) in ambigous.items()}
                 question = OrderBlockers(game.active_player, choices)
                 yield QuestionEvent(question)
-                for amb, block_order in zip(ambigous, game.answer):
-                    blockers = amb['blockers']
-                    blockers[:] = [blockers[b] for b in block_order]
+                for key, block_order in game.answer.items():
+                    blockers = ambigous[key][1]
+                    blockers[:] = [choices[key]['blockers'][b] for b in block_order]
 
             for attacker, blockers in blocked_by.items():
                 yield BlockEvent(attacker, blockers)

@@ -68,17 +68,19 @@ class OrderBlockers(Question):
 
     def validate(self, player, answer):
         return (player is self.player and
-                isinstance(answer, list) and
-                len(answer) == len(self.choices) and
+                isinstance(answer, dict) and
+                set(answer.keys()) == set(self.choices.keys()) and
                 all(isinstance(ans, list) and
-                    all(isinstance(a, int) and 0 <= a < len(choice['blockers'])
-                        for a in ans)
-                    and len(set(ans)) == len(choice['blockers'])
-                    for ans, choice in zip(answer, self.choices)) )
+                    len(ans) == len(set(ans)) and
+                    set(ans) == set(self.choices[key]['blockers'].keys())
+                    for key, ans in answer.items())
+                )
 
     def serialize_for(self, _unused):
         return Namespace(
             question = 'OrderBlockers',
             player = self.player.name,
-            choices = [str(choice) for choice in self.choices]
+            choices = {key: {'attacker': str(choice['attacker']),
+                             'blockers': {k: str(v) for k, v in choice['blockers'].items()}}
+                       for key, choice in self.choices.items()}
         )
