@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <ul id="array">
+    <li id='item1'>List Item 1
+      <button onclick="up('item1')">▲</button>
+      <button onclick="down('item1')">▼</button>
+    </li>
+    <li id='item2'>List Item 2
+      <button onclick="up('item2')">▲</button>
+      <button onclick="down('item2')">▼</button>
+    </li>
+    <li id='item3'>List Item 3
+      <button onclick="up('item3')">▲</button>
+      <button onclick="down('item3')">▼</button>
+    </li>
+    <li id='item4'>List Item 4
+      <button onclick="up('item4')">▲</button>
+      <button onclick="down('item4')">▼</button>
+    </li>
+  </ul>
+  <button onclick="show_items()">Show</button>
+  <div id='msg'></div>
+</body>
+<script>
+function show_items() {
+  var ul = document.getElementById('array');
+  var text = "";
+  ul.childNodes.forEach(function(x){if(x.id) text = text + x.id + " ";});
+  var msg = document.getElementById('msg');
+  msg.innerHTML = "";
+  msg.appendChild(document.createTextNode(text));
+}
+
+function up(item_id) {
+  var item = document.getElementById(item_id);
+  var prev = item.previousElementSibling;
+  if (prev) {
+    item.parentNode.insertBefore(item, prev);
+  }
+}
+
+function down(item_id) {
+  var item = document.getElementById(item_id);
+  var after = item.nextElementSibling;
+  if (after) {
+    after.parentNode.insertBefore(after, item);
+  }
+}
+</script>
+</html>
