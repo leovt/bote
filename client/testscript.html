@@ -1,11 +1,21 @@
 <!DOCTYPE html>
 <html>
-<body>
-  <ul id="log" style="overflow:scroll; height:300px;"></ul>
-  <button onclick="log_refresh()">Refresh</button>
-  <div id="answer" style="display: none;">
-    <div id="choices"></div>
-    <button onclick="send_answer()">Answer</button>
+<body style="display:flex">
+  <div id="left-column" style="flex:30%">
+    <ul id="log" style="overflow:scroll; height:300px;"></ul>
+    <button onclick="log_refresh()">Refresh</button>
+    <div id="answer" style="display: none;">
+      <div id="choices"></div>
+      <button onclick="send_answer()">Answer</button>
+    </div>
+  </div>
+  <div id="game" style="flex:70%">
+    <h1>Battlefield</h1>
+    <div id="battlefield"></div>
+    <h1>Stack</h1>
+    <div id="stack"></div>
+    <h1>Hand</h1>
+    <div id="hand"></div>
   </div>
 </body>
 <script src="game.js"></script>

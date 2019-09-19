@@ -9,10 +9,13 @@ function log_refresh () {
       var entry = document.createElement('li');
       entry.appendChild(document.createTextNode(JSON.stringify(result[key])));
       if (result[key].event_id == 'DrawCardEvent' && result[key].card) {
+        var hand = document.getElementById('hand');
         var img = document.createElement('img');
+        img.setAttribute('id', result[key].card.card_id);
+        img.setAttribute('class', 'card');
         img.setAttribute('src', result[key].card.url);
         img.setAttribute('style', 'height:5em;');
-        entry.appendChild(img);
+        hand.appendChild(img);
       }
       if (result[key].event_id == 'QuestionEvent' && result[key].question.choices) {
         build_question_ui(result[key]);
