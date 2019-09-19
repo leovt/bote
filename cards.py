@@ -85,6 +85,13 @@ class Card:
     def __repr__(self):
         return f'<Card name={self.name} owner={self.owner.name}>'
 
+    def serialize(self):
+        return {'art_id': self.art_card.art_id,
+                'card_id': self.known_identity,
+                'name': self.name,
+                'url': f'/card/svg/{self.art_card.art_id}',
+                }
+
 
 def art_card_spec(art_id):
     card = _art_cards.get(art_id)

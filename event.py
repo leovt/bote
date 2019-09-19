@@ -11,6 +11,8 @@ class Event:
         def try_serialize(value):
             if hasattr(value, 'serialize_for'):
                 return value.serialize_for(player)
+            elif hasattr(value, 'serialize'):
+                return value.serialize()
             else:
                 return str(value)
         d = {'event_id': self.__class__.__name__}
@@ -58,11 +60,7 @@ class DrawCardEvent(Event):
         d = {'event_id': self.__class__.__name__,
              'player': self.player}
         if self.player == player.name:
-            d['card'] = {'art_id': self.card.art_card.art_id,
-                         'card_id': self.card.known_identity,
-                         'name': self.card.name,
-                         'url': f'/card/svg/{self.card.art_card.art_id}',
-                        }
+            d['card'] = self.card.serialize()
         return d
 
 @event_id('draw_empty')
