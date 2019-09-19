@@ -1,3 +1,15 @@
+function getCardElement(card){
+  var element = document.getElementById(card.card_id);
+  if (!element) {
+    element = document.createElement('img');
+    element.setAttribute('id', card.card_id);
+    element.setAttribute('class', 'card');
+    element.setAttribute('src', card.url);
+    element.setAttribute('style', 'height:5em;');
+  }
+  return element;
+}
+
 function log_refresh () {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
@@ -10,12 +22,11 @@ function log_refresh () {
       entry.appendChild(document.createTextNode(JSON.stringify(result[key])));
       if (result[key].event_id == 'DrawCardEvent' && result[key].card) {
         var hand = document.getElementById('hand');
-        var img = document.createElement('img');
-        img.setAttribute('id', result[key].card.card_id);
-        img.setAttribute('class', 'card');
-        img.setAttribute('src', result[key].card.url);
-        img.setAttribute('style', 'height:5em;');
-        hand.appendChild(img);
+        hand.appendChild(getCardElement(result[key].card));
+      }
+      if (result[key].event_id == 'EnterTheBattlefieldEvent' && result[key].card) {
+        var bf = document.getElementById('battlefield');
+        battlefield.appendChild(getCardElement(result[key].card));
       }
       if (result[key].event_id == 'QuestionEvent' && result[key].question.choices) {
         build_question_ui(result[key]);
