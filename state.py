@@ -195,6 +195,7 @@ class Game:
         player = self.get_player(event.player)
         card_popped = player.library.pop()
         assert card_popped is event.card
+        card_popped.known_identity = event.card_id
         player.hand.add(card_popped)
 
     def handle_DrawEmptyEvent(self, event):
@@ -203,6 +204,8 @@ class Game:
 
     def handle_ShuffleLibraryEvent(self, event):
         player = self.get_player(event.player)
+        for card in player.library:
+            card.known_identity = None
         random.shuffle(player.library)
 
     def handle_ActivePlayerEvent(self, event):
@@ -342,7 +345,7 @@ def start_game(game):
     for player in game.players:
         yield ShuffleLibraryEvent(player.name)
         for _ in range(7):
-            yield from draw_card(player)
+            yield from draw_card(game, player)
     p1 = game.players[0]
     yield ActivePlayerEvent(p1.name)
     yield StepEvent(STEP.PRECOMBAT_MAIN)
@@ -394,7 +397,7 @@ def turn_based_actions(game):
                 yield UntapEvent(permanent)
         yield from end_of_step(game)
     elif game.step == STEP.DRAW:
-        yield from draw_card(game.active_player)
+        yield from draw_card(game, game.active_player)
         yield from open_priority(game)
     elif game.step == STEP.CLEANUP:
         yield from end_of_step(game)
@@ -526,10 +529,11 @@ def open_priority(game):
 def discard_excess_cards():
     pass
 
-def draw_card(player):
+def draw_card(game, player):
     if player.library:
         card = player.library[-1]
-        yield DrawCardEvent(player.name, card)
+        card_id = next(game.unique_ids)
+        yield DrawCardEvent(player.name, card, card_id)
     else:
         yield DrawEmptyEvent(player.name)
 

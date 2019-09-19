@@ -52,12 +52,14 @@ class AddEnergyEvent(Event):
 class DrawCardEvent(Event):
     player: object
     card: object
+    card_id: str
 
     def serialize_for(self, player):
         d = {'event_id': self.__class__.__name__,
              'player': self.player}
         if self.player == player.name:
             d['card'] = {'art_id': self.card.art_card.art_id,
+                         'card_id': self.card.known_identity,
                          'name': self.card.name,
                          'url': f'/card/svg/{self.card.art_card.art_id}',
                         }

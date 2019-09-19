@@ -70,10 +70,11 @@ class ArtCard:
                        rule_card=RuleCard.get_by_id(spec['card_id']))
 
 
-@dataclass(eq=False, frozen=True)
+@dataclass(eq=False)
 class Card:
     art_card: object
     owner: object
+    known_identity: str = None
 
     def __getattr__(self, attribute):
         return getattr(self.art_card.rule_card, attribute)
