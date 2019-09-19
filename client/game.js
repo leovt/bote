@@ -28,6 +28,10 @@ function log_refresh () {
         var bf = document.getElementById('battlefield');
         battlefield.appendChild(getCardElement(result[key].card));
       }
+      if (result[key].event_id == 'CastSpellEvent' && result[key].card) {
+        var stack = document.getElementById('stack');
+        stack.appendChild(getCardElement(result[key].card));
+      }
       if (result[key].event_id == 'QuestionEvent' && result[key].question.choices) {
         build_question_ui(result[key]);
       }

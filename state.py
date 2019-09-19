@@ -85,6 +85,9 @@ class Spell:
     def __str__(self):
         return f'cast {self.card.name} @{self.controller.name}'
 
+    def serialize(self):
+        return {'controller': self.controller.name,
+                'card': self.card.serialize()}
 
 def cast_spell(game, player, card):
     yield PayEnergyEvent(player.name, card.cost)
