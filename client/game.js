@@ -37,6 +37,12 @@ function log_refresh () {
         var stack = document.getElementById('stack');
         stack.appendChild(getCardElement(result[key].card));
       }
+      if (result[key].event_id == 'TapEvent') {
+        getCardElement(result[key].permanent.card).classList.add('tap');
+      }
+      if (result[key].event_id == 'UntapEvent') {
+        getCardElement(result[key].permanent.card).classList.remove('tap');
+      }
       if (result[key].event_id == 'QuestionEvent' && result[key].question.choices) {
         build_question_ui(result[key]);
       }

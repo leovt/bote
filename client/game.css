@@ -1,0 +1,7 @@
+#bf-theirs {
+  transform: rotate(180deg);
+}
+
+.card.tap {
+  transform: rotate(90deg);
+}
