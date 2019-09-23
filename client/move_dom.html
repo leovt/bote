@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+  .target {
+    min-width:200px;
+    min-height:200px;
+  }
+  #left {
+    background:#f88;
+  }
+  #right{
+    background:#6b6;
+    margin-left:234px;
+  }
+  .card{
+    width:100px;
+    height:160px;
+    background:#321;
+  }
+  #tempcard {
+    background:#641;
+  }
+  </style>
+</head>
+<body>
+  <p>Based on <a href="https://stackoverflow.com/a/5212193">this Stackoverflow answer</a></p>
+  <div class="target" id="left"><div class="card" id="card" onClick="move()"></div></div>
+  <div class="target" id="right"></div>
+</body>
+<script>
+function move(){
+  var card = document.getElementById('card');
+  card.removeAttribute('onClick');
+  var target = document.getElementById('right');
+  if (target == card.parentNode) {
+    target = document.getElementById('left');
+  }
+
+  var oldClientRect = card.getBoundingClientRect();
+  target.appendChild(card);
+  var newClientRect = card.getBoundingClientRect();
+
+  var temp = card.cloneNode();
+  document.body.appendChild(temp);
+
+  card.setAttribute('style', "visibility: hidden;");
+  temp.setAttribute('style',
+   `position: absolute;
+    left: ${oldClientRect.left}px; top: ${oldClientRect.top}px;
+    z-index:1000;`);
+  temp.setAttribute('id', 'tempcard');
+
+  function finalizer(){
+    card.removeAttribute('style');
+    card.setAttribute('onClick', "move()");
+    document.body.removeChild(temp);
+  }
+
+  const delay = 2000;
+  window.setTimeout(function(){
+    temp.setAttribute('style',
+     `position: absolute;
+      left: ${newClientRect.left}px; top: ${newClientRect.top}px;
+      z-index:1000;
+      transition: top ${delay}ms, left ${delay}ms;`);
+    /* not sure if the eventlistener fire sure enough
+    temp.addEventListener('transitionend', finalizer);
+    temp.addEventListener('transitioncancel', finalizer);*/
+    window.setTimeout(finalizer, delay);
+  },0);
+}
+</script>
+</html>
