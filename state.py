@@ -219,12 +219,10 @@ class Game:
             card.known_identity = None
         random.shuffle(player.library)
 
-    def handle_ActivePlayerEvent(self, event):
-        player = self.get_player(event.player)
-        self.active_player = player
-
     def handle_StepEvent(self, event):
+        assert event.active_player in self.players
         self.step = event.step
+        self.active_player = event.active_player
 
     def handle_ClearPoolEvent(self, event):
         player = self.get_player(event.player)
@@ -358,8 +356,7 @@ def start_game(game):
         for _ in range(7):
             yield from draw_card(game, player)
     p1 = game.players[0]
-    yield ActivePlayerEvent(p1.name)
-    yield StepEvent(STEP.PRECOMBAT_MAIN)
+    yield StepEvent(STEP.PRECOMBAT_MAIN, p1)
     yield PriorityEvent(p1.name)
 
 def end_of_step(game):
@@ -367,10 +364,9 @@ def end_of_step(game):
         yield ClearPoolEvent(player.name)
     yield PriorityEvent(None)
     if game.step == STEP.CLEANUP:
-        yield ActivePlayerEvent(game.active_player.next_in_turn.name)
-        yield StepEvent(STEP.UNTAP)
+        yield StepEvent(STEP.UNTAP, game.active_player.next_in_turn)
     else:
-        yield StepEvent(NEXT_STEP[game.step])
+        yield StepEvent(NEXT_STEP[game.step], game.active_player)
 
 def game_events(game):
     yield from start_game(game)
@@ -424,7 +420,7 @@ def turn_based_actions(game):
                 yield AttackEvent(candidates[i], game.active_player.next_in_turn.name)
             yield from open_priority(game)
         else:
-            yield StepEvent(STEP.END_OF_COMBAT)
+            yield StepEvent(STEP.END_OF_COMBAT, game.active_player)
     elif game.step == STEP.DECLARE_BLOCKERS:
         for player in game.players:
             attackers = {next(game.unique_ids): permanent for permanent in
@@ -469,7 +465,7 @@ def turn_based_actions(game):
         yield from open_priority(game)
     elif game.step == STEP.FIRST_STRIKE_DAMAGE:
         # TODO: do not skip this step if any attacker or blocker has first strike.
-        yield StepEvent(STEP.SECOND_STRIKE_DAMAGE)
+        yield StepEvent(STEP.SECOND_STRIKE_DAMAGE, game.active_player)
     elif game.step == STEP.SECOND_STRIKE_DAMAGE:
         for attacker in game.battlefield.filter(lambda x:x.attacking):
             remaining_strength = attacker.strength

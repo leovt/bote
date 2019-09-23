@@ -73,15 +73,11 @@ class DrawEmptyEvent(Event):
 class ShuffleLibraryEvent(Event):
     player: object
 
-@event_id('active_player')
-@dataclass(repr=False)
-class ActivePlayerEvent(Event):
-    player: object
-
 @event_id('step')
 @dataclass(repr=False)
 class StepEvent(Event):
     step: object
+    active_player: object
 
 @event_id('clear_pool')
 @dataclass(repr=False)
