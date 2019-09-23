@@ -27,7 +27,6 @@
   <p>Based on <a href="https://stackoverflow.com/a/5212193"> a similar idea using jQuery</a></p>
   <div class="target" id="left"><div class="card" id="card" onClick="move()">card</div><div class="card">card</div></div>
   <div class="target" id="right"><div class="card">card</div></div>
-</body>
 <script>
 function move(){
   var card = document.getElementById('card');
@@ -46,7 +45,9 @@ function move(){
   card.setAttribute('style',
    `position: absolute;
     left: ${oldClientRect.left}px; top: ${oldClientRect.top}px;
-    margin:0px;`);
+    z-index:1000;
+    margin:0px;
+    background:#aaa;`);
 
   function finalizer(){
     card.removeAttribute('style');
@@ -54,17 +55,25 @@ function move(){
     card.setAttribute('onClick', "move()");
   }
 
-  const delay = 7000;
-  window.setTimeout(function(){
-    card.setAttribute('style',
-     `position: absolute;
-      left: ${newClientRect.left}px; top: ${newClientRect.top}px;
-      z-index:1000;
-      margin:0px;
-      transition: top ${delay}ms, left ${delay}ms;
-      background:#aaa;`);
-    window.setTimeout(finalizer, delay);
-  },0);
+  const delay=900;
+
+if (card.animate) {
+  card.animate([
+  // keyframes
+  { left: `${oldClientRect.left}px`, top: `${oldClientRect.top}px` },
+  { left: `${newClientRect.left}px`, top: `${newClientRect.top}px` }
+  ], {
+  // timing options
+  duration: delay,
+  iterations: 1,
+  easing: "ease-in-out"
+  });
+  window.setTimeout(finalizer, delay);
+}
+else {
+  finalizer();
+}
 }
 </script>
+</body>
 </html>
