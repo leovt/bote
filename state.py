@@ -79,8 +79,8 @@ class Spell:
     controller: object
     card: object
 
-    def resolve(self):
-        yield EnterTheBattlefieldEvent(self.card, self.controller.name)
+    def resolve(self, game):
+        yield EnterTheBattlefieldEvent(self.card, self.controller, next(game.unique_ids))
 
     def __str__(self):
         return f'cast {self.card.name} @{self.controller.name}'
@@ -102,6 +102,7 @@ class Damage:
 class Permanent:
     card: object
     controller: object
+    perm_id: str
     tapped: bool = False
     damage: list = field(default_factory=list)
     attacking: bool = False
@@ -131,6 +132,12 @@ class Permanent:
     def __str__(self):
         return f'{self.card.name} @{self.controller.name}{"{T}" if self.tapped else ""}'
 
+    def serialize_for(self, player):
+        return {'card': self.card.serialize(),
+                'controller': self.controller.serialize_for(player),
+                'perm_id': self.perm_id,
+               }
+
 @dataclass(eq=False)
 class Player:
     name: str
@@ -149,6 +156,7 @@ class Player:
     def serialize_for(self, player):
         return {
             'name': self.name,
+            'is_me': self is player,
         }
 
 class EndOfGameException(Exception):
@@ -230,8 +238,8 @@ class Game:
         player.has_passed = True
 
     def handle_EnterTheBattlefieldEvent(self, event):
-        controller = self.get_player(event.controller)
-        permanent = Permanent(event.card, controller)
+        #controller = self.get_player(event.controller)
+        permanent = Permanent(event.card, event.controller, event.perm_id)
         self.battlefield.add(permanent)
 
     def handle_ExitTheBattlefieldEvent(self, event):
@@ -377,7 +385,7 @@ def game_events(game):
                     if game.stack:
                         tos = game.stack[-1]
                         yield ResolveEvent(tos)
-                        yield from tos.resolve()
+                        yield from tos.resolve(game)
                         yield from open_priority(game)
                     else:
                         yield from end_of_step(game)
@@ -545,7 +553,7 @@ def can_play_source(player):
 
 def play_source(game, player, card):
     yield PlaySourceEvent(player.name, card)
-    yield EnterTheBattlefieldEvent(card, player.name)
+    yield EnterTheBattlefieldEvent(card, player, next(game.unique_ids))
 
 def player_action(game, player):
     ACTION_PERFORMED = False

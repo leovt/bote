@@ -25,8 +25,13 @@ function log_refresh () {
         hand.appendChild(getCardElement(result[key].card));
       }
       if (result[key].event_id == 'EnterTheBattlefieldEvent' && result[key].card) {
-        var bf = document.getElementById('battlefield');
-        battlefield.appendChild(getCardElement(result[key].card));
+        var bf;
+        if (result[key].controller.is_me){
+          var bf = document.getElementById('bf-mine');
+        } else {
+          var bf = document.getElementById('bf-theirs');
+        }
+        bf.appendChild(getCardElement(result[key].card));
       }
       if (result[key].event_id == 'CastSpellEvent' && result[key].card) {
         var stack = document.getElementById('stack');

@@ -103,6 +103,7 @@ class PassedEvent(Event):
 class EnterTheBattlefieldEvent(Event):
     card: object
     controller: object
+    perm_id: str
 
 @event_id('exit_the_battlefield')
 @dataclass(repr=False)
