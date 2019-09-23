@@ -5,3 +5,7 @@
 .card.tap {
   transform: rotate(90deg);
 }
+
+.card {
+  transition: transform 0.7s;
+}
