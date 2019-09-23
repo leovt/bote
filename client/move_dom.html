@@ -18,16 +18,15 @@
     width:100px;
     height:160px;
     background:#321;
-  }
-  #tempcard {
-    background:#641;
+    margin:5px;
+    float:left;
   }
   </style>
 </head>
 <body>
-  <p>Based on <a href="https://stackoverflow.com/a/5212193">this Stackoverflow answer</a></p>
-  <div class="target" id="left"><div class="card" id="card" onClick="move()"></div></div>
-  <div class="target" id="right"></div>
+  <p>Based on <a href="https://stackoverflow.com/a/5212193"> a similar idea using jQuery</a></p>
+  <div class="target" id="left"><div class="card" id="card" onClick="move()">card</div><div class="card">card</div></div>
+  <div class="target" id="right"><div class="card">card</div></div>
 </body>
 <script>
 function move(){
@@ -42,32 +41,28 @@ function move(){
   target.appendChild(card);
   var newClientRect = card.getBoundingClientRect();
 
-  var temp = card.cloneNode();
-  document.body.appendChild(temp);
+  document.body.appendChild(card);
 
-  card.setAttribute('style', "visibility: hidden;");
-  temp.setAttribute('style',
+  card.setAttribute('style',
    `position: absolute;
     left: ${oldClientRect.left}px; top: ${oldClientRect.top}px;
-    z-index:1000;`);
-  temp.setAttribute('id', 'tempcard');
+    margin:0px;`);
 
   function finalizer(){
     card.removeAttribute('style');
+    target.appendChild(card);
     card.setAttribute('onClick', "move()");
-    document.body.removeChild(temp);
   }
 
-  const delay = 2000;
+  const delay = 7000;
   window.setTimeout(function(){
-    temp.setAttribute('style',
+    card.setAttribute('style',
      `position: absolute;
       left: ${newClientRect.left}px; top: ${newClientRect.top}px;
       z-index:1000;
-      transition: top ${delay}ms, left ${delay}ms;`);
-    /* not sure if the eventlistener fire sure enough
-    temp.addEventListener('transitionend', finalizer);
-    temp.addEventListener('transitioncancel', finalizer);*/
+      margin:0px;
+      transition: top ${delay}ms, left ${delay}ms;
+      background:#aaa;`);
     window.setTimeout(finalizer, delay);
   },0);
 }
