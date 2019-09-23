@@ -28,6 +28,9 @@ class STEP(Enum):
     END = 51
     CLEANUP = 52
 
+    def serialize(self):
+        return self.name
+
 STEPS = [
         STEP.UNTAP, STEP.UPKEEP, STEP.DRAW,
         STEP.PRECOMBAT_MAIN,

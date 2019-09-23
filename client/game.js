@@ -43,6 +43,9 @@ function log_refresh () {
       if (result[key].event_id == 'UntapEvent') {
         getCardElement(result[key].permanent.card).classList.remove('tap');
       }
+      if (result[key].event_id == 'StepEvent') {
+        indicate_step(result[key]);
+      }
       if (result[key].event_id == 'QuestionEvent' && result[key].question.choices) {
         build_question_ui(result[key]);
       }
@@ -239,3 +242,29 @@ function reorderDown(item_id) {
     after.parentNode.insertBefore(after, item);
   }
 }
+
+var indicate_step = (function() {
+  var indicator_position = 36000;
+  const STEPS = [
+          "UNTAP", "UPKEEP", "DRAW",
+          "PRECOMBAT_MAIN",
+          "BEGIN_COMBAT", "DECLARE_ATTACKERS", "DECLARE_BLOCKERS",
+          "FIRST_STRIKE_DAMAGE", "SECOND_STRIKE_DAMAGE", "END_OF_COMBAT",
+          "POSTCOMBAT_MAIN",
+          "END", "CLEANUP"];
+  return function (event){
+    var new_position = 172.5 - 15*STEPS.indexOf(event.step);
+    if (!event.active_player.is_me) {
+      new_position += 180;
+    }
+    while (new_position > indicator_position) {
+      new_position -= 360;
+    }
+    indicator_position = new_position;
+
+    var svgItem = document.getElementById("stepindicator")
+                          .contentDocument
+                          .getElementById("indicator");
+    svgItem.setAttribute("style", `transform: rotate(${indicator_position}deg);`);
+  };
+})();

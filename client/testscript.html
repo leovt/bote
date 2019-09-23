@@ -12,7 +12,14 @@
       <button onclick="send_answer()">Answer</button>
     </div>
   </div>
-  <div id="game" style="flex:70%">
+  <div style="flex:20%">
+    <h1>Opponent</h1>
+    <p id="op-life"></p>
+    <p id="op-hand"></p>
+    <p id="op-energy"></p>
+    <object type="image/svg+xml" data="steps.svg" id="stepindicator"></object>
+  </div>
+  <div style="flex:50%">
     <h1>Battlefield</h1>
     <div id="bf-theirs"></div>
     <div id="bf-mine"></div>
