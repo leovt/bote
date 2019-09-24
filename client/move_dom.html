@@ -21,44 +21,63 @@
     margin:5px;
     float:left;
   }
+  .card.active{
+    background:#f44;
+  }
+  .card.active.inmotion{
+    background:#c99;
+  }
   </style>
 </head>
 <body>
   <p>Based on <a href="https://stackoverflow.com/a/5212193"> a similar idea using jQuery</a></p>
-  <div class="target" id="left"><div class="card" id="card" onClick="move()">card</div><div class="card">card</div></div>
-  <div class="target" id="right"><div class="card">card</div></div>
+  <div class="target" id="left">
+    <div class="card active" id="card" onClick="move()"></div>
+    <div class="card"></div>
+  </div>
+  <div class="target" id="right">
+    <div class="card"></div>
+  </div>
 <script>
 function move(){
   var card = document.getElementById('card');
-  card.removeAttribute('onClick');
+  if (card.classList.contains('inmotion')) {
+    return;
+  }
+
+  var delay = 900;
   var target = document.getElementById('right');
   if (target == card.parentNode) {
     target = document.getElementById('left');
+    delay = 2000;
   }
 
-  var oldClientRect = card.getBoundingClientRect();
-  target.appendChild(card);
-  var newClientRect = card.getBoundingClientRect();
+  animatedMove(card, target, delay);
+}
 
-  document.body.appendChild(card);
+function animatedMove(element, target, delay){
+  var oldClientRect = element.getBoundingClientRect();
+  target.appendChild(element);
+  var newClientRect = element.getBoundingClientRect();
 
-  card.setAttribute('style',
+  document.body.appendChild(element);
+
+  element.setAttribute('style',
    `position: absolute;
     left: ${oldClientRect.left}px; top: ${oldClientRect.top}px;
     z-index:1000;
-    margin:0px;
-    background:#aaa;`);
+    margin:0px;`);
+
+  element.classList.add('inmotion');
 
   function finalizer(){
-    card.removeAttribute('style');
-    target.appendChild(card);
-    card.setAttribute('onClick', "move()");
+    target.appendChild(element);
+    element.removeAttribute('style');
+    element.classList.remove('inmotion');
   }
 
-  const delay=900;
-
-if (card.animate) {
-  card.animate([
+if (element.animate) {
+  element.animate([
   // keyframes
   { left: `${oldClientRect.left}px`, top: `${oldClientRect.top}px` },
   { left: `${newClientRect.left}px`, top: `${newClientRect.top}px` }
@@ -71,6 +90,7 @@ if (card.animate) {
   window.setTimeout(finalizer, delay);
 }
 else {
+  /* animation not available, immediately finalize */
   finalizer();
 }
 }
