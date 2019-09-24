@@ -60,9 +60,11 @@ class DrawCardEvent(Event):
 
     def serialize_for(self, player):
         d = {'event_id': self.__class__.__name__,
-             'player': self.player}
-        if self.player == player.name:
+             'player': self.player.serialize_for(player)}
+        if self.player is player:
             d['card'] = self.card.serialize()
+        else:
+            d['card_id'] = self.card_id
         return d
 
 @event_id('draw_empty')

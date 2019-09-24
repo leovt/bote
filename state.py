@@ -206,15 +206,13 @@ class Game:
         event.new_total = event.player.energy_pool.energy
 
     def handle_DrawCardEvent(self, event):
-        player = self.get_player(event.player)
-        card_popped = player.library.pop()
+        card_popped = event.player.library.pop()
         assert card_popped is event.card
         card_popped.known_identity = event.card_id
-        player.hand.add(card_popped)
+        event.player.hand.add(card_popped)
 
     def handle_DrawEmptyEvent(self, event):
-        player = self.get_player(event.player)
-        player.has_drawn_from_empty_library = True
+        event.player.has_drawn_from_empty_library = True
 
     def handle_ShuffleLibraryEvent(self, event):
         player = self.get_player(event.player)
@@ -542,9 +540,9 @@ def draw_card(game, player):
     if player.library:
         card = player.library[-1]
         card_id = next(game.unique_ids)
-        yield DrawCardEvent(player.name, card, card_id)
+        yield DrawCardEvent(player, card, card_id)
     else:
-        yield DrawEmptyEvent(player.name)
+        yield DrawEmptyEvent(player)
 
 def can_play_source(player):
     return True
