@@ -168,6 +168,7 @@ class DamageEvent(Event):
 class PlayerDamageEvent(Event):
     player: object
     damage: object
+    new_total: int = None
 
 @event_id('remove_from_combat')
 @dataclass(repr=False)

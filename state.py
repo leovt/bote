@@ -285,8 +285,8 @@ class Game:
         event.permanent.damage.append(Damage(event.damage))
 
     def handle_PlayerDamageEvent(self, event):
-        player = self.get_player(event.player)
-        player.life -= event.damage
+        event.player.life -= event.damage;
+        event.new_total = event.player.life;
 
     def handle_RemoveFromCombatEvent(self, event):
         event.permanent.attacking = False
@@ -481,7 +481,7 @@ def turn_based_actions(game):
                 yield DamageEvent(blocker, damage)
                 yield DamageEvent(attacker, blocker.strength)
             if remaining_strength:
-                yield PlayerDamageEvent(attacker.attacking.name, remaining_strength)
+                yield PlayerDamageEvent(attacker.attacking, remaining_strength)
         yield from open_priority(game)
     elif game.step == STEP.POSTCOMBAT_MAIN:
         for permanent in game.battlefield:

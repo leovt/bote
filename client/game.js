@@ -52,6 +52,10 @@ function log_refresh () {
         document.getElementById(result[key].player.is_me ? 'my-energy' : 'op-energy')
                 .innerText = "Energy: {0}";
       }
+      if (result[key].event_id == 'PlayerDamageEvent') {
+        document.getElementById(result[key].player.is_me ? 'my-life' : 'op-life')
+                .innerText = `Life: ${result[key].new_total}`;
+      }
       if (result[key].event_id == 'StepEvent') {
         indicate_step(result[key]);
       }
