@@ -42,12 +42,14 @@ class  QuestionEvent(Event):
 class PayEnergyEvent(Event):
     player: object
     energy: object
+    new_total: object = None
 
 @event_id('add_energy')
 @dataclass(repr=False)
 class AddEnergyEvent(Event):
     player: object
     energy: object
+    new_total: object = None
 
 @event_id('draw_card')
 @dataclass(repr=False)

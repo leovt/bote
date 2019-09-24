@@ -93,7 +93,7 @@ class Spell:
                 'card': self.card.serialize()}
 
 def cast_spell(game, player, card):
-    yield PayEnergyEvent(player.name, card.cost)
+    yield PayEnergyEvent(player, card.cost)
     yield CastSpellEvent(player.name, card)
 
 
@@ -189,21 +189,21 @@ class Game:
                 return player
 
     def handle(self, event):
-        self.log(event)
         handler = getattr(self, f'handle_{event.__class__.__name__}')
         handler(event)
+        self.log(event)
 
     def handle_QuestionEvent(self, event):
         self.question = event.question
         self.answer = None
 
     def handle_PayEnergyEvent(self, event):
-        player = self.get_player(event.player)
-        player.energy_pool.pay(event.energy)
+        event.player.energy_pool.pay(event.energy)
+        event.new_total = event.player.energy_pool.energy
 
     def handle_AddEnergyEvent(self, event):
-        player = self.get_player(event.player)
         event.player.energy_pool.add(event.energy)
+        event.new_total = event.player.energy_pool.energy
 
     def handle_DrawCardEvent(self, event):
         player = self.get_player(event.player)
