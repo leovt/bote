@@ -43,6 +43,15 @@ function log_refresh () {
       if (result[key].event_id == 'UntapEvent') {
         getCardElement(result[key].permanent.card).classList.remove('tap');
       }
+      if (result[key].event_id == 'AddEnergyEvent'
+          || result[key].event_id == 'PayEnergyEvent') {
+        document.getElementById(result[key].player.is_me ? 'my-energy' : 'op-energy')
+                .innerText = `Energy: ${result[key].new_total}`;
+      }
+      if (result[key].event_id == 'ClearPoolEvent') {
+        document.getElementById(result[key].player.is_me ? 'my-energy' : 'op-energy')
+                .innerText = "Energy: {0}";
+      }
       if (result[key].event_id == 'StepEvent') {
         indicate_step(result[key]);
       }

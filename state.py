@@ -228,8 +228,7 @@ class Game:
         self.active_player = event.active_player
 
     def handle_ClearPoolEvent(self, event):
-        player = self.get_player(event.player)
-        player.energy_pool.clear()
+        event.player.energy_pool.clear()
 
     def handle_PriorityEvent(self, event):
         self.priority_player = self.get_player(event.player)
@@ -364,7 +363,7 @@ def start_game(game):
 
 def end_of_step(game):
     for player in game.players:
-        yield ClearPoolEvent(player.name)
+        yield ClearPoolEvent(player)
     yield PriorityEvent(None)
     if game.step == STEP.CLEANUP:
         yield StepEvent(STEP.UNTAP, game.active_player.next_in_turn)
