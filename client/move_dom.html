@@ -76,23 +76,23 @@ function animatedMove(element, target, delay){
     element.classList.remove('inmotion');
   }
 
-if (element.animate) {
-  element.animate([
-  // keyframes
-  { left: `${oldClientRect.left}px`, top: `${oldClientRect.top}px` },
-  { left: `${newClientRect.left}px`, top: `${newClientRect.top}px` }
-  ], {
-  // timing options
-  duration: delay,
-  iterations: 1,
-  easing: "ease-in-out"
-  });
-  window.setTimeout(finalizer, delay);
-}
-else {
-  /* animation not available, immediately finalize */
-  finalizer();
-}
+  if (element.animate) {
+    element.animate([
+    // keyframes
+    { left: `${oldClientRect.left}px`, top: `${oldClientRect.top}px` },
+    { left: `${newClientRect.left}px`, top: `${newClientRect.top}px` }
+    ], {
+    // timing options
+    duration: delay,
+    iterations: 1,
+    easing: "ease-in-out"
+    });
+    window.setTimeout(finalizer, delay);
+  }
+  else {
+    /* animation not available, immediately finalize */
+    finalizer();
+  }
 }
 </script>
 </body>
