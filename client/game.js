@@ -179,7 +179,13 @@ function build_question_ui(event){
   choices.innerHTML = "";
   if (question.question == 'ChooseAction'){
     var first = true;
-    for (var action in question.choices) {
+    var makeOnclick = function(action) {
+      return function () {
+        document.getElementById(`action-${action}`).checked = true;
+        send_answer();
+      };
+    }
+    for (let action in question.choices) {
       choices.appendChild(make_input_with_label(
         type = 'radio',
         value = action,
@@ -192,6 +198,7 @@ function build_question_ui(event){
       if (question.choices[action].action == 'play') {
         let card = document.getElementById(question.choices[action].card_id);
         card.classList.add('playable');
+        card.onclick = makeOnclick(action);
       }
     }
   }
@@ -274,6 +281,7 @@ function send_answer () {
       if (question.choices[action].action == 'play') {
         let card = document.getElementById(question.choices[action].card_id);
         card.classList.remove('playable');
+        card.removeAttribute('onclick');
       }
     }
   }
