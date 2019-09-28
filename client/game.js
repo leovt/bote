@@ -76,6 +76,7 @@ function log_refresh () {
         indicate_step(event);
         if (event.step == 'BEGIN_COMBAT') {
           let combat = document.getElementById('combat');
+          combat.innerHTML = '';
           if (event.active_player.is_me) {
             combat.classList.remove('opponent-attacking');
           } else {
