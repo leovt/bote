@@ -557,37 +557,34 @@ def player_action(game, player):
     choices = {}
     actions = {}
 
-    def add_choice(choice, action):
+    def add_choice(effects, **description):
         key = next(game.unique_ids)
-        choices[key] = choice
-        actions[key] = action
+        choices[key] = description
+        actions[key] = effects
 
-    add_choice('Pass Priority', None)
+    add_choice(None, action='pass', text='Pass Priority')
 
     if (player is game.active_player and
         game.step in (STEP.PRECOMBAT_MAIN, STEP.POSTCOMBAT_MAIN) and
         not game.stack):
         if can_play_source(player):
             for source in player.hand.sources:
-                add_choice(f'play {source.name}', [
-                    (play_source, (game, player, source))
-                ])
+                add_choice([(play_source, (game, player, source))],
+                    action='play', card_id=source.known_identity, text=f'play {source.name}')
 
         for card in player.hand.creatures:
             if player.energy_pool.can_pay(card.cost):
-                add_choice(f'cast {card.name}', [
-                    (cast_spell, (game, player, card))
-                ])
+                add_choice([(cast_spell, (game, player, card))],
+                    action='play', card_id=card.known_identity, text=f'cast {card.name}')
 
     for permanent in game.battlefield.controlled_by(player):
-        for ability in permanent.abilities:
+        for ab_key, ability in enumerate(permanent.abilities):
             if isinstance(ability, ActivatableAbility):
                 if all(cost.can_pay(permanent, permanent.card) for cost in ability.cost):
-                    add_choice(f'activate {permanent.card.name}:{ability}', [
-                        (cost.pay, (permanent, permanent.card))
-                            for cost in ability.cost] + [
-                        (ability.effect, (player,))
-                    ])
+                    add_choice([(cost.pay, (permanent, permanent.card))
+                        for cost in ability.cost] + [(ability.effect, (player,))],
+                        action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
+                        text=f'activate {permanent.card.name}:{ability}')
     question = ChooseAction(player, choices)
     yield QuestionEvent(question)
     answer = game.answer

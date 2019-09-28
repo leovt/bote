@@ -12,7 +12,7 @@ def choices_text(question, choices):
     number_width = len(str(len(choices))) # width of number
     return '\n'.join(
         [question] +
-        [f'{i:{number_width}d}: {choice}'
+        [f'{i:{number_width}d}: {choice["text"] if isinstance(choice, dict) else str(choice)}'
          for i, choice in enumerate(choices, 1)])
 
 

@@ -19,7 +19,7 @@ class ChooseAction(Question):
             player = self.player.serialize_for(player),
         )
         if player is self.player:
-            ret.choices = {key:str(choice) for key, choice in self.choices.items()}
+            ret.choices = self.choices
         return ret
 
 class DeclareAttackers(Question):
