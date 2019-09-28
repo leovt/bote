@@ -184,11 +184,15 @@ function build_question_ui(event){
         type = 'radio',
         value = action,
         name = 'action',
-        label = question.choices[action],
+        label = question.choices[action].text,
         checked = first
       ));
       first = false;
       choices.appendChild(document.createElement('br'));
+      if (question.choices[action].action == 'play') {
+        let card = document.getElementById(question.choices[action].card_id);
+        card.classList.add('playable');
+      }
     }
   }
   else if (question.question == 'DeclareAttackers') {
@@ -264,6 +268,12 @@ function send_answer () {
       if (radios[i].checked) {
         answer = radios[i].value;
         break;
+      }
+    }
+    for (var action in question.choices) {
+      if (question.choices[action].action == 'play') {
+        let card = document.getElementById(question.choices[action].card_id);
+        card.classList.remove('playable');
       }
     }
   }

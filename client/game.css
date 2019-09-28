@@ -39,3 +39,7 @@
   margin: -3px;
   height: 2em;
 }
+
+.card.playable {
+  border: 5px solid #0f0;
+}
