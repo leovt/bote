@@ -46,11 +46,11 @@ function log_refresh () {
         } else {
           var bf = document.getElementById('bf-theirs');
         }
-        bf.appendChild(getCardElement(result[key].card));
+        animatedMove(getCardElement(result[key].card), bf);
       }
       if (result[key].event_id == 'CastSpellEvent' && result[key].card) {
         var stack = document.getElementById('stack');
-        stack.appendChild(getCardElement(result[key].card));
+        animatedMove(getCardElement(result[key].card), stack);
       }
       if (result[key].event_id == 'TapEvent') {
         getCardElement(result[key].permanent.card).classList.add('tap');
@@ -296,3 +296,43 @@ var indicate_step = (function() {
     svgItem.setAttribute("style", `transform: rotate(${indicator_position}deg);`);
   };
 })();
+
+function animatedMove(element, target, delay=900){
+  var oldClientRect = element.getBoundingClientRect();
+  target.appendChild(element);
+  var newClientRect = element.getBoundingClientRect();
+
+  document.body.appendChild(element);
+
+  element.setAttribute('style',
+   `position: absolute;
+    left: ${oldClientRect.left}px; top: ${oldClientRect.top}px;
+    z-index:1000;
+    margin:0px;`);
+
+  element.classList.add('inmotion');
+
+  function finalizer(){
+    target.appendChild(element);
+    element.removeAttribute('style');
+    element.classList.remove('inmotion');
+  }
+
+  if (element.animate) {
+    element.animate([
+    // keyframes
+    { left: `${oldClientRect.left}px`, top: `${oldClientRect.top}px` },
+    { left: `${newClientRect.left}px`, top: `${newClientRect.top}px` }
+    ], {
+    // timing options
+    duration: delay,
+    iterations: 1,
+    easing: "ease-in-out"
+    });
+    window.setTimeout(finalizer, delay);
+  }
+  else {
+    /* animation not available, immediately finalize */
+    finalizer();
+  }
+}
