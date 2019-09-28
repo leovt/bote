@@ -26,56 +26,57 @@ function log_refresh () {
     result = JSON.parse(httpRequest.responseText)
     var list = document.getElementById('log');
     for (var key in result) {
+      let event = result[key];
       log_count += 1;
-      console.log(result[key].event_id)
+      console.log(event.event_id)
       var entry = document.createElement('li');
-      entry.appendChild(document.createTextNode(JSON.stringify(result[key])));
-      if (result[key].event_id == 'DrawCardEvent'){
-        if (result[key].player.is_me) {
+      entry.appendChild(document.createTextNode(JSON.stringify(event)));
+      if (event.event_id == 'DrawCardEvent'){
+        if (event.player.is_me) {
           var hand = document.getElementById('hand');
-          hand.appendChild(getCardElement(result[key].card));
+          hand.appendChild(getCardElement(event.card));
         } else {
           var hand = document.getElementById('op-hand');
-          hand.appendChild(getBackfaceCardElement(result[key].card_id));
+          hand.appendChild(getBackfaceCardElement(event.card_id));
         }
       }
-      if (result[key].event_id == 'EnterTheBattlefieldEvent' && result[key].card) {
+      if (event.event_id == 'EnterTheBattlefieldEvent' && event.card) {
         var bf;
-        if (result[key].controller.is_me){
+        if (event.controller.is_me){
           var bf = document.getElementById('bf-mine');
         } else {
           var bf = document.getElementById('bf-theirs');
         }
-        animatedMove(getCardElement(result[key].card), bf);
+        animatedMove(getCardElement(event.card), bf);
       }
-      if (result[key].event_id == 'CastSpellEvent' && result[key].card) {
+      if (event.event_id == 'CastSpellEvent' && event.card) {
         var stack = document.getElementById('stack');
-        animatedMove(getCardElement(result[key].card), stack);
+        animatedMove(getCardElement(event.card), stack);
       }
-      if (result[key].event_id == 'TapEvent') {
-        getCardElement(result[key].permanent.card).classList.add('tap');
+      if (event.event_id == 'TapEvent') {
+        getCardElement(event.permanent.card).classList.add('tap');
       }
-      if (result[key].event_id == 'UntapEvent') {
-        getCardElement(result[key].permanent.card).classList.remove('tap');
+      if (event.event_id == 'UntapEvent') {
+        getCardElement(event.permanent.card).classList.remove('tap');
       }
-      if (result[key].event_id == 'AddEnergyEvent'
-          || result[key].event_id == 'PayEnergyEvent') {
-        document.getElementById(result[key].player.is_me ? 'my-energy' : 'op-energy')
-                .innerText = `Energy: ${result[key].new_total}`;
+      if (event.event_id == 'AddEnergyEvent'
+          || event.event_id == 'PayEnergyEvent') {
+        document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
+                .innerText = `Energy: ${event.new_total}`;
       }
-      if (result[key].event_id == 'ClearPoolEvent') {
-        document.getElementById(result[key].player.is_me ? 'my-energy' : 'op-energy')
+      if (event.event_id == 'ClearPoolEvent') {
+        document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
                 .innerText = "Energy: {0}";
       }
-      if (result[key].event_id == 'PlayerDamageEvent') {
-        document.getElementById(result[key].player.is_me ? 'my-life' : 'op-life')
-                .innerText = `Life: ${result[key].new_total}`;
+      if (event.event_id == 'PlayerDamageEvent') {
+        document.getElementById(event.player.is_me ? 'my-life' : 'op-life')
+                .innerText = `Life: ${event.new_total}`;
       }
-      if (result[key].event_id == 'StepEvent') {
-        indicate_step(result[key]);
+      if (event.event_id == 'StepEvent') {
+        indicate_step(event);
       }
-      if (result[key].event_id == 'QuestionEvent' && result[key].question.choices) {
-        build_question_ui(result[key]);
+      if (event.event_id == 'QuestionEvent' && event.question.choices) {
+        build_question_ui(event);
       }
       list.appendChild(entry);
     }
