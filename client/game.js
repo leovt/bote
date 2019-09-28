@@ -84,7 +84,7 @@ function log_refresh () {
           }
         }
       }
-      if (event.event_id == 'QuestionEvent' && event.question.choices) {
+      if (event.event_id == 'QuestionEvent' && event.question.player.is_me) {
         build_question_ui(event);
       }
       if (event.event_id == 'AttackEvent') {
@@ -98,6 +98,14 @@ function log_refresh () {
         fightbox.appendChild(blockers);
         document.getElementById('combat').appendChild(fightbox);
         animatedMove(attacker, fightbox);
+      }
+      if (event.event_id == 'BlockEvent') {
+        let attacker = getCardElement(event.attacker.card);
+        let blockers = document.getElementById(`blk-${attacker.id}`);
+        for (let i = 0; i<event.blockers.length; i++) {
+          let blocker = getCardElement(event.blockers[i].card);
+          animatedMove(blocker, blockers);
+        }
       }
       if (event.event_id == 'RemoveFromCombatEvent') {
         let card = getCardElement(event.permanent.card);

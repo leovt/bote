@@ -23,5 +23,14 @@
 }
 
 #combat.opponent-attacking {
-  transform: rotate(180deg);  
+  transform: rotate(180deg);
+}
+
+.blockers {
+  transform: rotate(180deg);
+}
+
+.fightbox {
+  width: max-content;
+  border: 1px solid black;
 }

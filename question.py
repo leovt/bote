@@ -13,10 +13,10 @@ class ChooseAction(Question):
         return (player is self.player and
                 answer in self.choices)
 
-    def serialize_for(self, player=None):
+    def serialize_for(self, player):
         ret = Namespace(
-            question='ChooseAction',
-            player=self.player.name,
+            question = 'ChooseAction',
+            player = self.player.serialize_for(player),
         )
         if player is self.player:
             ret.choices = {key:str(choice) for key, choice in self.choices.items()}
@@ -33,10 +33,10 @@ class DeclareAttackers(Question):
                 all(x in self.choices for x in answer) and
                 len(answer) == len(set(answer)))
 
-    def serialize_for(self, _unused):
+    def serialize_for(self, player):
         return Namespace(
             question = 'DeclareAttackers',
-            player = self.player.name,
+            player = self.player.serialize_for(player),
             choices = {key:str(choice) for key, choice in self.choices.items()}
         )
 
@@ -52,10 +52,10 @@ class DeclareBlockers(Question):
                     v in self.choices[k]['attackers']
                     for k,v in answer.items()))
 
-    def serialize_for(self, _unused):
+    def serialize_for(self, player):
         return dict(
             question = 'DeclareBlockers',
-            player = self.player.name,
+            player = self.player.serialize_for(player),
             choices = {key: {'candidate': str(choice['candidate']),
                              'attackers': {k: str(v) for k, v in choice['attackers'].items()}}
                        for key, choice in self.choices.items()}
@@ -76,10 +76,10 @@ class OrderBlockers(Question):
                     for key, ans in answer.items())
                 )
 
-    def serialize_for(self, _unused):
+    def serialize_for(self, player):
         return Namespace(
             question = 'OrderBlockers',
-            player = self.player.name,
+            player = self.player.serialize_for(player),
             choices = {key: {'attacker': str(choice['attacker']),
                              'blockers': {k: str(v) for k, v in choice['blockers'].items()}}
                        for key, choice in self.choices.items()}
