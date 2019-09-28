@@ -13,6 +13,8 @@ class Event:
                 return value.serialize_for(player)
             elif hasattr(value, 'serialize'):
                 return value.serialize()
+            elif isinstance(value, list):
+                return [try_serialize(x) for x in value]
             else:
                 return str(value)
         d = {'event_id': self.__class__.__name__}
