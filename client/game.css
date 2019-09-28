@@ -16,3 +16,12 @@
   height: 3em;
   margin: 2px;
 }
+
+#combat {
+  background: orange;
+  padding: 10px;
+}
+
+#combat.opponent-attacking {
+  transform: rotate(180deg);  
+}

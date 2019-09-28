@@ -74,10 +74,41 @@ function log_refresh () {
       }
       if (event.event_id == 'StepEvent') {
         indicate_step(event);
+        if (event.step == 'BEGIN_COMBAT') {
+          let combat = document.getElementById('combat');
+          if (event.active_player.is_me) {
+            combat.classList.remove('opponent-attacking');
+          } else {
+            combat.classList.add('opponent-attacking');
+          }
+        }
       }
       if (event.event_id == 'QuestionEvent' && event.question.choices) {
         build_question_ui(event);
       }
+      if (event.event_id == 'AttackEvent') {
+        let attacker = getCardElement(event.attacker.card);
+        let fightbox = document.createElement('div');
+        fightbox.setAttribute('id', `fbx-${attacker.id}`);
+        fightbox.setAttribute('class', 'fightbox');
+        let blockers = document.createElement('div');
+        blockers.setAttribute('id', `blk-${attacker.id}`);
+        blockers.setAttribute('class', 'blockers');
+        fightbox.appendChild(blockers);
+        document.getElementById('combat').appendChild(fightbox);
+        animatedMove(attacker, fightbox);
+      }
+      if (event.event_id == 'RemoveFromCombatEvent') {
+        let card = getCardElement(event.permanent.card);
+        let bf;
+        if (event.permanent.controller.is_me){
+          bf = document.getElementById('bf-mine');
+        } else {
+          bf = document.getElementById('bf-theirs');
+        }
+        animatedMove(card, bf);
+      }
+
       list.appendChild(entry);
     }
     list.scrollTop = list.scrollHeight; //Scroll to bottom of log
@@ -299,6 +330,9 @@ var indicate_step = (function() {
 })();
 
 function animatedMove(element, target, delay=900){
+  if (target === element.parentNode){
+    return;
+  }
   var oldClientRect = element.getBoundingClientRect();
   target.appendChild(element);
   var newClientRect = element.getBoundingClientRect();
