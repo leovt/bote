@@ -49,6 +49,15 @@ function log_refresh () {
         }
         animatedMove(getCardElement(event.card), bf);
       }
+      if (event.event_id == 'PutInGraveyardEvent') {
+        let target;
+        if (event.card.owner.is_me){
+          target = document.getElementById('my-graveyard');
+        } else {
+          target = document.getElementById('op-graveyard');
+        }
+        animatedMove(getCardElement(event.card), target);
+      }
       if (event.event_id == 'CastSpellEvent' && event.card) {
         var stack = document.getElementById('stack');
         animatedMove(getCardElement(event.card), stack);

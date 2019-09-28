@@ -34,3 +34,8 @@
   width: max-content;
   border: 1px solid black;
 }
+
+.graveyard > .card {
+  margin: -3px;
+  height: 2em;
+}
