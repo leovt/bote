@@ -88,9 +88,9 @@ class Spell:
     def __str__(self):
         return f'cast {self.card.name} @{self.controller.name}'
 
-    def serialize(self):
+    def serialize_for(self, player):
         return {'controller': self.controller.name,
-                'card': self.card.serialize()}
+                'card': self.card.serialize_for(player)}
 
 def cast_spell(game, player, card):
     yield PayEnergyEvent(player, card.cost)
@@ -136,7 +136,7 @@ class Permanent:
         return f'{self.card.name} @{self.controller.name}{"{T}" if self.tapped else ""}'
 
     def serialize_for(self, player):
-        return {'card': self.card.serialize(),
+        return {'card': self.card.serialize_for(player),
                 'controller': self.controller.serialize_for(player),
                 'perm_id': self.perm_id,
                }

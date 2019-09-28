@@ -64,7 +64,7 @@ class DrawCardEvent(Event):
         d = {'event_id': self.__class__.__name__,
              'player': self.player.serialize_for(player)}
         if self.player is player:
-            d['card'] = self.card.serialize()
+            d['card'] = self.card.serialize_for(player)
         else:
             d['card_id'] = self.card_id
         return d
