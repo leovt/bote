@@ -70,6 +70,16 @@ def create_data_url(filename):
     return f'data:{mimetype};base64,{data}'
 
 
+def str_ability(a, lang):
+    if 'cost' in a:
+        return f"{a['cost']}: {describe_effect(a['effect'], lang)}"
+    if 'keyword' in a:
+        return a['keyword'] #TODO: translate
+    if 'trigger' in a:
+        return str(a)
+
+
+
 @app.route('/card/svg/<art_id>/<lang>')
 def art_svg(art_id, lang):
     art_card = cards.art_card_spec(int(art_id))
@@ -84,5 +94,5 @@ def art_svg(art_id, lang):
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
         attribution = art_card['attribution'],
         image_url = create_data_url('client/'+art_card['image']),
-        attributes = [f"{a['cost']}: {describe_effect(a['effect'], lang)}" for a in card.get('abilities', [])],
+        attributes = [str_ability(a, lang) for a in card.get('abilities', [])],
     ), 200, {'Content-Type': 'image/svg+xml'}

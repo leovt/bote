@@ -44,7 +44,7 @@ class RuleCard:
                                        parse_effect(ab_spec['effect']),
                                        ab_spec.get('energy_ability', False)))
             else:
-                assert False, 'Abilities other than activatable not implemented'
+                print(f'{card_id}: Abilities other than activatable are not implemented')
 
         return RuleCard(
             card_id = spec['card_id'],
