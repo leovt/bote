@@ -43,3 +43,12 @@
 .card.playable {
   border: 5px solid #0f0;
 }
+
+.card.activateable {
+  border: 5px solid #4ef;
+}
+
+.menu {
+  position: absolute;
+  z-index: 1000;
+}

@@ -200,6 +200,28 @@ function build_question_ui(event){
         card.classList.add('playable');
         card.onclick = makeOnclick(action);
       }
+      if (question.choices[action].action == 'activate') {
+        let card = document.getElementById(question.choices[action].card_id);
+        card.classList.add('activateable');
+        let menu = document.getElementById('menu-'+question.choices[action].card_id);
+        if (!menu) {
+          menu = document.createElement('div');
+          menu.setAttribute('id', 'menu-'+question.choices[action].card_id);
+          menu.setAttribute('class', 'menu');
+          menu.setAttribute('style', 'display: none;');
+          document.body.appendChild(menu);
+
+        }
+        let button = document.createElement('button');
+        button.appendChild(document.createTextNode(question.choices[action].text));
+        button.onclick = makeOnclick(action);
+        menu.appendChild(button);
+        card.onmouseenter = function (event) {
+          let menu = document.getElementById('menu-'+this.id);
+          let rect = this.getBoundingClientRect();
+          menu.setAttribute('style', `left:${rect.right}px; top:${rect.top}px`);
+        };
+      }
     }
   }
   else if (question.question == 'DeclareAttackers') {
@@ -282,6 +304,12 @@ function send_answer () {
         let card = document.getElementById(question.choices[action].card_id);
         card.classList.remove('playable');
         card.removeAttribute('onclick');
+      }
+      if (question.choices[action].action == 'activate') {
+        let card = document.getElementById(question.choices[action].card_id);
+        card.classList.remove('activateable');
+        let menu = document.getElementById('menu-'+question.choices[action].card_id);
+        if (menu) menu.parentNode.removeChild(menu);
       }
     }
   }
