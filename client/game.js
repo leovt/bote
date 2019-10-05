@@ -23,29 +23,28 @@ function getBackfaceCardElement(card_id){
 function log_refresh () {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
-    result = JSON.parse(httpRequest.responseText)
+    result = JSON.parse(httpRequest.responseText);
     var list = document.getElementById('log');
-    for (var key in result) {
-      let event = result[key];
+    forEachKeyValue(result, (key, event) => {
       log_count += 1;
-      console.log(event.event_id)
-      var entry = document.createElement('li');
+      console.log(event.event_id);
+      let entry = document.createElement('li');
       entry.appendChild(document.createTextNode(JSON.stringify(event)));
       if (event.event_id == 'DrawCardEvent'){
         if (event.player.is_me) {
-          var hand = document.getElementById('hand');
+          let hand = document.getElementById('hand');
           hand.appendChild(getCardElement(event.card));
         } else {
-          var hand = document.getElementById('op-hand');
+          let hand = document.getElementById('op-hand');
           hand.appendChild(getBackfaceCardElement(event.card_id));
         }
       }
       if (event.event_id == 'EnterTheBattlefieldEvent' && event.card) {
-        var bf;
+        let bf;
         if (event.controller.is_me){
-          var bf = document.getElementById('bf-mine');
+          bf = document.getElementById('bf-mine');
         } else {
-          var bf = document.getElementById('bf-theirs');
+          bf = document.getElementById('bf-theirs');
         }
         animatedMove(getCardElement(event.card), bf);
       }
@@ -59,7 +58,7 @@ function log_refresh () {
         animatedMove(getCardElement(event.card), target);
       }
       if (event.event_id == 'CastSpellEvent' && event.card) {
-        var stack = document.getElementById('stack');
+        let stack = document.getElementById('stack');
         animatedMove(getCardElement(event.card), stack);
       }
       if (event.event_id == 'TapEvent') {
@@ -68,8 +67,7 @@ function log_refresh () {
       if (event.event_id == 'UntapEvent') {
         getCardElement(event.permanent.card).classList.remove('tap');
       }
-      if (event.event_id == 'AddEnergyEvent'
-          || event.event_id == 'PayEnergyEvent') {
+      if (event.event_id == 'AddEnergyEvent' || event.event_id == 'PayEnergyEvent') {
         document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
                 .innerText = `Energy: ${event.new_total}`;
       }
@@ -128,11 +126,11 @@ function log_refresh () {
       }
 
       list.appendChild(entry);
-    }
+    });
     list.scrollTop = list.scrollHeight; //Scroll to bottom of log
-  })
+  });
   httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
-  httpRequest.send()
+  httpRequest.send();
 }
 
 function make_input_with_label(type, value, name, label, checked){
@@ -172,6 +170,14 @@ function make_reorderable_listitem(value, label) {
   return li;
 }
 
+function forEachKeyValue(object, receiver) {
+  for (var key in object) {
+    // skip loop if the property is from prototype
+    if (!object.hasOwnProperty(key)) continue;
+    receiver(key, object[key]);
+  }
+}
+
 function build_question_ui(event){
   question = event.question;
   document.getElementById('answer').setAttribute('style', '');
@@ -179,42 +185,41 @@ function build_question_ui(event){
   choices.innerHTML = "";
   if (question.question == 'ChooseAction'){
     var first = true;
-    var makeOnclick = function(action) {
+    var makeOnclick = function(action_id) {
       return function () {
-        document.getElementById(`action-${action}`).checked = true;
+        document.getElementById(`action-${action_id}`).checked = true;
         send_answer();
       };
-    }
-    for (let action in question.choices) {
+    };
+    forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(make_input_with_label(
         type = 'radio',
-        value = action,
+        value = action_id,
         name = 'action',
-        label = question.choices[action].text,
+        label = action.text,
         checked = first
       ));
       first = false;
       choices.appendChild(document.createElement('br'));
-      if (question.choices[action].action == 'play') {
-        let card = document.getElementById(question.choices[action].card_id);
+      if (action.action == 'play') {
+        let card = document.getElementById(action.card_id);
         card.classList.add('playable');
-        card.onclick = makeOnclick(action);
+        card.onclick = makeOnclick(action_id);
       }
-      if (question.choices[action].action == 'activate') {
-        let card = document.getElementById(question.choices[action].card_id);
+      if (action.action == 'activate') {
+        let card = document.getElementById(action.card_id);
         card.classList.add('activateable');
-        let menu = document.getElementById('menu-'+question.choices[action].card_id);
+        let menu = document.getElementById('menu-'+action.card_id);
         if (!menu) {
           menu = document.createElement('div');
-          menu.setAttribute('id', 'menu-'+question.choices[action].card_id);
+          menu.setAttribute('id', 'menu-'+action.card_id);
           menu.setAttribute('class', 'menu');
           menu.setAttribute('style', 'display: none;');
           document.body.appendChild(menu);
-
         }
         let button = document.createElement('button');
-        button.appendChild(document.createTextNode(question.choices[action].text));
-        button.onclick = makeOnclick(action);
+        button.appendChild(document.createTextNode(action.text));
+        button.onclick = makeOnclick(action_id);
         menu.appendChild(button);
         card.onmouseenter = function (event) {
           let menu = document.getElementById('menu-'+this.id);
@@ -222,62 +227,59 @@ function build_question_ui(event){
           menu.setAttribute('style', `left:${rect.right}px; top:${rect.top}px`);
         };
       }
-    }
+    });
   }
   else if (question.question == 'DeclareAttackers') {
-    choices.innerHTML = "";
-    for (var action in question.choices) {
+    forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(make_input_with_label(
         type = 'checkbox',
-        value = action,
+        value = action_id,
         name = 'attacker',
-        label = question.choices[action],
+        label = action,
         checked = false
       ));
       choices.appendChild(document.createElement('br'));
-    }
+    });
   }
   else if (question.question == 'DeclareBlockers') {
-    choices.innerHTML = "";
-    for (var action in question.choices) {
-      choices.appendChild(document.createTextNode(question.choices[action].candidate));
+    forEachKeyValue(question.choices, (action_id, action) => {
+      choices.appendChild(document.createTextNode(action.candidate));
       choices.appendChild(make_input_with_label(
         type = 'radio',
         value = 'noblock',
-        name = 'cand-' + action,
+        name = 'cand-' + action_id,
         label = 'Do not block',
         checked = true
       ));
       choices.appendChild(document.createTextNode(' or block one of: '));
-      for (var attacker in question.choices[action].attackers){
+      forEachKeyValue(action.attackers, (attacker_id, attacker) => {
         choices.appendChild(make_input_with_label(
           type = 'radio',
-          value = attacker,
-          name = 'cand-' + action,
-          label = question.choices[action].attackers[attacker],
+          value = attacker_id,
+          name = 'cand-' + action_id,
+          label = attacker,
           checked = false
         ));
-      }
+      });
       choices.appendChild(document.createElement('br'));
-    }
+    });
   }
   else if (question.question == 'OrderBlockers') {
     choices.innerHTML = "";
-    for (var action in question.choices) {
-      choices.appendChild(document.createTextNode(question.choices[action].attacker));
+    forEachKeyValue(question.choices, (action_id, action) => {
+      choices.appendChild(document.createTextNode(action.attacker));
       var list = document.createElement('ol');
-      list.setAttribute('id', action);
+      list.setAttribute('id', action_id);
       choices.appendChild(list);
-      for (var blocker in question.choices[action].blockers){
+      for (var blocker in action.blockers){
         list.appendChild(make_reorderable_listitem(
           value = blocker,
-          label = question.choices[action].blockers[blocker]
+          label = action.blockers[blocker]
         ));
       }
-    }
+    });
   }
   else {
-    choices.innerHTML = "";
     choices.appendChild(document.createTextNode(JSON.stringify(question)));
   }
 }
@@ -293,30 +295,30 @@ function send_answer () {
   var answer;
   if (question.question == 'ChooseAction'){
     var radios = document.getElementsByName('action');
-    for (var i = 0, length = radios.length; i < length; i++) {
+    for (let i = 0, length = radios.length; i < length; i++) {
       if (radios[i].checked) {
         answer = radios[i].value;
         break;
       }
     }
-    for (var action in question.choices) {
-      if (question.choices[action].action == 'play') {
-        let card = document.getElementById(question.choices[action].card_id);
+    forEachKeyValue(question.choices, (action_id, action) => {
+      if (action.action == 'play') {
+        let card = document.getElementById(action.card_id);
         card.classList.remove('playable');
         card.removeAttribute('onclick');
       }
-      if (question.choices[action].action == 'activate') {
-        let card = document.getElementById(question.choices[action].card_id);
+      if (action.action == 'activate') {
+        let card = document.getElementById(action.card_id);
         card.classList.remove('activateable');
-        let menu = document.getElementById('menu-'+question.choices[action].card_id);
+        let menu = document.getElementById('menu-'+action.card_id);
         if (menu) menu.parentNode.removeChild(menu);
       }
-    }
+    });
   }
   if (question.question == 'DeclareAttackers'){
     answer = [];
     var attackers = document.getElementsByName('attacker');
-    for (var i = 0, length = attackers.length; i < length; i++) {
+    for (let i = 0, length = attackers.length; i < length; i++) {
       if (attackers[i].checked) {
         answer.push(attackers[i].value);
       }
@@ -324,25 +326,25 @@ function send_answer () {
   }
   if (question.question == 'DeclareBlockers'){
     answer = {};
-    for (var action in question.choices) {
-      var attackers = document.getElementsByName('cand-' + action);
+    forEachKeyValue(question.choices, (action_id, action) => {
+      var attackers = document.getElementsByName('cand-' + action_id);
       for (var i = 0, length = attackers.length; i < length; i++) {
         if (attackers[i].checked) {
           if (attackers[i].value != 'noblock')
-            answer[action] = attackers[i].value;
+            answer[action_id] = attackers[i].value;
           break;
         }
       }
-    }
+    });
   }
   if (question.question == 'OrderBlockers'){
-    var choices = document.getElementById('choices');
+    let choices = document.getElementById('choices');
     answer = {};
-    var attackers = choices.getElementsByTagName('ol');
-    for (var i = 0, length = attackers.length; i < length; i++) {
+    let attackers = choices.getElementsByTagName('ol');
+    for (let i = 0, length = attackers.length; i < length; i++) {
       var ans = [];
       var blockers = attackers[i].getElementsByTagName('li');
-      for (var j = 0; j < blockers.length; j++) {
+      for (let j = 0; j < blockers.length; j++) {
         ans.push(blockers[j].id);
       }
       answer[attackers[i].id] = ans;
