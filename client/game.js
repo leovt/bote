@@ -342,28 +342,20 @@ function send_answer () {
   if (question.question == 'DeclareBlockers'){
     answer = {};
     forEachKeyValue(question.choices, (action_id, action) => {
-      var attackers = document.getElementsByName('cand-' + action_id);
-      for (var i = 0, length = attackers.length; i < length; i++) {
-        if (attackers[i].checked) {
-          if (attackers[i].value != 'noblock')
-            answer[action_id] = attackers[i].value;
-          break;
-        }
-      }
+      let attackers = document.getElementsByName('cand-' + action_id);
+      let value = Array.from(attackers).find(x => x.checked).value;
+      if (value != 'noblock') answer[action_id] = value;
     });
   }
   if (question.question == 'OrderBlockers'){
     let choices = document.getElementById('choices');
     answer = {};
     let attackers = choices.getElementsByTagName('ol');
-    for (let i = 0, length = attackers.length; i < length; i++) {
-      var ans = [];
-      var blockers = attackers[i].getElementsByTagName('li');
-      for (let j = 0; j < blockers.length; j++) {
-        ans.push(blockers[j].id);
-      }
-      answer[attackers[i].id] = ans;
-    }
+    attackers.forEach(attacker => {
+      let blockers = attacker.getElementsByTagName('li');
+      let ans = Array.from(blockers).map(x => x.id);
+      answer[attacker.id] = ans;
+    });
   }
   cleanupFunctions[question.question]();
   httpRequest.send(JSON.stringify({"answer": answer}));
