@@ -284,6 +284,44 @@ function build_question_ui(event){
   }
 }
 
+
+function cleanupChooseActionUI() {
+  forEachKeyValue(question.choices, (action_id, action) => {
+    if (action.action == 'play') {
+      let card = document.getElementById(action.card_id);
+      card.classList.remove('playable');
+      card.removeAttribute('onclick');
+    }
+    if (action.action == 'activate') {
+      let card = document.getElementById(action.card_id);
+      card.classList.remove('activateable');
+      let menu = document.getElementById('menu-'+action.card_id);
+      if (menu) menu.parentNode.removeChild(menu);
+    }
+  });
+}
+
+
+function cleanupDeclareAttackersUI(){
+}
+
+
+function cleanupDeclareBlockersUI(){
+}
+
+
+function cleanupOrderBlockersUI(){
+}
+
+
+cleanupFunctions = {
+  'ChooseAction': cleanupChooseActionUI,
+  'DeclareAttackers': cleanupDeclareAttackersUI,
+  'DeclareBlockers': cleanupDeclareBlockersUI,
+  'OrderBlockers': cleanupOrderBlockersUI
+};
+
+
 function send_answer () {
   var httpRequest = new XMLHttpRequest();
   httpRequest.open("POST", `${game_uri}/answer`);
@@ -294,30 +332,12 @@ function send_answer () {
   });
   var answer;
   if (question.question == 'ChooseAction'){
-    var radios = document.getElementsByName('action');
+    let radios = document.getElementsByName('action');
     answer = Array.from(radios).find(r => r.checked).value;
-    forEachKeyValue(question.choices, (action_id, action) => {
-      if (action.action == 'play') {
-        let card = document.getElementById(action.card_id);
-        card.classList.remove('playable');
-        card.removeAttribute('onclick');
-      }
-      if (action.action == 'activate') {
-        let card = document.getElementById(action.card_id);
-        card.classList.remove('activateable');
-        let menu = document.getElementById('menu-'+action.card_id);
-        if (menu) menu.parentNode.removeChild(menu);
-      }
-    });
   }
   if (question.question == 'DeclareAttackers'){
-    answer = [];
-    var attackers = document.getElementsByName('attacker');
-    for (let i = 0, length = attackers.length; i < length; i++) {
-      if (attackers[i].checked) {
-        answer.push(attackers[i].value);
-      }
-    }
+    let attackers = document.getElementsByName('attacker');
+    answer = Array.from(attackers).filter(x => x.checked).map(x => x.value);
   }
   if (question.question == 'DeclareBlockers'){
     answer = {};
@@ -345,6 +365,7 @@ function send_answer () {
       answer[attackers[i].id] = ans;
     }
   }
+  cleanupFunctions[question.question]();
   httpRequest.send(JSON.stringify({"answer": answer}));
 }
 
