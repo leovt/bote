@@ -295,12 +295,7 @@ function send_answer () {
   var answer;
   if (question.question == 'ChooseAction'){
     var radios = document.getElementsByName('action');
-    for (let i = 0, length = radios.length; i < length; i++) {
-      if (radios[i].checked) {
-        answer = radios[i].value;
-        break;
-      }
-    }
+    answer = Array.from(radios).find(r => r.checked).value;
     forEachKeyValue(question.choices, (action_id, action) => {
       if (action.action == 'play') {
         let card = document.getElementById(action.card_id);
