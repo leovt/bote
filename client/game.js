@@ -20,114 +20,106 @@ function getBackfaceCardElement(card_id){
   return element;
 }
 
+function handleGameEvent(event) {
+  log_count += 1;
+  console.log(event.event_id);
+  let entry = document.createElement('li');
+  entry.appendChild(document.createTextNode(JSON.stringify(event)));
+  if (event.event_id == 'DrawCardEvent'){
+    if (event.player.is_me) {
+      let hand = document.getElementById('hand');
+      hand.appendChild(getCardElement(event.card));
+    } else {
+      let hand = document.getElementById('op-hand');
+      hand.appendChild(getBackfaceCardElement(event.card_id));
+    }
+  }
+  if (event.event_id == 'EnterTheBattlefieldEvent') {
+    let tgt = document.getElementById(event.controller.is_me ? 'bf-mine' : 'bf-theirs');
+    animatedMove(getCardElement(event.card), tgt);
+  }
+  if (event.event_id == 'PutInGraveyardEvent') {
+    let tgt = document.getElementById(event.controller.is_me ? 'my-graveyard' : 'op-graveyard');
+    animatedMove(getCardElement(event.card), tgt);
+  }
+  if (event.event_id == 'CastSpellEvent' && event.card) {
+    let tgt = document.getElementById('stack');
+    animatedMove(getCardElement(event.card), tgt);
+  }
+  if (event.event_id == 'TapEvent') {
+    getCardElement(event.permanent.card).classList.add('tap');
+  }
+  if (event.event_id == 'UntapEvent') {
+    getCardElement(event.permanent.card).classList.remove('tap');
+  }
+  if (event.event_id == 'AddEnergyEvent' || event.event_id == 'PayEnergyEvent') {
+    document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
+            .innerText = `Energy: ${event.new_total}`;
+  }
+  if (event.event_id == 'ClearPoolEvent') {
+    document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
+            .innerText = "Energy: {0}";
+  }
+  if (event.event_id == 'PlayerDamageEvent') {
+    document.getElementById(event.player.is_me ? 'my-life' : 'op-life')
+            .innerText = `Life: ${event.new_total}`;
+  }
+  if (event.event_id == 'StepEvent') {
+    indicate_step(event);
+    if (event.step == 'BEGIN_COMBAT') {
+      let combat = document.getElementById('combat');
+      combat.innerHTML = '';
+      if (event.active_player.is_me) {
+        combat.classList.remove('opponent-attacking');
+      } else {
+        combat.classList.add('opponent-attacking');
+      }
+    }
+  }
+  if (event.event_id == 'QuestionEvent' && event.question.player.is_me) {
+    build_question_ui(event);
+  }
+  if (event.event_id == 'AttackEvent') {
+    let attacker = getCardElement(event.attacker.card);
+    let fightbox = document.createElement('div');
+    fightbox.setAttribute('id', `fbx-${attacker.id}`);
+    fightbox.setAttribute('class', 'fightbox');
+    let blockers = document.createElement('div');
+    blockers.setAttribute('id', `blk-${attacker.id}`);
+    blockers.setAttribute('class', 'blockers');
+    fightbox.appendChild(blockers);
+    document.getElementById('combat').appendChild(fightbox);
+    animatedMove(attacker, fightbox);
+  }
+  if (event.event_id == 'BlockEvent') {
+    let attacker = getCardElement(event.attacker.card);
+    let blockers = document.getElementById(`blk-${attacker.id}`);
+    for (let i = 0; i<event.blockers.length; i++) {
+      let blocker = getCardElement(event.blockers[i].card);
+      animatedMove(blocker, blockers);
+    }
+  }
+  if (event.event_id == 'RemoveFromCombatEvent') {
+    let card = getCardElement(event.permanent.card);
+    let bf;
+    if (event.permanent.controller.is_me){
+      bf = document.getElementById('bf-mine');
+    } else {
+      bf = document.getElementById('bf-theirs');
+    }
+    animatedMove(card, bf);
+  }
+  let list = document.getElementById('log');
+  list.appendChild(entry);
+  list.scrollTop = list.scrollHeight; //Scroll to bottom of log
+}
+
+
 function log_refresh () {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     result = JSON.parse(httpRequest.responseText);
-    var list = document.getElementById('log');
-    forEachKeyValue(result, (key, event) => {
-      log_count += 1;
-      console.log(event.event_id);
-      let entry = document.createElement('li');
-      entry.appendChild(document.createTextNode(JSON.stringify(event)));
-      if (event.event_id == 'DrawCardEvent'){
-        if (event.player.is_me) {
-          let hand = document.getElementById('hand');
-          hand.appendChild(getCardElement(event.card));
-        } else {
-          let hand = document.getElementById('op-hand');
-          hand.appendChild(getBackfaceCardElement(event.card_id));
-        }
-      }
-      if (event.event_id == 'EnterTheBattlefieldEvent' && event.card) {
-        let bf;
-        if (event.controller.is_me){
-          bf = document.getElementById('bf-mine');
-        } else {
-          bf = document.getElementById('bf-theirs');
-        }
-        animatedMove(getCardElement(event.card), bf);
-      }
-      if (event.event_id == 'PutInGraveyardEvent') {
-        let target;
-        if (event.card.owner.is_me){
-          target = document.getElementById('my-graveyard');
-        } else {
-          target = document.getElementById('op-graveyard');
-        }
-        animatedMove(getCardElement(event.card), target);
-      }
-      if (event.event_id == 'CastSpellEvent' && event.card) {
-        let stack = document.getElementById('stack');
-        animatedMove(getCardElement(event.card), stack);
-      }
-      if (event.event_id == 'TapEvent') {
-        getCardElement(event.permanent.card).classList.add('tap');
-      }
-      if (event.event_id == 'UntapEvent') {
-        getCardElement(event.permanent.card).classList.remove('tap');
-      }
-      if (event.event_id == 'AddEnergyEvent' || event.event_id == 'PayEnergyEvent') {
-        document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
-                .innerText = `Energy: ${event.new_total}`;
-      }
-      if (event.event_id == 'ClearPoolEvent') {
-        document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
-                .innerText = "Energy: {0}";
-      }
-      if (event.event_id == 'PlayerDamageEvent') {
-        document.getElementById(event.player.is_me ? 'my-life' : 'op-life')
-                .innerText = `Life: ${event.new_total}`;
-      }
-      if (event.event_id == 'StepEvent') {
-        indicate_step(event);
-        if (event.step == 'BEGIN_COMBAT') {
-          let combat = document.getElementById('combat');
-          combat.innerHTML = '';
-          if (event.active_player.is_me) {
-            combat.classList.remove('opponent-attacking');
-          } else {
-            combat.classList.add('opponent-attacking');
-          }
-        }
-      }
-      if (event.event_id == 'QuestionEvent' && event.question.player.is_me) {
-        build_question_ui(event);
-      }
-      if (event.event_id == 'AttackEvent') {
-        let attacker = getCardElement(event.attacker.card);
-        let fightbox = document.createElement('div');
-        fightbox.setAttribute('id', `fbx-${attacker.id}`);
-        fightbox.setAttribute('class', 'fightbox');
-        let blockers = document.createElement('div');
-        blockers.setAttribute('id', `blk-${attacker.id}`);
-        blockers.setAttribute('class', 'blockers');
-        fightbox.appendChild(blockers);
-        document.getElementById('combat').appendChild(fightbox);
-        animatedMove(attacker, fightbox);
-      }
-      if (event.event_id == 'BlockEvent') {
-        let attacker = getCardElement(event.attacker.card);
-        let blockers = document.getElementById(`blk-${attacker.id}`);
-        for (let i = 0; i<event.blockers.length; i++) {
-          let blocker = getCardElement(event.blockers[i].card);
-          animatedMove(blocker, blockers);
-        }
-      }
-      if (event.event_id == 'RemoveFromCombatEvent') {
-        let card = getCardElement(event.permanent.card);
-        let bf;
-        if (event.permanent.controller.is_me){
-          bf = document.getElementById('bf-mine');
-        } else {
-          bf = document.getElementById('bf-theirs');
-        }
-        animatedMove(card, bf);
-      }
-
-      list.appendChild(entry);
-    });
-    list.scrollTop = list.scrollHeight; //Scroll to bottom of log
+    forEachKeyValue(result, (key, event) => handleGameEvent(event));
   });
   httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
   httpRequest.send();
