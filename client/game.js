@@ -213,12 +213,23 @@ function Attacker(card_id, choice_id) {
     checkboxElement.checked = false;
   }
 
+  function toggle() {
+    if (isAttacking)
+      retreat();
+    else
+      attack();
+  }
+
+  cloneElement.onclick = toggle;
+  cloneElement.classList.add('selectable');
+
   retreat();
 
   return {
     'attack': attack,
     'retreat': retreat,
     'isAttacking': () => isAttacking,
+    'toggle': toggle,
     'destroy': destroy
   };
 }

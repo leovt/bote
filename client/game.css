@@ -48,6 +48,10 @@
   border: 5px solid #4ef;
 }
 
+.card.selectable {
+  border: 5px solid #f2f;
+}
+
 .menu {
   position: absolute;
   z-index: 1000;
