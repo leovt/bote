@@ -41,15 +41,15 @@
 }
 
 .card.playable {
-  border: 5px solid #0f0;
+  box-shadow: 0 0 15px 5px #0f0;
 }
 
 .card.activateable {
-  border: 5px solid #4ef;
+  box-shadow: 0 0 15px 5px #4ef;
 }
 
 .card.selectable {
-  border: 5px solid #f2f;
+  box-shadow: 0 0 15px 5px #f2f;
 }
 
 .menu {
