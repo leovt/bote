@@ -227,7 +227,7 @@ function build_question_ui(event){
         type = 'checkbox',
         value = action_id,
         name = 'attacker',
-        label = action,
+        label = action.name,
         checked = false
       ));
       choices.appendChild(document.createElement('br'));

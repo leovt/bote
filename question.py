@@ -37,7 +37,7 @@ class DeclareAttackers(Question):
         return Namespace(
             question = 'DeclareAttackers',
             player = self.player.serialize_for(player),
-            choices = {key:str(choice) for key, choice in self.choices.items()}
+            choices = {key:choice.serialize_for(player) for key, choice in self.choices.items()}
         )
 
 class DeclareBlockers(Question):

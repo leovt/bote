@@ -411,7 +411,7 @@ def turn_based_actions(game):
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = {next(game.unique_ids): permanent for permanent in
             game.battlefield.creatures.controlled_by(game.active_player)}
-        choices = {key: c.card.name for key, c in candidates.items()}
+        choices = {key: c.card for key, c in candidates.items()}
         question = DeclareAttackers(game.active_player, choices)
         yield QuestionEvent(question)
         attackers_chosen = game.answer
