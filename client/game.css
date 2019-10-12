@@ -52,3 +52,14 @@
   position: absolute;
   z-index: 1000;
 }
+
+.placeholder {
+  opacity: 0.1;
+}
+
+.inmotion.clone {
+  position: absolute;
+  transition: left 0.9s ease-out, top 0.9s ease-out;
+  z-index: 1000;
+  margin: 0px;
+}

@@ -170,6 +170,60 @@ function forEachKeyValue(object, receiver) {
   }
 }
 
+
+function Attacker(card_id, choice_id) {
+  var cardElement = document.getElementById(card_id);
+  var cloneElement = cardElement.cloneNode(false);
+  var placeholderElement = cardElement.cloneNode(false);
+  var checkboxElement = document.getElementById(`attacker-${choice_id}`);
+  var isAttacking = false;
+
+  cloneElement.classList.add('inmotion');
+  cloneElement.classList.add('clone');
+  cardElement.classList.add('placeholder');
+  placeholderElement.classList.add('placeholder');
+
+  var fightbox = document.createElement('div');
+  fightbox.setAttribute('id', `fbx-${choice_id}`);
+  fightbox.setAttribute('class', 'fightbox');
+  fightbox.appendChild(placeholderElement);
+  document.getElementById('combat').appendChild(fightbox);
+  document.body.appendChild(cloneElement);
+
+  function destroy() {
+    cardElement.classList.remove('placeholder');
+    cloneElement.remove();
+    placeholderElement.remove();
+    fightbox.remove();
+  }
+
+  function attack() {
+    let rect = placeholderElement.getBoundingClientRect();
+    cloneElement.setAttribute('style',
+      `left:${rect.left + window.scrollX}px; top:${rect.top + window.scrollY}px`);
+    isAttacking = true;
+    checkboxElement.checked = true;
+  }
+
+  function retreat() {
+    let rect = cardElement.getBoundingClientRect();
+    cloneElement.setAttribute('style',
+      `left:${rect.left + window.scrollX}px; top:${rect.top + window.scrollY}px`);
+    isAttacking = false;
+    checkboxElement.checked = false;
+  }
+
+  retreat();
+
+  return {
+    'attack': attack,
+    'retreat': retreat,
+    'isAttacking': () => isAttacking,
+    'destroy': destroy
+  };
+}
+
+
 function build_question_ui(event){
   question = event.question;
   document.getElementById('answer').setAttribute('style', '');
@@ -231,6 +285,17 @@ function build_question_ui(event){
         checked = false
       ));
       choices.appendChild(document.createElement('br'));
+
+      let checkbox = document.getElementById(`attacker-${action_id}`);
+      let attacker = Attacker(action.card_id, action_id);
+      checkbox.onchange = function(att, cbx) {
+        return function () {
+          if (cbx.checked)
+            attacker.attack();
+          else
+            attacker.retreat();
+        };
+      }(attacker, checkbox);
     });
   }
   else if (question.question == 'DeclareBlockers') {
