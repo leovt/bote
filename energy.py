@@ -119,22 +119,3 @@ WHITE = Energy(white=1)
 GREEN = Energy(green=1)
 RED = Energy(red=1)
 YELLOW = Energy(yellow=1)
-
-def test():
-    assert str(ZERO) == '{0}'
-    assert str(COLORLESS) == '{1}'
-    assert str(RED) == '{R}'
-    assert str(GREEN) == '{G}'
-    assert str(BLUE) == '{B}'
-    assert str(WHITE) == '{W}'
-    assert str(YELLOW) == '{Y}'
-    assert str(BLUE + 2 * YELLOW) == '{Y}{Y}{B}'
-
-    energy_pool = EnergyPool()
-    energy_pool.add(2*RED + 4*GREEN)
-    assert energy_pool.can_pay(4*COLORLESS + 2*RED)
-    energy_pool.pay(2*RED + COLORLESS)
-    assert energy_pool.energy.total == 3
-
-if __name__ == '__main__':
-    test()
