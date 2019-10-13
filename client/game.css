@@ -33,6 +33,7 @@
 .fightbox {
   width: max-content;
   border: 1px solid black;
+  display: inline-block;
 }
 
 .graveyard > .card {
@@ -66,4 +67,8 @@
   transition: left 0.9s ease-out, top 0.9s ease-out;
   z-index: 1000;
   margin: 0px;
+}
+
+.fightbox>div {
+  transform: rotate(180deg);
 }
