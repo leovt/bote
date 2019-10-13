@@ -39,7 +39,7 @@ function handleGameEvent(event) {
     animatedMove(getCardElement(event.card), tgt);
   }
   if (event.event_id == 'PutInGraveyardEvent') {
-    let tgt = document.getElementById(event.controller.is_me ? 'my-graveyard' : 'op-graveyard');
+    let tgt = document.getElementById(event.card.owner.is_me ? 'my-graveyard' : 'op-graveyard');
     animatedMove(getCardElement(event.card), tgt);
   }
   if (event.event_id == 'CastSpellEvent' && event.card) {
@@ -87,7 +87,8 @@ function handleGameEvent(event) {
   if (event.event_id == 'AttackEvent') {
     let attacker = attackers[event.attacker.card.card_id];
     if (!attacker) {
-      attacker = Attacker(event.attacker.card.card_id, none);
+      attacker = Attacker(event.attacker.card.card_id, null);
+      attackers[event.attacker.card.card_id] = attacker;
     }
     attacker.attack();
     attacker.stopInteracting();
@@ -211,7 +212,8 @@ function Attacker(card_id, choice_id) {
     cloneElement.setAttribute('style',
       `left:${rect.left + window.scrollX}px; top:${rect.top + window.scrollY}px`);
     isAttacking = true;
-    checkboxElement.checked = true;
+    if (checkboxElement)
+      checkboxElement.checked = true;
   }
 
   function retreat() {
@@ -219,7 +221,8 @@ function Attacker(card_id, choice_id) {
     cloneElement.setAttribute('style',
       `left:${rect.left + window.scrollX}px; top:${rect.top + window.scrollY}px`);
     isAttacking = false;
-    checkboxElement.checked = false;
+    if (checkboxElement)
+      checkboxElement.checked = false;
   }
 
   function toggle() {
@@ -292,6 +295,8 @@ function build_question_ui(event){
         menu.appendChild(button);
         card.onmouseenter = function (event) {
           let menu = document.getElementById('menu-'+this.id);
+          if (!menu)
+            return;
           let rect = this.getBoundingClientRect();
           menu.setAttribute('style', `left:${rect.right}px; top:${rect.top}px`);
         };
