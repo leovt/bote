@@ -92,22 +92,26 @@ function handleGameEvent(event) {
     }
     attacker.attack();
     attacker.stopInteracting();
-    let blockers = document.createElement('div');
-    blockers.setAttribute('id', `blk-${attacker.id}`);
-    blockers.setAttribute('class', 'blockers');
-    attacker.fightbox.appendChild(blockers);
   }
   if (event.event_id == 'BlockEvent') {
-    let attacker = getCardElement(event.attacker.card);
-    let blockers = document.getElementById(`blk-${attacker.id}`);
-    for (let i = 0; i<event.blockers.length; i++) {
-      let blocker = getCardElement(event.blockers[i].card);
-      animatedMove(blocker, blockers);
-    }
+    let attacker = attackers[event.attacker.card.card_id];
+    event.blockers.forEach(blocker => {
+      let card = getCardElement(blocker.card);
+      animatedMove(card, attacker.blockerDiv);
+    });
   }
   if (event.event_id == 'RemoveFromCombatEvent' && attackers) {
     let attacker = attackers[event.permanent.card.card_id];
-    if (attacker) attacker.retreat();
+    if (attacker) {
+      attacker.retreat();
+    }
+    else {
+      let card = getCardElement(event.permanent.card);
+      if (event.permanent.controller.is_me)
+        animatedMove(card, document.getElementById('bf-mine'));
+      else
+        animatedMove(card, document.getElementById('bf-theirs'));
+    }
   }
   let list = document.getElementById('log');
   list.appendChild(entry);
@@ -184,8 +188,11 @@ function Attacker(card_id, choice_id) {
   placeholderElement.classList.add('placeholder');
 
   var fightbox = document.createElement('div');
-  fightbox.setAttribute('id', `fbx-${choice_id}`);
   fightbox.setAttribute('class', 'fightbox');
+
+  var blockerDiv = document.createElement('div');
+  fightbox.appendChild(blockerDiv);
+
   fightbox.appendChild(placeholderElement);
   document.getElementById('combat').appendChild(fightbox);
   document.body.appendChild(cloneElement);
@@ -245,6 +252,7 @@ function Attacker(card_id, choice_id) {
     'stopInteracting': stopInteracting,
     'destroy': destroy,
     'fightbox': fightbox,
+    'blockerDiv': blockerDiv,
     'choice_id': choice_id
   };
 }
