@@ -363,6 +363,11 @@ def end_of_step(game):
     for player in game.players:
         yield ClearPoolEvent(player)
     yield PriorityEvent(None)
+
+    if game.step == STEP.END_OF_COMBAT:
+        for permanent in game.battlefield:
+            yield RemoveFromCombatEvent(permanent)
+
     if game.step == STEP.CLEANUP:
         yield StepEvent(STEP.UNTAP, game.active_player.next_in_turn)
     else:
@@ -480,10 +485,6 @@ def turn_based_actions(game):
                 yield DamageEvent(attacker, blocker.strength)
             if remaining_strength:
                 yield PlayerDamageEvent(attacker.attacking, remaining_strength)
-        yield from open_priority(game)
-    elif game.step == STEP.POSTCOMBAT_MAIN:
-        for permanent in game.battlefield:
-            yield RemoveFromCombatEvent(permanent)
         yield from open_priority(game)
     else:
         yield from open_priority(game)
