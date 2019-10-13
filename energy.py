@@ -61,16 +61,16 @@ class Energy(tuple):
 
     @staticmethod
     def parse(string):
-        match = re.match(r'(?:\{(\d+|R|Y|B|G|W)\})+', string)
-        if not match:
-            return None
         total = 0
         red = 0
         yellow = 0
         blue = 0
         green = 0
         white = 0
-        for group in match.groups():
+        match = re.match(r'^(?:\{(\d+|R|Y|B|G|W)\})+$', string)
+        if not match:
+            return None
+        for group in re.findall(r'\{(\d+|R|Y|B|G|W)\}', string):
             if group == 'R':
                 red += 1
                 total += 1
