@@ -74,22 +74,27 @@ function handleGameEvent(event) {
       } else {
         combat.classList.add('opponent-attacking');
       }
+      attackers = {};
+    }
+    if (event.step == 'POSTCOMBAT_MAIN') {
+      forEachKeyValue(attackers, (key, attacker) => attacker.destroy());
+      attackers = null;
     }
   }
   if (event.event_id == 'QuestionEvent' && event.question.player.is_me) {
     build_question_ui(event);
   }
   if (event.event_id == 'AttackEvent') {
-    let attacker = getCardElement(event.attacker.card);
-    let fightbox = document.createElement('div');
-    fightbox.setAttribute('id', `fbx-${attacker.id}`);
-    fightbox.setAttribute('class', 'fightbox');
+    let attacker = attackers[event.attacker.card.card_id];
+    if (!attacker) {
+      attacker = Attacker(event.attacker.card.card_id, none);
+    }
+    attacker.attack();
+    attacker.stopInteracting();
     let blockers = document.createElement('div');
     blockers.setAttribute('id', `blk-${attacker.id}`);
     blockers.setAttribute('class', 'blockers');
-    fightbox.appendChild(blockers);
-    document.getElementById('combat').appendChild(fightbox);
-    animatedMove(attacker, fightbox);
+    attacker.fightbox.appendChild(blockers);
   }
   if (event.event_id == 'BlockEvent') {
     let attacker = getCardElement(event.attacker.card);
@@ -99,15 +104,9 @@ function handleGameEvent(event) {
       animatedMove(blocker, blockers);
     }
   }
-  if (event.event_id == 'RemoveFromCombatEvent') {
-    let card = getCardElement(event.permanent.card);
-    let bf;
-    if (event.permanent.controller.is_me){
-      bf = document.getElementById('bf-mine');
-    } else {
-      bf = document.getElementById('bf-theirs');
-    }
-    animatedMove(card, bf);
+  if (event.event_id == 'RemoveFromCombatEvent' && attackers) {
+    let attacker = attackers[event.permanent.card.card_id];
+    if (attacker) attacker.retreat();
   }
   let list = document.getElementById('log');
   list.appendChild(entry);
@@ -197,6 +196,16 @@ function Attacker(card_id, choice_id) {
     fightbox.remove();
   }
 
+  function stopInteracting() {
+    cloneElement.setAttribute('style', 'display: none;');
+    if (isAttacking) {
+      placeholderElement.classList.remove('placeholder');
+    }
+    else {
+      cardElement.classList.remove('placeholder');
+    }
+  }
+
   function attack() {
     let rect = placeholderElement.getBoundingClientRect();
     cloneElement.setAttribute('style',
@@ -230,7 +239,10 @@ function Attacker(card_id, choice_id) {
     'retreat': retreat,
     'isAttacking': () => isAttacking,
     'toggle': toggle,
-    'destroy': destroy
+    'stopInteracting': stopInteracting,
+    'destroy': destroy,
+    'fightbox': fightbox,
+    'choice_id': choice_id
   };
 }
 
@@ -299,6 +311,8 @@ function build_question_ui(event){
 
       let checkbox = document.getElementById(`attacker-${action_id}`);
       let attacker = Attacker(action.card_id, action_id);
+      attackers[action.card_id] = attacker;
+
       checkbox.onchange = function(att, cbx) {
         return function () {
           if (cbx.checked)
@@ -404,8 +418,16 @@ function send_answer () {
     answer = Array.from(radios).find(r => r.checked).value;
   }
   if (question.question == 'DeclareAttackers'){
-    let attackers = document.getElementsByName('attacker');
-    answer = Array.from(attackers).filter(x => x.checked).map(x => x.value);
+    answer = [];
+    forEachKeyValue(attackers, (key, attacker) => {
+      if (attacker.isAttacking()) {
+        attacker.stopInteracting();
+        answer.push(attacker.choice_id);
+      }
+      else {
+        attacker.destroy();
+      }
+    });
   }
   if (question.question == 'DeclareBlockers'){
     answer = {};
