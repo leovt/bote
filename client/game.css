@@ -6,6 +6,10 @@
   transform: rotate(90deg);
 }
 
+#log {
+  display:none;
+}
+
 .card {
   transition: transform 0.7s;
   height: 5em;

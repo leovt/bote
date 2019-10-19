@@ -1,3 +1,23 @@
+document.onmouseover = function(e){
+   e=window.event? event.srcElement: e.target;
+   if(e.className && e.className.indexOf('card')!=-1){
+     p = document.getElementById('cardview');
+     p.style.display = "block";
+     p.src = e.src;
+   }
+};
+
+document.onmouseout = function(e){
+    e=window.event? event.srcElement: e.target;
+    if(e.className && e.className.indexOf('card')!=-1){
+      p = document.getElementById('cardview');
+      p.style.display = "none";
+      p.src = "";
+    }
+};
+
+
+
 function getCardElement(card){
   var element = document.getElementById(card.card_id);
   if (!element) {
