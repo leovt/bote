@@ -49,6 +49,10 @@
   box-shadow: 0 0 15px 5px #0f0;
 }
 
+.card.discardable {
+  box-shadow: 0 0 15px 5px #777;
+}
+
 .card.activateable {
   box-shadow: 0 0 15px 5px #4ef;
 }

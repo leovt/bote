@@ -246,6 +246,10 @@ class Game:
     def handle_PutInGraveyardEvent(self, event):
         event.card.owner.graveyard.add(event.card)
 
+    def handle_DiscardEvent(self, event):
+        event.card.owner.hand.discard(event.card)
+        event.card.owner.graveyard.add(event.card)
+
     def handle_PlaySourceEvent(self, event):
         player = self.get_player(event.player)
         player.hand.discard(event.card)
@@ -412,6 +416,7 @@ def turn_based_actions(game):
         yield from draw_card(game, game.active_player)
         yield from open_priority(game)
     elif game.step == STEP.CLEANUP:
+        yield from discard_excess_cards(game)
         yield from end_of_step(game)
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = {next(game.unique_ids): permanent for permanent in
@@ -534,8 +539,17 @@ def open_priority(game):
     yield ResetPassEvent()
     yield PriorityEvent(game.active_player.name)
 
-def discard_excess_cards():
-    pass
+def discard_excess_cards(game):
+    player = game.active_player
+    while len(player.hand)>7:
+        choices = {next(game.unique_ids): card for card in player.hand}
+        question = ChooseAction(player, {key: dict(
+            action='discard', card_id=card.known_identity, text=f'discard {card.name}')
+            for key, card in choices.items()})
+        yield QuestionEvent(question)
+        answer = game.answer
+        if answer in choices:
+            yield DiscardEvent(choices[answer])
 
 def draw_card(game, player):
     if player.library:

@@ -179,6 +179,11 @@ class PlayerDamageEvent(Event):
 class RemoveFromCombatEvent(Event):
     permanent: object
 
+@event_id('discard')
+@dataclass(repr=False)
+class DiscardEvent(Event):
+    card: object
+
 @event_id('lose')
 @dataclass(repr=False)
 class PlayerLosesEvent(Event):

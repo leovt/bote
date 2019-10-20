@@ -58,7 +58,7 @@ function handleGameEvent(event) {
     let tgt = document.getElementById(event.controller.is_me ? 'bf-mine' : 'bf-theirs');
     animatedMove(getCardElement(event.card), tgt);
   }
-  if (event.event_id == 'PutInGraveyardEvent') {
+  if (event.event_id == 'PutInGraveyardEvent' || event.event_id == 'DiscardEvent') {
     let tgt = document.getElementById(event.card.owner.is_me ? 'my-graveyard' : 'op-graveyard');
     animatedMove(getCardElement(event.card), tgt);
   }
@@ -325,6 +325,11 @@ function build_question_ui(event){
         card.classList.add('playable');
         card.onclick = makeOnclick(action_id);
       }
+      if (action.action == 'discard') {
+        let card = document.getElementById(action.card_id);
+        card.classList.add('discardable');
+        card.onclick = makeOnclick(action_id);
+      }
       if (action.action == 'activate') {
         let card = document.getElementById(action.card_id);
         card.classList.add('activateable');
@@ -435,6 +440,11 @@ function cleanupChooseActionUI() {
     if (action.action == 'play') {
       let card = document.getElementById(action.card_id);
       card.classList.remove('playable');
+      card.removeAttribute('onclick');
+    }
+    if (action.action == 'discard') {
+      let card = document.getElementById(action.card_id);
+      card.classList.remove('discardable');
       card.removeAttribute('onclick');
     }
     if (action.action == 'activate') {
