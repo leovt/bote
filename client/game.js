@@ -241,6 +241,9 @@ function Attacker(card_id, choice_id) {
     isAttacking = true;
     if (checkboxElement)
       checkboxElement.checked = true;
+
+    let btn = document.getElementById('confirm');
+    btn.innerText = "Attack";
   }
 
   function retreat() {
@@ -250,6 +253,9 @@ function Attacker(card_id, choice_id) {
     isAttacking = false;
     if (checkboxElement)
       checkboxElement.checked = false;
+    let btn = document.getElementById('confirm');
+    btn.innerText = "Skip Attack";
+    forEachKeyValue(attackers, (_, att) => {if (att.isAttacking()) btn.innerText = "Attack";});
   }
 
   function toggle() {
@@ -301,6 +307,12 @@ function build_question_ui(event){
       ));
       first = false;
       choices.appendChild(document.createElement('br'));
+      if (action.action == "pass") {
+        let btn = document.getElementById('confirm');
+        btn.innerText = "Continue / Pass Priority";
+        btn.style.visibility = 'visible';
+        btn.onclick = makeOnclick(action_id);
+      }
       if (action.action == 'play') {
         let card = document.getElementById(action.card_id);
         card.classList.add('playable');
@@ -332,6 +344,10 @@ function build_question_ui(event){
     });
   }
   else if (question.question == 'DeclareAttackers') {
+    let btn = document.getElementById('confirm');
+    btn.innerText = "Skip Attack";
+    btn.style.visibility = 'visible';
+    btn.onclick = send_answer;
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(make_input_with_label(
         type = 'checkbox',
@@ -402,6 +418,10 @@ function build_question_ui(event){
 
 function cleanupChooseActionUI() {
   forEachKeyValue(question.choices, (action_id, action) => {
+    let btn = document.getElementById('confirm');
+    btn.innerText = "";
+    btn.style.visibility = 'hidden';
+    btn.removeAttribute('onclick');
     if (action.action == 'play') {
       let card = document.getElementById(action.card_id);
       card.classList.remove('playable');

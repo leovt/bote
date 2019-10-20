@@ -21,6 +21,7 @@
     <h3>Graveyard</h3>
     <div id="op-graveyard" class="graveyard"></div>
     <object type="image/svg+xml" data="steps.svg" id="stepindicator"></object>
+    <button id="confirm" style="visibility: hidden;">Confirm</button>
     <h1>My Stats</h1>
     <p id="my-life"></p>
     <p id="my-energy"></p>
@@ -46,6 +47,7 @@ function create() {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     game_uri = httpRequest.getResponseHeader('Location');
+    log_refresh();
   });
   httpRequest.open("POST", `/game/create`);
   httpRequest.send();
