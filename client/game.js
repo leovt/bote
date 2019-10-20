@@ -100,6 +100,13 @@ function handleGameEvent(event) {
       forEachKeyValue(attackers, (key, attacker) => attacker.destroy());
       attackers = null;
     }
+    passText = {
+      'BEGIN_COMBAT': 'Pass, go to declare attackers',
+      'DECLARE_ATTACKERS': 'Pass, go to declare blockers',
+      'DECLARE_BLOCKERS': 'Pass, go to combat damage',
+      'END': 'Pass, end the turn'
+    }[event.step];
+    if (!passText) passText = 'Pass';
   }
   if (event.event_id == 'QuestionEvent' && event.question.player.is_me) {
     build_question_ui(event);
@@ -309,8 +316,8 @@ function build_question_ui(event){
       choices.appendChild(document.createElement('br'));
       if (action.action == "pass") {
         let btn = document.getElementById('confirm');
-        btn.innerText = "Continue / Pass Priority";
-        btn.style.visibility = 'visible';
+        btn.disabled = false;
+        btn.innerText = passText;
         btn.onclick = makeOnclick(action_id);
       }
       if (action.action == 'play') {
@@ -346,7 +353,7 @@ function build_question_ui(event){
   else if (question.question == 'DeclareAttackers') {
     let btn = document.getElementById('confirm');
     btn.innerText = "Skip Attack";
-    btn.style.visibility = 'visible';
+    btn.disabled = false;
     btn.onclick = send_answer;
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(make_input_with_label(
@@ -373,6 +380,10 @@ function build_question_ui(event){
     });
   }
   else if (question.question == 'DeclareBlockers') {
+    let btn = document.getElementById('confirm');
+    btn.innerText = "Confirm Blockers";
+    btn.disabled = false;
+    btn.onclick = send_answer;
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(document.createTextNode(action.candidate));
       choices.appendChild(make_input_with_label(
@@ -419,8 +430,7 @@ function build_question_ui(event){
 function cleanupChooseActionUI() {
   forEachKeyValue(question.choices, (action_id, action) => {
     let btn = document.getElementById('confirm');
-    btn.innerText = "";
-    btn.style.visibility = 'hidden';
+    btn.disabled = true;
     btn.removeAttribute('onclick');
     if (action.action == 'play') {
       let card = document.getElementById(action.card_id);
