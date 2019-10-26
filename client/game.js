@@ -542,15 +542,15 @@ function reorderDown(item_id) {
 
 var indicate_step = (function() {
   var indicator_position = 36000;
-  const STEPS = [
-          "UNTAP", "UPKEEP", "DRAW",
-          "PRECOMBAT_MAIN",
-          "BEGIN_COMBAT", "DECLARE_ATTACKERS", "DECLARE_BLOCKERS",
-          "FIRST_STRIKE_DAMAGE", "SECOND_STRIKE_DAMAGE", "END_OF_COMBAT",
-          "POSTCOMBAT_MAIN",
-          "END", "CLEANUP"];
+  const STEPS = {
+          "UNTAP":0, "UPKEEP":1, "DRAW":2,
+          "PRECOMBAT_MAIN":3,
+          "BEGIN_COMBAT":4, "DECLARE_ATTACKERS":5, "DECLARE_BLOCKERS":6,
+          "FIRST_STRIKE_DAMAGE":7, "SECOND_STRIKE_DAMAGE":8, "END_OF_COMBAT":9,
+          "POSTCOMBAT_MAIN":10,
+          "END":11, "CLEANUP":11}; //no cleanup step indicator: stay on "END" position
   return function (event){
-    var new_position = 172.5 - 15*STEPS.indexOf(event.step);
+    var new_position = 172.5 - 15*STEPS[event.step];
     if (!event.active_player.is_me) {
       new_position += 180;
     }
