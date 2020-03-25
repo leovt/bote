@@ -80,3 +80,7 @@
 .fightbox>div {
   transform: rotate(180deg);
 }
+
+#stepindicator {
+  pointer-events: none;
+}

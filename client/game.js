@@ -301,7 +301,7 @@ function build_question_ui(event){
     var makeOnclick = function(action_id) {
       return function () {
         document.getElementById(`action-${action_id}`).checked = true;
-        send_answer();
+        get_and_send_answer();
       };
     };
     forEachKeyValue(question.choices, (action_id, action) => {
@@ -315,10 +315,7 @@ function build_question_ui(event){
       first = false;
       choices.appendChild(document.createElement('br'));
       if (action.action == "pass") {
-        let btn = document.getElementById('confirm');
-        btn.disabled = false;
-        btn.innerText = passText;
-        btn.onclick = makeOnclick(action_id);
+        make_ans_button(passText, makeOnclick(action_id));
       }
       if (action.action == 'play') {
         let card = document.getElementById(action.card_id);
@@ -356,10 +353,7 @@ function build_question_ui(event){
     });
   }
   else if (question.question == 'DeclareAttackers') {
-    let btn = document.getElementById('confirm');
-    btn.innerText = "Skip Attack";
-    btn.disabled = false;
-    btn.onclick = send_answer;
+    make_ans_button("Skip Attack", get_and_send_answer);
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(make_input_with_label(
         type = 'checkbox',
@@ -385,10 +379,7 @@ function build_question_ui(event){
     });
   }
   else if (question.question == 'DeclareBlockers') {
-    let btn = document.getElementById('confirm');
-    btn.innerText = "Confirm Blockers";
-    btn.disabled = false;
-    btn.onclick = send_answer;
+    make_ans_button("Confirm Blockers", get_and_send_answer);
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(document.createTextNode(action.candidate));
       choices.appendChild(make_input_with_label(
@@ -433,10 +424,13 @@ function build_question_ui(event){
 
 
 function cleanupChooseActionUI() {
+  let btn = document.getElementById('confirm');
+  btn.disabled = true;
+  btn.removeAttribute('onclick');
+  let ind = document.getElementById('stepconfirm');
+  ind.removeAttribute('onclick');
+
   forEachKeyValue(question.choices, (action_id, action) => {
-    let btn = document.getElementById('confirm');
-    btn.disabled = true;
-    btn.removeAttribute('onclick');
     if (action.action == 'play') {
       let card = document.getElementById(action.card_id);
       card.classList.remove('playable');
@@ -477,7 +471,7 @@ cleanupFunctions = {
 };
 
 
-function send_answer () {
+function get_and_send_answer () {
   var httpRequest = new XMLHttpRequest();
   httpRequest.open("POST", `${game_uri}/answer`);
   httpRequest.setRequestHeader('Content-Type', 'application/json');
@@ -607,4 +601,13 @@ function animatedMove(element, target, delay=900){
     /* animation not available, immediately finalize */
     finalizer();
   }
+}
+
+
+function make_ans_button(label, onclick){
+  let btn = document.getElementById('confirm');
+  let div = document.getElementById('stepconfirm');
+  btn.disabled = false;
+  btn.innerText = label;
+  div.onclick = onclick;
 }
