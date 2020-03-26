@@ -50,8 +50,8 @@ cards:
 
     art:
       10201:
-        image: firesource1.png
-        attribution: Leonhard Vogt, 2019
+        image: kilauea.jpg
+        attribution: USGS Hawaiian Volcano Observatory, 2018
         frame: brown
       10202:
         image: firesource2.png
