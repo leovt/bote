@@ -8,6 +8,23 @@ types:
         en: Goblin
         de: Goblin
         ko: 고블린
+      dragon:
+        en: Dragon
+        de: Drache
+        ko: 용
+      elemental:
+        en: Elemental
+        de: Elementarwesen
+        ko: 정령
+      minotaur:
+        en: Minotaur
+        de: Minotaurus
+        ko: 미노타우로스
+      human:
+        en: Human
+        de: Mensch
+        ko: 인간
+
   source:
     de: Quelle
     en: Source
@@ -29,8 +46,8 @@ cards:
 
     art:
       10101:
-        image: goblin.png
-        attribution: Leonhard Vogt, 2019
+        image: goblins.jpg
+        attribution: Leonhard Vogt, 2020
         frame: red
         flavour:
           en: They would be scary if they were not so disorganized.
@@ -54,8 +71,8 @@ cards:
         attribution: USGS Hawaiian Volcano Observatory, 2018
         frame: brown
       10202:
-        image: firesource2.png
-        attribution: Leonhard Vogt, 2019
+        image: fire.jpg
+        attribution: piotr1, 2019
         frame: brown
 
   103:
@@ -76,5 +93,41 @@ cards:
 
     art:
       10301:
-        image: 10301.png
+        image: flammenkrieger.jpg
+        attribution: Leonhard Vogt, 2020
+
+  104:
+    names:
+      en: Angry Minotaur
+      de: Wütender Minotaurus
+      ko: 화가 나는 미노타우루스
+    type: creature
+    subtypes:
+      - minotaur
+    token: No
+    cost: '{3}{R}'
+    strength: 3
+    toughness: 3
+    art:
+      10401:
+        image: ''
+        attribution: ''
+
+  105:
+    names:
+      en: Dragonbaby
+      de: Drachenbaby
+      ko: 애기 공용
+    type: creature
+    subtypes:
+      - dragon
+    token: No
+    cost: '{1}{R}'
+    strength: 0
+    toughness: 1
+    abilities:
+      - keyword: flying
+    art:
+      10501:
+        image: ''
         attribution: ''

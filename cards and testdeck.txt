@@ -1,0 +1,31 @@
+Creatures
+
+4x Minotaur 3R - 3/3
+4x Dragon 1R - 0/1 - Flying - R:+1/+0 until end of turn
+1x Dragon 2RR - 2/2 - Flying - R:+1/+0 until end of turn
+2x Goblin R
+3x Elemental 3R - 4/1 - Haste
+1x Dragon 4RR - 4/4 - Flying - Haste
+1x Pyromancer - 1R - Whenever you cast an instant or sorcery create 1/1 red elemntal creature token
+
+[tokens]
+1/1 red elemental
+1/1 red goblin
+
+Enchantment
+1x Fire Feet 2R - Enchant Creature - Enchanted Creature gets +3/+0 and first strike
+
+Instant
+2x Outrage 2RR - deals 4 damage to target creature and 2 damage to its controller
+4x Incinerate 1R - deal 3 damage to target creature or player (can not regenerate)
+4x War Cry - target creature gets +3/+0 and first strike until end of turn
+
+Sorcery
+2x Treason 2R - Gain Control of target creature until end of turn. It gains haste until end of turn.
+1x Fireball XR - deal X damage to target creature or player (or more targets)
+1x Flames 2R - deal total of 3 damage divided among up to 3 target creature or player
+2x Goblin Command 1R - Create two red 1/1 goblin token creature
+2x Magma Hammer 4R - deal 5 damage to target crature / player
+
+Source
+24 x firesource
