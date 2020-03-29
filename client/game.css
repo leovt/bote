@@ -1,5 +1,16 @@
 #bf-theirs {
   transform: rotate(180deg);
+  flex: 25%;
+}
+
+#bf-mine {
+  flex: 25%;
+}
+
+#right {
+  flex: 50%;
+  display: flex;
+  flex-direction: column;
 }
 
 .card.tap {
@@ -21,13 +32,31 @@
   margin: 2px;
 }
 
+#hand {
+  flex: 20%;
+}
+
 #combat {
   background: orange;
   padding: 10px;
+  flex: 20%
 }
 
 #combat.opponent-attacking {
   transform: rotate(180deg);
+}
+
+#stack {
+  background-color: lightblue;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+#stack > .card:last-child {
+  box-shadow: 0 0 15px 5px #ee0;
 }
 
 .blockers {
