@@ -6,7 +6,7 @@ from app.models import User
 from app.forms import LoginForm
 
 
-@app.route('/')
+@app.route('/whoami')
 def hello():
     return render_template('base.html', title='Home')
 
@@ -14,7 +14,7 @@ def hello():
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('hello'))
+        return redirect(url_for('lobby'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -30,3 +30,8 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('hello'))
+
+
+@app.route('/')
+def lobby():
+    return render_template('lobby.html')

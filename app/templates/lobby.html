@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Lobby</h1>
+    <h2>Users</h2>
+    <ul id="users"></ul>
+    <h2>Chat</h2>
+    <ul id="chat"></ul>
+    <label for="chat_msg">Chat:</label>
+    <textarea cols="40" rows="5" id="chat_msg"></textarea>
+    <button onclick="send_msg();">Send</button>
+{% endblock %}
+
+{% block afterbody %}
+    <script src="{{ url_for('static', filename='lobby.js') }}"></script>
+{% endblock %}
