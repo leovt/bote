@@ -12,7 +12,7 @@ function read_msg() {
   var chat = document.getElementById('chat');
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
-    result = JSON.parse(httpRequest.responseText);
+    var result = JSON.parse(httpRequest.responseText);
     result.forEach(function(msg) {
       msg_count += 1;
       let element = document.createElement('li');
@@ -32,4 +32,34 @@ function read_msg() {
   window.setTimeout(read_msg, 1000);
 }
 
+function update_users() {
+  var users = document.getElementById('users');
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.addEventListener("load", function () {
+    var obsolete = new Set(Array.from(users.children).map(el => el.id));
+    var result = JSON.parse(httpRequest.responseText);
+    result.forEach(function(usr) {
+      let element_id = `user-${usr.user}`;
+      let element = document.getElementById(element_id);
+      if (element) {
+        obsolete.delete(element_id);
+      }
+      else {
+        element = document.createElement('li');
+        element.id = element_id;
+        users.appendChild(element);
+      }
+      element.innerText = usr.user;
+      element.className = `user-${usr.status}`;
+    });
+    for (var element of obsolete) {
+      users.removeChild(element);
+    }
+  });
+  httpRequest.open("GET", `/lobby_users`);
+  httpRequest.send();
+  window.setTimeout(update_users, 5000);
+}
+
 read_msg();
+update_users();

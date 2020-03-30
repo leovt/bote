@@ -5,6 +5,8 @@ from app import app
 from app.models import User
 from app.forms import LoginForm
 
+import time
+
 
 @app.route('/whoami')
 def hello():
@@ -39,6 +41,7 @@ def lobby():
     return render_template('lobby.html')
 
 global_chat_messages = []
+global_lobby_users_last_seen = {}
 
 @app.route('/chat_msg', methods=['POST'])
 @login_required
@@ -56,5 +59,17 @@ def chat():
     if first < 0:
         abort(400)
 
+    global_lobby_users_last_seen[current_user.username] = time.time()
     return jsonify([{'index': index, 'user': user, 'message': message}
         for index, (user, message) in enumerate(global_chat_messages[first:], first)])
+
+
+@app.route('/lobby_users')
+@login_required
+def lobby_users():
+    now = time.time()
+    return jsonify([{
+        'user': user,
+        'status': ('away' if last_seen < now - 30 else 'here')}
+        for user, last_seen in global_lobby_users_last_seen.items()
+    ])
