@@ -26,7 +26,7 @@ class Deck(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     name = db.Column(db.String)
-    cards = db.relationship('DeckCard', backref='deck', lazy='joined')
+    cards = db.relationship('DeckCard', backref='deck', lazy='dynamic')
 
 class DeckCard(db.Model):
     deck_id = db.Column(db.Integer, db.ForeignKey('deck.id'), primary_key=True)

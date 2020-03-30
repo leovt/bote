@@ -2,7 +2,7 @@ from flask import render_template, redirect, flash, url_for, request, abort, jso
 from flask_login import login_user, logout_user, current_user, login_required
 
 from app import app, db
-from app.models import User, Deck
+from app.models import User, Deck, DeckCard
 from app.forms import LoginForm, PasswordForm
 
 import time
@@ -110,4 +110,31 @@ def new_deck():
 @login_required
 def deck(deck_id):
     deck = Deck.query.get_or_404(deck_id)
+    if (deck.owner_id != current_user.id):
+        abort(403);
     return render_template('deck.html', deck=deck, cards=cards.all())
+
+@app.route('/deck/<deck_id>', methods=['POST'])
+@login_required
+def save_deck(deck_id):
+    deck = Deck.query.get_or_404(deck_id)
+    if (deck.owner_id != current_user.id):
+        abort(403);
+    if request.json is None:
+        abort(415)
+    deck.name = request.json['name']
+    art_ids = {c.art_id for c in deck.cards}
+    print("art_ids", art_ids)
+    print("json", request.json)
+    for art_id, count in request.json['cards'].items():
+        art_id = int(art_id)
+        count = int(count)
+        if art_id in art_ids:
+            deck.cards.filter_by(art_id=art_id).one().count = count
+            art_ids.remove(art_id)
+        else:
+            db.session.add(DeckCard(deck_id=deck.id, art_id=art_id, count=count))
+    for art_id in art_ids:
+        db.session.delete(deck.cards.filter_by(art_id=art_id).one())
+    db.session.commit()
+    return ('', 204)

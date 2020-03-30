@@ -1,18 +1,23 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Deck</h1>
-    <p>Name: {{ deck.name }}</p>
+    <p>Name: <input type="text" value="{{ deck.name }}" id="name"></input><button onclick="save_deck()">Save Deck</button></p>
     <h2>Cards in Deck</h2>
-    <div class="card_list">
-    {% for card in deck.cards %}
-    <div class="deck_card"><img src="{{ url_for('art_svg_redirect', art_id=card.art_id) }}"></img></div>
-    {% endfor %}
-    </div>
+    <div class="card_list" id=deck></div>
     <h2>Cards available</h2>
     <div class="card_list">
     {% for card in cards %}
-      <img src="{{ url_for('art_svg_redirect', art_id=card.art_id) }}"></img>
+      <img src="{{ url_for('art_svg_redirect', art_id=card.art_id) }}" onclick="add_card({{ card.art_id }})" class="card"></img>
     {% endfor %}
     </div>
+{% endblock %}
+
+{% block afterbody %}
+    <script src="{{ url_for('static', filename='deck.js') }}"></script>
+    <script>
+    {% for card in deck.cards %}
+    for(i=0; i<{{ card.count }}; i++)
+      add_card({{ card.art_id }});
+    {% endfor %}
+    </script>
 {% endblock %}

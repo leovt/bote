@@ -31,3 +31,12 @@ ul#users > li.user-away::before {
   overflow-x: scroll;
   white-space: nowrap;
 }
+
+.deck_card {
+  display: inline-block;
+  margin: 1rem;
+}
+
+.card {
+  height: 30vh;
+}
