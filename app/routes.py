@@ -1,9 +1,9 @@
 from flask import render_template, redirect, flash, url_for, request, abort, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
 
-from app import app
+from app import app, db
 from app.models import User
-from app.forms import LoginForm
+from app.forms import LoginForm, PasswordForm
 
 import time
 
@@ -32,6 +32,21 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('hello'))
+
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = PasswordForm()
+    if form.validate_on_submit():
+        if not current_user.check_password(form.old_password.data):
+            logout_user()
+            return redirect(url_for('lobby'))
+
+        current_user.set_password(form.password.data)
+        db.session.commit()
+        return redirect(url_for('lobby'))
+    return render_template('password.html', title='Change Password', form=form)
 
 
 @app.route('/')
