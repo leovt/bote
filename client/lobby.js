@@ -25,6 +25,7 @@ function read_msg() {
       element.appendChild(user);
       element.appendChild(message);
       chat.appendChild(element);
+      chat.scrollTop = chat.scrollHeight;
     });
   });
   httpRequest.open("GET", `/chat_msg?first=${msg_count}`);

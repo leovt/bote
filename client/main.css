@@ -1,0 +1,28 @@
+ul#users {
+  list-style-type: none;
+}
+
+ul#users > li.user-here::before {
+  content: '■ ';
+  color: lightgreen;
+}
+
+ul#users > li.user-away::before {
+  content: '♦ ';
+  color: orange;
+}
+
+.chat_message {
+  background: lightblue;
+  border: 1px solid black;
+  border-radius: 0.5rem;
+  box-shadow: 0.4rem grey;
+  padding: 0.6rem;
+  display: inline-block;
+}
+
+#chat {
+  height: 50%;
+  border: 1px solid black;
+  overflow: scroll;
+}

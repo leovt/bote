@@ -5,6 +5,7 @@
       {% else %}
       <title>Welcome to BOTE</title>
       {% endif %}
+      <link href="{{ url_for('static', filename='main.css') }}" rel="stylesheet">
     </head>
     <body>
       {% if current_user.is_anonymous %}

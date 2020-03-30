@@ -7,7 +7,7 @@
     <h2>Chat</h2>
     <ul id="chat"></ul>
     <label for="chat_msg">Chat:</label>
-    <textarea cols="40" rows="5" id="chat_msg"></textarea>
+    <input type='text' id="chat_msg" onkeyup="if (event.keyCode === 13) {send_msg();}"></input>
     <button onclick="send_msg();">Send</button>
 {% endblock %}
 
