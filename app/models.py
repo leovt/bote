@@ -21,3 +21,14 @@ class User(UserMixin, db.Model):
 @login_mgr.user_loader
 def load_user(uid):
     return User.query.get(int(uid))
+
+class Deck(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    name = db.Column(db.String)
+    cards = db.relationship('DeckCard', backref='deck', lazy='joined')
+
+class DeckCard(db.Model):
+    deck_id = db.Column(db.Integer, db.ForeignKey('deck.id'), primary_key=True)
+    art_id = db.Column(db.Integer, primary_key=True)
+    count = db.Column(db.Integer)

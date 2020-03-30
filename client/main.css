@@ -26,3 +26,8 @@ ul#users > li.user-away::before {
   border: 1px solid black;
   overflow: scroll;
 }
+
+.card_list {
+  overflow-x: scroll;
+  white-space: nowrap;
+}

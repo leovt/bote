@@ -132,5 +132,8 @@ def load_yaml():
 
     return types, cards, art_cards
 
+def all():
+    return _art_cards.values()
+
 _types, _cards, _art_cards = load_yaml()
 del load_yaml

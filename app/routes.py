@@ -2,11 +2,11 @@ from flask import render_template, redirect, flash, url_for, request, abort, jso
 from flask_login import login_user, logout_user, current_user, login_required
 
 from app import app, db
-from app.models import User
+from app.models import User, Deck
 from app.forms import LoginForm, PasswordForm
 
 import time
-
+import cards
 
 @app.route('/whoami')
 def hello():
@@ -88,3 +88,26 @@ def lobby_users():
         'status': ('away' if last_seen < now - 30 else 'here')}
         for user, last_seen in global_lobby_users_last_seen.items()
     ])
+
+
+@app.route('/decks')
+@login_required
+def decks():
+    decks = Deck.query.filter_by(owner_id=current_user.id)
+    return render_template('decks.html', decks=decks)
+
+
+@app.route('/decks', methods=['POST'])
+@login_required
+def new_deck():
+    deck = Deck(owner_id=current_user.id, name="Unnamed Deck")
+    db.session.add(deck)
+    db.session.commit()
+    return redirect(url_for('deck', deck_id=deck.id))
+
+
+@app.route('/deck/<deck_id>')
+@login_required
+def deck(deck_id):
+    deck = Deck.query.get_or_404(deck_id)
+    return render_template('deck.html', deck=deck, cards=cards.all())
