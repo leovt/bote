@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Decks</h1>
+    <h2>List of your decks</h2>
     {% for deck in decks %}
     <p><a href="/deck/{{ deck.id }}">{{ deck.name }}</a></p>
     {% endfor %}
