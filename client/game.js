@@ -35,7 +35,7 @@ function getBackfaceCardElement(card_id){
     element = document.createElement('img');
     element.setAttribute('id', card_id);
     element.setAttribute('class', 'card');
-    element.setAttribute('src', 'backface.png');
+    element.setAttribute('src', BACKFACE_URL);
   }
   return element;
 }

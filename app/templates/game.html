@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link href="game.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='game.css') }}" rel="stylesheet">
 </head>
 <body style="display:flex">
   <div id="left-column" style="flex:30%">
@@ -21,7 +21,7 @@
     <h3>Graveyard</h3>
     <div id="op-graveyard" class="graveyard"></div>
     <div id="stepconfirm">
-      <object type="image/svg+xml" data="steps.svg" id="stepindicator"></object>
+      <object type="image/svg+xml" data="{{ url_for('static', filename='steps.svg') }}" id="stepindicator"></object>
       <button id="confirm">Confirm</button>
     </div>
     <h1>My Stats</h1>
@@ -43,21 +43,11 @@
     <div id="hand"></div>
   </div>
 </body>
-<script src="game.js"></script>
+<script src="{{ url_for('static', filename='game.js') }}"></script>
 <script>
 log_count = 0;
-
-function create() {
-  var httpRequest = new XMLHttpRequest();
-  httpRequest.addEventListener("load", function () {
-    game_uri = httpRequest.getResponseHeader('Location');
-    log_refresh();
-  });
-  httpRequest.open("POST", `/game/create`);
-  httpRequest.send();
-}
-
-create();
-
+game_uri = document.URL;
+BACKFACE_URL = "{{ url_for('static', filename='backface.png') }}";
+log_refresh();
 </script>
 </html>

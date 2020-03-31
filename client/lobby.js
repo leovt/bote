@@ -34,10 +34,12 @@ function read_msg() {
 }
 
 function update_users() {
+  // Update the User List
   var users = document.getElementById('users');
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     var obsolete = new Set(Array.from(users.children).map(el => el.id));
+    console.log(httpRequest.responseText);
     var result = JSON.parse(httpRequest.responseText);
     result.forEach(function(usr) {
       let element_id = `user-${usr.user}`;
@@ -59,6 +61,25 @@ function update_users() {
   });
   httpRequest.open("GET", `/lobby_users`);
   httpRequest.send();
+
+  // Update the Game List
+  var games = document.getElementById('games');
+  var httpRequest2 = new XMLHttpRequest();
+  httpRequest2.addEventListener("load", function () {
+    games.innerHTML = "";
+    var result = JSON.parse(httpRequest2.responseText);
+    result.forEach(function(game) {
+        var element = document.createElement('li');
+        var anchor = document.createElement('a');
+        anchor.href = game.url;
+        anchor.innerText = game.players.join(" vs. ");
+        anchor.target = '_blank';
+        element.appendChild(anchor);
+        games.appendChild(element);
+    });
+  });
+  httpRequest2.open("GET", `/games`);
+  httpRequest2.send();
   window.setTimeout(update_users, 5000);
 }
 

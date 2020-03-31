@@ -1,4 +1,4 @@
-from flask import abort, jsonify, request
+from flask import abort, jsonify, request, render_template
 from flask_login import login_required, current_user
 
 from app import app
@@ -9,6 +9,26 @@ from aiplayers import random_answer
 
 
 games = {}
+
+@app.route('/games')
+@login_required
+def my_games():
+    '''produce a list of games for the current user'''
+    return jsonify([{
+        'id': game_id,
+        'url': '/game/'+game_id,
+        'players': [p.name for p in game.players],}
+        for game_id, game in games.items()
+        if any(p.name == current_user.username for p in game.players)])
+
+
+@app.route('/game/<game_id>')
+@login_required
+def game(game_id):
+    game = games.get(game_id)
+    if not game:
+        abort(404)
+    return render_template('game.html')
 
 
 def advance_game_state(game):
@@ -101,3 +121,16 @@ def game_log(game_id):
         abort(400)
 
     return jsonify(dict(enumerate((e.serialize_for(player) for e in game.event_log[first:]), first)))
+
+
+
+# create a dummy game
+# TODO: remove when frontend can create games
+def create_game2():
+    game = setup_duel('Leo', TEST_DECK, '__ai__random__', TEST_DECK)
+    game.events = game_events(game)
+    game_id = tools.random_id()
+    advance_game_state(game)
+    games[game_id] = game
+    return "", 201, {'location': '/game/'+game_id}
+create_game2()
