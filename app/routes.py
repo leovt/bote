@@ -85,7 +85,9 @@ def lobby_users():
     now = time.time()
     return jsonify([{
         'user': user,
-        'status': ('away' if last_seen < now - 30 else 'here')}
+        'status': ('away' if last_seen < now - 30 else 'here'),
+        'is_me': (user == current_user.username),
+        }
         for user, last_seen in global_lobby_users_last_seen.items()
     ])
 

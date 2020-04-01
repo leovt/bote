@@ -51,7 +51,10 @@ def advance_game_state(game):
 @app.route('/game/create', methods=["POST"])
 @login_required
 def create_game():
-    game = setup_duel('Leo', TEST_DECK, '__ai__random__', TEST_DECK)
+    if request.json is None:
+        abort(415)
+
+    game = setup_duel(current_user.username, TEST_DECK, request.json['opponent'], TEST_DECK)
     game.events = game_events(game)
     game_id = tools.random_id()
     advance_game_state(game)
@@ -121,16 +124,3 @@ def game_log(game_id):
         abort(400)
 
     return jsonify(dict(enumerate((e.serialize_for(player) for e in game.event_log[first:]), first)))
-
-
-
-# create a dummy game
-# TODO: remove when frontend can create games
-def create_game2():
-    game = setup_duel('Leo', TEST_DECK, '__ai__random__', TEST_DECK)
-    game.events = game_events(game)
-    game_id = tools.random_id()
-    advance_game_state(game)
-    games[game_id] = game
-    return "", 201, {'location': '/game/'+game_id}
-create_game2()

@@ -6,6 +6,22 @@ function send_msg() {
   chat_msg.value = '';
 }
 
+
+function duel(username) {
+  var game_window = window.open('', '_blank');
+  game_window.document.write('Loading game ...');
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.addEventListener("load", function () {
+    game_window.location.href = httpRequest.getResponseHeader('Location');
+  });
+  httpRequest.open("POST", `/game/create`);
+  httpRequest.setRequestHeader('Content-Type', 'application/json');
+  httpRequest.send(JSON.stringify({
+    opponent: username
+  }));
+}
+
+
 msg_count = 0;
 
 function read_msg() {
@@ -39,7 +55,6 @@ function update_users() {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     var obsolete = new Set(Array.from(users.children).map(el => el.id));
-    console.log(httpRequest.responseText);
     var result = JSON.parse(httpRequest.responseText);
     result.forEach(function(usr) {
       let element_id = `user-${usr.user}`;
@@ -50,13 +65,24 @@ function update_users() {
       else {
         element = document.createElement('li');
         element.id = element_id;
+        element.innerText = usr.user;
+        if (!usr.is_me) {
+          button = document.createElement('button');
+          button.innerText = "Duel";
+          button.setAttribute('onclick', `duel('${usr.user}')`);
+          element.appendChild(button);
+        }
         users.appendChild(element);
       }
-      element.innerText = usr.user;
       element.className = `user-${usr.status}`;
     });
-    for (var element of obsolete) {
-      users.removeChild(element);
+    for (var element_id of obsolete) {
+      if (element_id) {
+        var element = document.getElementById(element_id);
+        if (!element.classList.contains("robot_user")) {
+          users.removeChild(element);
+        }
+      }
     }
   });
   httpRequest.open("GET", `/lobby_users`);

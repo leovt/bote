@@ -12,6 +12,11 @@ ul#users > li.user-away::before {
   color: orange;
 }
 
+ul#users > li.robot_user::before {
+  content: '🤖 ';
+  color: grey;
+}
+
 .chat_message {
   background: lightblue;
   border: 1px solid black;
