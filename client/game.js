@@ -108,9 +108,6 @@ function handleGameEvent(event) {
     }[event.step];
     if (!passText) passText = 'Pass';
   }
-  if (event.event_id == 'QuestionEvent' && event.question.player.is_me) {
-    build_question_ui(event);
-  }
   if (event.event_id == 'AttackEvent') {
     let attacker = attackers[event.attacker.card.card_id];
     if (!attacker) {
@@ -150,7 +147,11 @@ function log_refresh () {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     result = JSON.parse(httpRequest.responseText);
-    forEachKeyValue(result, (key, event) => handleGameEvent(event));
+    forEachKeyValue(result.event_log, (key, event) => handleGameEvent(event));
+    if (result.question && result.question.player.is_me) {
+      build_question_ui(result.question);
+    }
+
   });
   httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
   httpRequest.send();
@@ -291,8 +292,8 @@ function Attacker(card_id, choice_id) {
 }
 
 
-function build_question_ui(event){
-  question = event.question;
+function build_question_ui(question){
+  window.question = question;
   document.getElementById('answer').setAttribute('style', '');
   var choices = document.getElementById('choices');
   choices.innerHTML = "";

@@ -2,7 +2,7 @@ from flask import abort, jsonify, request, render_template
 from flask_login import login_required, current_user
 
 from app import app
-from state import setup_duel, game_events
+from state import setup_duel
 import tools
 from dummy_deck import TEST_DECK
 from aiplayers import random_answer
@@ -33,19 +33,17 @@ def game(game_id):
 
 def advance_game_state(game):
     while True:
-        if game.question:
-            if game.question.player.name == '__ai__random__':
-                player = game.question.player
-                answer = random_answer(game.question)
-                ret = game.set_answer(player, answer)
-                assert ret, f'random answer is not valid: {game.question}? {answer}.'
-                game.question = None
-                # todo: game.question = None is necessary, but this should not be necessary
-                # and somehow be handled in set_answer
-            else:
-                break
-        event = next(game.events)
-        game.handle(event)
+        question = game.next_decision()
+        if not question:
+            break
+
+        if question.player.name == '__ai__random__':
+            answer = random_answer(question)
+            ret = game.set_answer(question.player, answer)
+            assert ret, 'random answer is not valid'
+            game.question = None
+        else:
+            return question
 
 
 @app.route('/game/create', methods=["POST"])
@@ -55,7 +53,7 @@ def create_game():
         abort(415)
 
     game = setup_duel(current_user.username, TEST_DECK, request.json['opponent'], TEST_DECK)
-    game.events = game_events(game)
+    game.run()
     game_id = tools.random_id()
     advance_game_state(game)
     games[game_id] = game
@@ -123,4 +121,14 @@ def game_log(game_id):
     if first<0:
         abort(400)
 
-    return jsonify(dict(enumerate((e.serialize_for(player) for e in game.event_log[first:]), first)))
+    response = {
+        'is_running': True,
+        'event_log': dict(enumerate((e.serialize_for(player) for e in game.event_log[first:]), first)),
+    }
+    question = advance_game_state(game)
+    if question is None:
+        response['is_running'] = False
+    else:
+        response['question'] = question.serialize_for(player)
+
+    return jsonify(response)
