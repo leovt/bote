@@ -340,7 +340,34 @@ class Game:
             if self.question.validate(player, answer):
                 self.answer = answer
                 return True
+            else:
+                print('validate failed')
+        else:
+            print('did not expect answer now')
         return False
+
+    def run(self):
+        # todo: move to __init__
+        self.events = game_events(self)
+
+    def next_decision(self):
+        ''' return the next question which needs to be answered
+            if necessary advance the game to the next question
+            if the question is not answered it will be returned repeatedly.
+            if the game has ended None is returned
+        '''
+        while self.question is None:
+            event = next(self.events, None)
+            if event is None:
+                return
+            if isinstance(event, QuestionEvent):
+                self.question = event.question
+                self.answer = None
+                break
+            self.handle(event)
+
+        return self.question
+
 
 def make_library(deck, player):
     return [Card(x, player) for x in deck]
