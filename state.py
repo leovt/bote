@@ -370,7 +370,10 @@ class Game:
 
 
 def make_library(deck, player):
-    return [Card(x, player) for x in deck]
+    return [Card(ArtCard.get_by_id(art_id), player)
+            for art_id, count in deck.items()
+            for _ in range(count)]
+
 
 def setup_duel(name1, deck1, name2, deck2):
     p1 = Player(name1, None)
