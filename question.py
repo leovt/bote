@@ -1,13 +1,15 @@
 from tools import Namespace
+import tools
 
 class Question:
     def __str__(self):
         return '%s(%s, [...])' % (self.__class__.__name__, self.player)
 
 class ChooseAction(Question):
-    def __init__(self, player, choices):
+    def __init__(self, game, player, choices):
         self.player = player
         self.choices = choices
+        self.id = next(game.unique_ids)
 
     def validate(self, player, answer):
         return (player is self.player and
@@ -15,6 +17,7 @@ class ChooseAction(Question):
 
     def serialize_for(self, player):
         ret = Namespace(
+            id = self.id,
             question = 'ChooseAction',
             player = self.player.serialize_for(player),
         )
@@ -23,9 +26,10 @@ class ChooseAction(Question):
         return ret
 
 class DeclareAttackers(Question):
-    def __init__(self, player, choices):
+    def __init__(self, game, player, choices):
         self.player = player
         self.choices = choices
+        self.id = next(game.unique_ids)
 
     def validate(self, player, answer):
         return (player is self.player and
@@ -35,15 +39,17 @@ class DeclareAttackers(Question):
 
     def serialize_for(self, player):
         return Namespace(
+            id = self.id,
             question = 'DeclareAttackers',
             player = self.player.serialize_for(player),
             choices = {key:choice.serialize_for(player) for key, choice in self.choices.items()}
         )
 
 class DeclareBlockers(Question):
-    def __init__(self, player, choices):
+    def __init__(self, game, player, choices):
         self.player = player
         self.choices = choices
+        self.id = next(game.unique_ids)
 
     def validate(self, player, answer):
         return (player is self.player and
@@ -54,6 +60,7 @@ class DeclareBlockers(Question):
 
     def serialize_for(self, player):
         return dict(
+            id = self.id,
             question = 'DeclareBlockers',
             player = self.player.serialize_for(player),
             choices = {key: {'candidate': str(choice['candidate']),
@@ -62,9 +69,10 @@ class DeclareBlockers(Question):
         )
 
 class OrderBlockers(Question):
-    def __init__(self, player, choices):
+    def __init__(self, game, player, choices):
         self.player = player
         self.choices = choices
+        self.id = next(game.unique_ids)
 
     def validate(self, player, answer):
         return (player is self.player and
@@ -78,6 +86,7 @@ class OrderBlockers(Question):
 
     def serialize_for(self, player):
         return Namespace(
+            id = self.id,
             question = 'OrderBlockers',
             player = self.player.serialize_for(player),
             choices = {key: {'attacker': str(choice['attacker']),

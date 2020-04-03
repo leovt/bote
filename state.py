@@ -452,7 +452,7 @@ def turn_based_actions(game):
         candidates = {next(game.unique_ids): permanent for permanent in
             game.battlefield.creatures.controlled_by(game.active_player)}
         choices = {key: c.card for key, c in candidates.items()}
-        question = DeclareAttackers(game.active_player, choices)
+        question = DeclareAttackers(game, game.active_player, choices)
         yield QuestionEvent(question)
         attackers_chosen = game.answer
         if attackers_chosen:
@@ -473,7 +473,7 @@ def turn_based_actions(game):
                 continue
             blocking = {}
             blocked_by = defaultdict(list)
-            question = DeclareBlockers(player,
+            question = DeclareBlockers(game, player,
                 {key: {'candidate': cand, 'attackers': attackers}
                  for key, cand in candidates.items()})
             yield QuestionEvent(question)
@@ -494,7 +494,7 @@ def turn_based_actions(game):
                 choices = {key: {'attacker': attacker,
                                  'blockers': {next(game.unique_ids): b for b in blockers}}
                            for key, (attacker, blockers) in ambigous.items()}
-                question = OrderBlockers(game.active_player, choices)
+                question = OrderBlockers(game, game.active_player, choices)
                 yield QuestionEvent(question)
                 for key, block_order in game.answer.items():
                     blockers = ambigous[key][1]
@@ -573,7 +573,7 @@ def discard_excess_cards(game):
     player = game.active_player
     while len(player.hand)>7:
         choices = {next(game.unique_ids): card for card in player.hand}
-        question = ChooseAction(player, {key: dict(
+        question = ChooseAction(game, player, {key: dict(
             action='discard', card_id=card.known_identity, text=f'discard {card.name}')
             for key, card in choices.items()})
         yield QuestionEvent(question)
@@ -630,7 +630,7 @@ def player_action(game, player):
                         for cost in ability.cost] + [(ability.effect, (player,))],
                         action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
                         text=f'activate {permanent.card.name}:{ability}')
-    question = ChooseAction(player, choices)
+    question = ChooseAction(game, player, choices)
     yield QuestionEvent(question)
     answer = game.answer
     if actions[answer] is None:
