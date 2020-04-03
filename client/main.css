@@ -65,3 +65,15 @@ ul.menu a {
 ul.menu a.active {
   background: lightgreen;
 }
+
+div.player {
+  display: inline-block;
+  padding: 2em;
+  margin: 1em;
+  border-radius: 1em;
+  background: lightblue;
+}
+
+div.player.ready {
+  background: lightgreen;
+}

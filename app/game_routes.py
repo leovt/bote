@@ -2,10 +2,7 @@ from flask import abort, jsonify, request, render_template
 from flask_login import login_required, current_user
 
 from app import app
-from state import setup_duel
-import tools
-from dummy_deck import TEST_DECK
-from aiplayers import random_answer
+from app.models import Deck, GameFrontend
 
 
 games = {}
@@ -16,10 +13,12 @@ def my_games():
     '''produce a list of games for the current user'''
     return jsonify([{
         'id': game_id,
-        'url': '/game/'+game_id,
-        'players': [p.name for p in game.players],}
+        'url': game.url(),
+        'players': [game.user1, game.user2],
+        }
         for game_id, game in games.items()
-        if any(p.name == current_user.username for p in game.players)])
+        if current_user.username in (game.user1, game.user2)
+    ])
 
 
 @app.route('/game/<game_id>')
@@ -28,22 +27,27 @@ def game(game_id):
     game = games.get(game_id)
     if not game:
         abort(404)
+    if game.status == 'choose_deck':
+        if (game.user1 == current_user.username and not game.deck1) or \
+            (game.user2 == current_user.username and not game.deck2):
+            decks = Deck.query.filter_by(owner_id=current_user.id)
+        else:
+            decks = []
+        return render_template('choose_deck.html', game=game, decks=decks)
     return render_template('game.html')
 
 
-def advance_game_state(game):
-    while True:
-        question = game.next_decision()
-        if not question:
-            break
-
-        if question.player.name == '__ai__random__':
-            answer = random_answer(question)
-            ret = game.set_answer(question.player, answer)
-            assert ret, 'random answer is not valid'
-            game.question = None
-        else:
-            return question
+@app.route('/game/<game_id>/choose_deck', methods=['POST'])
+@login_required
+def choose_deck(game_id):
+    game = games.get(game_id)
+    if not game:
+        abort(404)
+    deck = Deck.query.get(request.json['deck_id'])
+    if not deck or deck.owner_id != current_user.id:
+        abort(400)
+    game.choose_deck(current_user.username, deck)
+    return ('', 204)
 
 
 @app.route('/game/create', methods=["POST"])
@@ -52,12 +56,10 @@ def create_game():
     if request.json is None:
         abort(415)
 
-    game = setup_duel(current_user.username, TEST_DECK, request.json['opponent'], TEST_DECK)
-    game.run()
-    game_id = tools.random_id()
-    advance_game_state(game)
-    games[game_id] = game
-    return "", 201, {'location': '/game/'+game_id}
+    new_game = GameFrontend(current_user.username, request.json['opponent'])
+    games[new_game.id] = new_game
+    assert new_game.url()
+    return "", 201, {'location': new_game.url()}
 
 
 @app.route('/game/<game_id>/answer', methods=["POST"])
@@ -66,6 +68,8 @@ def answer(game_id):
     game = games.get(game_id)
     if not game:
         abort(404)
+
+    game = game.game
     if game.answer is not None or game.question is None:
         abort(409)
 
@@ -87,16 +91,8 @@ def answer(game_id):
 
     game.question = None
     game.answer = ans
-    advance_game_state(game)
     return ('', 204)
 
-@app.route('/game/<game_id>/state')
-def game_state(game_id):
-    game = games.get(game_id)
-    if not game:
-        abort(404)
-
-    return jsonify(game.player_view())
 
 @app.route('/game/<game_id>/log')
 def game_log(game_id):
@@ -107,7 +103,7 @@ def game_log(game_id):
     if current_user.is_anonymous:
         player = None
     else:
-        for p in game.players:
+        for p in game.game.players:
             if p.name == current_user.username:
                 player = p
                 break
@@ -118,17 +114,15 @@ def game_log(game_id):
         first = int(request.args.get('first', 0))
     except ValueError:
         abort(400)
-    if first<0:
+    if first < 0:
         abort(400)
 
+    question = game.advance_game_state()
     response = {
-        'is_running': True,
-        'event_log': dict(enumerate((e.serialize_for(player) for e in game.event_log[first:]), first)),
+        'status': game.status,
+        'event_log': dict(enumerate((e.serialize_for(player) for e in game.game.event_log[first:]), first)),
     }
-    question = advance_game_state(game)
-    if question is None:
-        response['is_running'] = False
-    else:
+    if question:
         response['question'] = question.serialize_for(player)
 
     return jsonify(response)

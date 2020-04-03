@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="player{{ ' ready' if game.deck1 else '' }}">
+      <p>Name: {{ game.user1 }}</p>
+      {% if game.deck1 %}
+      <p>Ready</p>
+      {% else %}
+      <p>Waiting...</p>
+      {% endif %}
+    </div>
+    <div class="player{{ ' ready' if game.deck2 else '' }}">
+      <p>Name: {{ game.user2 }}</p>
+      {% if game.deck2 %}
+      <p>Ready</p>
+      {% else %}
+      <p>Waiting...</p>
+      {% endif %}
+    </div>
+    {% if decks %}
+    <h2>Choose your deck</h2>
+    <ul>
+    {% for deck in decks %}
+    <li><button onclick="choose_deck('{{ deck.id }}');">{{ deck.name }}</button></li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+    <script>
+function choose_deck(deck_id) {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.open("POST", "{{ url_for('choose_deck', game_id=game.id) }}");
+  httpRequest.setRequestHeader('Content-Type', 'application/json');
+  httpRequest.addEventListener("load", function(){location.reload(true)});
+  httpRequest.send(JSON.stringify({deck_id:deck_id}));
+}
+
+window.setTimeout(function(){location.reload(true);}, 3000);
+
+    </script>
+{% endblock %}
