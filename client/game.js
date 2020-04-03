@@ -143,6 +143,7 @@ function handleGameEvent(event) {
 
 
 function log_refresh () {
+  window.clearTimeout(window.log_refresh_timeout_id);
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     result = JSON.parse(httpRequest.responseText);
@@ -154,6 +155,7 @@ function log_refresh () {
   });
   httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
   httpRequest.send();
+  window.log_refresh_timeout_id = window.setTimeout(log_refresh, 1000);
 }
 
 function make_input_with_label(type, value, name, label, checked){
@@ -292,6 +294,11 @@ function Attacker(card_id, choice_id) {
 
 
 function build_question_ui(question){
+  if (window.question && window.question.id === question.id) {
+    // this question is already setup
+    return;
+  }
+  cleanupChooseActionUI();
   window.question = question;
   document.getElementById('answer').setAttribute('style', '');
   var choices = document.getElementById('choices');
@@ -424,6 +431,9 @@ function build_question_ui(question){
 
 
 function cleanupChooseActionUI() {
+  if (!window.question) {
+    return;
+  }
   let btn = document.getElementById('confirm');
   btn.disabled = true;
   btn.removeAttribute('onclick');
