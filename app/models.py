@@ -57,27 +57,15 @@ class GameFrontend:
             return
 
         if user == self.user1 and self.deck1 is None:
-            self.deck1 = deck
+            self.deck1 = {c.art_id: c.count for c in deck.cards}
         if user == self.user2 and self.deck2 is None:
-            self.deck2 = deck
+            self.deck2 = {c.art_id: c.count for c in deck.cards}
 
         if self.deck1 is not None and self.deck2 is not None:
             self.start()
 
     def start(self):
-        if isinstance(self.deck1, dict):
-            #todo: until figured out how to chose decks for robot players
-            deck1 = self.deck1
-        else:
-            deck1 = {c.art_id: c.count for c in self.deck1.cards}
-
-        if isinstance(self.deck2, dict):
-            #todo: until figured out how to chose decks for robot players
-            deck2 = self.deck2
-        else:
-            deck2 = {c.art_id: c.count for c in self.deck2.cards}
-
-        self.game = setup_duel(self.user1, deck1, self.user2, deck2)
+        self.game = setup_duel(self.user1, self.deck1, self.user2, self.deck2)
         self.game.run()
         self.status = 'started'
 
