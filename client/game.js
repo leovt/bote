@@ -1,18 +1,17 @@
 document.onmouseover = function(e){
-   e=window.event? event.srcElement: e.target;
-   if(e.className && e.className.indexOf('card')!=-1){
-     p = document.getElementById('cardview');
-     p.style.display = "block";
-     p.src = e.src;
+   var element = window.event ? event.srcElement: e.target;
+   if(element.classList.contains("card")){
+     var cardview = document.getElementById('cardview');
+     cardview.src = element.src;
+     cardview.style.visibility = "visible";
    }
 };
 
 document.onmouseout = function(e){
-    e=window.event? event.srcElement: e.target;
-    if(e.className && e.className.indexOf('card')!=-1){
-      p = document.getElementById('cardview');
-      p.style.display = "none";
-      p.src = "";
+  var element = window.event ? event.srcElement: e.target;
+  if(element.classList.contains("card")){
+      var cardview = document.getElementById('cardview');
+      cardview.style.visibility = "hidden";
     }
 };
 
