@@ -21,7 +21,7 @@
     <h3>Graveyard</h3>
     <div id="op-graveyard" class="graveyard"></div>
     <div id="stepconfirm">
-      <object type="image/svg+xml" data="{{ url_for('static', filename='steps.svg') }}" id="stepindicator"></object>
+      {% include 'steps.svg' %}
       <button id="confirm">Confirm</button>
     </div>
     <h1>My Stats</h1>

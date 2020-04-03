@@ -554,9 +554,7 @@ var indicate_step = (function() {
     }
     indicator_position = new_position;
 
-    var svgItem = document.getElementById("stepindicator")
-                          .contentDocument
-                          .getElementById("indicator");
+    var svgItem = document.getElementById("indicator");
     svgItem.setAttribute("style", `transform: rotate(${indicator_position}deg);`);
   };
 })();
