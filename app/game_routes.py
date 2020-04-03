@@ -15,6 +15,7 @@ def my_games():
         'id': game_id,
         'url': game.url(),
         'players': [game.user1, game.user2],
+        'status': game.status,
         }
         for game_id, game in games.items()
         if current_user.username in (game.user1, game.user2)

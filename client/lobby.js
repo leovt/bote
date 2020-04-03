@@ -101,6 +101,7 @@ function update_users() {
         anchor.innerText = game.players.join(" vs. ");
         anchor.target = '_blank';
         element.appendChild(anchor);
+        element.appendChild(document.createTextNode(`(${game.status})`));
         games.appendChild(element);
     });
   });
