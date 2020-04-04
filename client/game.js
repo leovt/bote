@@ -2,7 +2,7 @@ document.onmouseover = function(e){
    var element = window.event ? event.srcElement: e.target;
    if(element.classList.contains("card")){
      var cardview = document.getElementById('cardview');
-     cardview.src = element.src;
+     cardview.data = element.data;
      cardview.style.visibility = "visible";
    }
 };
@@ -20,21 +20,21 @@ document.onmouseout = function(e){
 function getCardElement(card){
   var element = document.getElementById(card.card_id);
   if (!element) {
-    element = document.createElement('img');
+    element = document.createElement('object');
     element.setAttribute('id', card.card_id);
     element.setAttribute('class', 'card');
   }
-  element.setAttribute('src', card.url);
+  element.setAttribute('data', card.url);
   return element;
 }
 
 function getBackfaceCardElement(card_id){
   var element = document.getElementById(card_id);
   if (!element) {
-    element = document.createElement('img');
+    element = document.createElement('object');
     element.setAttribute('id', card_id);
     element.setAttribute('class', 'card');
-    element.setAttribute('src', BACKFACE_URL);
+    element.setAttribute('data', BACKFACE_URL);
   }
   return element;
 }

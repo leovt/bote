@@ -7,7 +7,7 @@
     <h2>Cards available</h2>
     <div class="card_list">
     {% for card in cards %}
-      <img src="{{ url_for('art_svg_redirect', art_id=card.art_id) }}" onclick="add_card({{ card.art_id }})" class="card"></img>
+      <object data="{{ url_for('art_svg_redirect', art_id=card.art_id) }}" onclick="add_card({{ card.art_id }})" class="card"></object>
     {% endfor %}
     </div>
 {% endblock %}
