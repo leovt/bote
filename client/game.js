@@ -142,14 +142,43 @@ function handleGameEvent(event) {
 }
 
 
+function pass_only_choice(question) {
+  if (question.question == 'ChooseAction') {
+    var pass;
+    var count;
+    forEachKeyValue(question.choices, (action_id, action) => {
+      if (action.action === 'pass') {
+        pass = action_id;
+      }
+      count += 1;
+    });
+    if (count == 1) {
+      return pass;
+    }
+  }
+}
+
 function log_refresh () {
   window.clearTimeout(window.log_refresh_timeout_id);
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     result = JSON.parse(httpRequest.responseText);
     forEachKeyValue(result.event_log, (key, event) => handleGameEvent(event));
-    if (result.question && result.question.player.is_me) {
-      build_question_ui(result.question);
+    if (result.question) {
+      if (result.question.player.is_me) {
+        console.log(result.question);
+        var pass_oc = pass_only_choice(result.question);
+        var autopass = document.getElementById('autopass');
+        if (autopass.checked && pass_oc) {
+          send_answer(pass_oc);
+        }
+        else {
+          build_question_ui(result.question);
+        }
+      }
+      else {
+        document.getElementById('confirm').innerText = "waiting for " + result.question.player.name;
+      }
     }
 
   });
