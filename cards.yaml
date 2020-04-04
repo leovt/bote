@@ -69,11 +69,11 @@ cards:
       10201:
         image: kilauea.jpg
         attribution: USGS Hawaiian Volcano Observatory, 2018
-        frame: brown
+        frame: source
       10202:
         image: fire.jpg
         attribution: piotr1, 2019
-        frame: brown
+        frame: source
 
   103:
     names:
@@ -95,6 +95,7 @@ cards:
       10301:
         image: flammenkrieger.jpg
         attribution: Leonhard Vogt, 2020
+        frame: red
 
   104:
     names:
@@ -112,6 +113,7 @@ cards:
       10401:
         image: ''
         attribution: ''
+        frame: red
 
   105:
     names:
@@ -131,3 +133,4 @@ cards:
       10501:
         image: ''
         attribution: ''
+        frame: red

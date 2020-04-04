@@ -86,13 +86,13 @@ def art_svg(art_id, lang):
     if not art_card:
         abort(404)
     card = cards.card_spec(art_card['card_id'])
-    assert card, art_card['card_id']
     return render_template('card.svg',
         name = get_lang(card['names'], lang),
         cost = card.get('cost',''),
         type = card['type'],
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
         attribution = art_card['attribution'],
-        image_url = create_data_url('client/'+art_card['image']),
+        image_url = url_for('static', filename=art_card['image']),
         attributes = [str_ability(a, lang) for a in card.get('abilities', [])],
+        frame = art_card['frame'],
     ), 200, {'Content-Type': 'image/svg+xml'}

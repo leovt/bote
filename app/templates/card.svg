@@ -11,12 +11,7 @@
        height="400"
        x="0"
        y="0" />
-    <rect id="inner_border"
-       style="fill:#980000"
-       width="268"
-       height="386"
-       x="7"
-       y="7" />
+    <use xlink:href="{{ url_for('static', filename='card_includes.svg') }}#frame_{{ frame }}" />
     <text id="attribution"
        style="font-size:13px"
        x="22"

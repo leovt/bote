@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+   xmlns:html="http://www.w3.org/1999/xhtml"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   width="500" height="1000"
+   viewBox="0 0 500 1000"
+   version="1.1">
+  <defs>
+    <filter id='noise' x='0%' y='0%' width='100%' height='100%'>
+      <feTurbulence baseFrequency=".06 .09" width="200%" height="200%" top="-50%" type="fractalNoise" numOctaves="4" seed="0" result="noise1" />
+      <feColorMatrix type="matrix" values=
+         "0 0 0 1 0,
+         0 0 0 1 0,
+         0 0 0 1 0,
+         0 0 0 0 1"
+         in="noise1" result="noise2" />
+         <feComposite in="SourceGraphic" in2="noise2" operator="arithmetic" k1="0.7" k2="0.3" k3="0"/>
+      </filter>
+    <symbol viewport="0 0 28 28" id="energy_x">
+      <circle cx="14" cy="14" r="13" fill="lightgrey" stroke="grey" />
+    </symbol>
+    <symbol viewport="0 0 28 28" id="energy_r">
+      <circle cx="14" cy="14" r="13" fill="lightpink" stroke="red" />
+    </symbol>
+    <symbol viewport="0 0 28 28" id="energy_y">
+      <circle cx="14" cy="14" r="13" fill="cornsilk" stroke="gold" />
+    </symbol>
+    <symbol viewport="0 0 28 28" id="energy_b">
+      <circle cx="14" cy="14" r="13" fill="lightblue" stroke="blue" />
+    </symbol>
+    <symbol viewport="0 0 28 28" id="energy_g">
+      <circle cx="14" cy="14" r="13" fill="lightgreen" stroke="green" />
+    </symbol>
+    <symbol viewport="0 0 28 28" id="energy_w">
+      <circle cx="14" cy="14" r="13" fill="white" stroke="lightgrey" />
+    </symbol>
+    <g id="frame_source" filter="url(#noise)">
+      <rect fill="sienna" width="268" height="386" x="7" y="7" />
+    </g>
+    <g id="frame_red" filter="url(#noise)">
+      <rect fill="firebrick" width="268" height="386" x="7" y="7" />
+    </g>
+  </defs>
+  <rect style="fill:#fff" width="100%" height="100%" x="0" y="0" />
+  <rect style="fill:#000" width="100%" height="50" x="0" y="150" />
+  <rect id="outer_border" style="fill:#000000" width="282" height="400" x="0" y="0" />
+  <use xlink:href="#frame_source" />
+  <use xlink:href="#frame_source" transform="translate(300 0)"/>
+  <use xlink:href="#energy_x" x="240"  y="10" />
+  <use xlink:href="#energy_x" x="210"  y="10" />
+  <use xlink:href="#energy_x" x="180"  y="10" />
+
+  <use xlink:href="#energy_x" x="5"  y="450" />
+  <use xlink:href="#energy_x" transform="translate(40 450)scale(5)"/>
+  <use xlink:href="#energy_r" x="205"  y="450" />
+  <use xlink:href="#energy_r" transform="translate(240 450)scale(5)"/>
+  <use xlink:href="#energy_y" x="5"  y="625" />
+  <use xlink:href="#energy_y" transform="translate(40 625)scale(5)"/>
+  <use xlink:href="#energy_b" x="205"  y="625" />
+  <use xlink:href="#energy_b" transform="translate(240 625)scale(5)"/>
+  <use xlink:href="#energy_g" x="5"  y="800" />
+  <use xlink:href="#energy_g" transform="translate(40 800)scale(5)"/>
+  <use xlink:href="#energy_w" x="205"  y="800" />
+  <use xlink:href="#energy_w" transform="translate(240 800)scale(5)"/>
+    <text id="attribution"
+       style="font-size:13px"
+       x="22"
+       y="385"
+       >{{attribution}}</text>
+    <rect id="textbox"
+       style="fill:#987100"
+       width="240"
+       height="145"
+       x="21"
+       y="225" />
+       <foreignObject x="21" y="225" width="240" height="145">
+         {% for attr in attributes %}
+         <html:p class="attribute">{{attr}}</html:p>
+         {% endfor %}
+         <html:p class="flavour">{{flavour}}</html:p>
+      </foreignObject>
+    <text id="stats"
+       style="font-size:28px"
+       x="261"
+       y="383"
+       text-anchor="end"
+       >{{stats}}</text>
+    <text id="type"
+       style="font-size:18px"
+       x="22"
+       y="220">{{type}}</text>
+    <text id="name"
+          style="font-size:18px"
+          x="21"
+          y="30"
+          >{{name}}</text>
+          <text id="cost"
+             style="font-size:18px"
+             x="261"
+             y="30"
+             text-anchor="end"
+             >{{cost}}</text>
+
+    <rect id="image"
+      width="240"
+      height="160"
+      x="21"
+      y="40"
+      fill="white"/>
+
+</svg>
