@@ -480,15 +480,7 @@ cleanupFunctions = {
   'OrderBlockers': cleanupOrderBlockersUI
 };
 
-
-function get_and_send_answer () {
-  var httpRequest = new XMLHttpRequest();
-  httpRequest.open("POST", `${game_uri}/answer`);
-  httpRequest.setRequestHeader('Content-Type', 'application/json');
-  httpRequest.addEventListener("load", function(){
-    document.getElementById('answer').setAttribute('style', 'display: none;');
-    log_refresh();
-  });
+function get_answer() {
   var answer;
   if (question.question == 'ChooseAction'){
     let radios = document.getElementsByName('action');
@@ -525,8 +517,27 @@ function get_and_send_answer () {
     });
   }
   cleanupFunctions[question.question]();
+  return answer;
+}
+
+
+function send_answer (answer) {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.open("POST", `${game_uri}/answer`);
+  httpRequest.setRequestHeader('Content-Type', 'application/json');
+  httpRequest.addEventListener("load", function(){
+    document.getElementById('answer').setAttribute('style', 'display: none;');
+    log_refresh();
+  });
+
   httpRequest.send(JSON.stringify({"answer": answer}));
 }
+
+
+function get_and_send_answer () {
+  send_answer(get_answer());
+}
+
 
 function reorderUp(item_id) {
   var item = document.getElementById(item_id);
