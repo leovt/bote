@@ -15,8 +15,8 @@ function add_card(art_id) {
     let minus = document.createElement('button');
     minus.innerText="-";
     minus.setAttribute('onclick', `remove_card(${art_id})`);
-    let img = document.createElement('object');
-    img.data=`/card/svg/${art_id}`;
+    let img = document.createElement('img');
+    img.src=`/card/svg/${art_id}`;
     img.className = "card";
     let count = document.createElement('span');
     count.id = `count${art_id}`;
