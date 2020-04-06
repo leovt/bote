@@ -1,24 +1,75 @@
+body {
+  display: grid;
+  grid-template-columns: 3fr 2fr 1fr 6fr;
+  grid-template-rows: repeat(12, 1fr);
+  justify-items: stretch;
+  align-items: stretch;
+}
+html, body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+#logarea {
+  display: none;
+}
+
+#cardview {
+  grid-column: 1;
+  grid-row: 1 / span 12;
+  align-self: center;
+  margin:10px;
+}
+
+#op-stats {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+}
+
+#stepconfirm {
+  grid-column: 2;
+  grid-row: 5 / span 4;
+}
+
+#my-stats {
+  grid-column: 2;
+  grid-row: 9 / span 4;
+}
+
+#stack {
+  grid-column: 3;
+  grid-row: 1 / span 12;
+}
+
 #bf-theirs {
-  transform: rotate(180deg);
-  flex: 25%;
+  grid-column: 4;
+  grid-row: 1 / span 3;
+}
+
+#combat {
+  grid-column: 4;
+  grid-row: 4 / span 3;
 }
 
 #bf-mine {
-  flex: 25%;
+  grid-column: 4;
+  grid-row: 7 / span 3;
 }
 
-#right {
-  flex: 50%;
-  display: flex;
-  flex-direction: column;
+#hand {
+  grid-column: 4;
+  grid-row: 10 / span 3;
+}
+
+
+#bf-theirs {
+  transform: rotate(180deg);
 }
 
 .card.tap {
   transform: rotate(90deg);
-}
-
-#log {
-  display:none;
 }
 
 .card {
@@ -32,14 +83,9 @@
   margin: 2px;
 }
 
-#hand {
-  flex: 20%;
-}
-
 #combat {
   background: orange;
   padding: 10px;
-  flex: 20%
 }
 
 #combat.opponent-attacking {

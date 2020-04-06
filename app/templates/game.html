@@ -3,49 +3,42 @@
 <head>
   <link href="{{ url_for('static', filename='game.css') }}" rel="stylesheet">
 </head>
-<body style="display:flex">
-  <div id="left-column" style="flex:30%">
+<body>
+  <div id="logarea">
     <ul id="log" style="overflow:scroll; height:300px;"></ul>
     <button onclick="log_refresh()">Refresh</button>
     <div id="answer" style="display: none;">
       <div id="choices"></div>
       <button onclick="send_answer()">Answer</button>
     </div>
-    <img id="cardview"></img>
   </div>
-  <div style="flex:20%">
-    <h1>Opponents Stats</h1>
+  <img id="cardview"></img>
+  <div id="op-stats">
+    Opponents Stats
     <p id="op-life"></p>
     <p id="op-energy"></p>
     <div id="op-hand"></div>
-    <h3>Graveyard</h3>
     <div id="op-graveyard" class="graveyard"></div>
-    <div id="stepconfirm">
-      {% include 'steps.svg' %}
-      <p><button id="confirm">Confirm</button></p>
-      <p>
-        <input type="checkbox" id="autopass" checked></input>
-        <label for="autopass">Pass when no other choice</label>
-      </p>
-    </div>
-    <h1>My Stats</h1>
+  </div>
+  <div id="stepconfirm">
+    {% include 'steps.svg' %}
+    <p><button id="confirm">Confirm</button></p>
+    <p>
+      <input type="checkbox" id="autopass" checked></input>
+      <label for="autopass">Pass when no other choice</label>
+    </p>
+  </div>
+  <div id="my-stats">
+    My Stats
     <p id="my-life"></p>
     <p id="my-energy"></p>
-    <h3>Graveyard</h3>
     <div id="my-graveyard" class="graveyard"></div>
   </div>
-  <div style="flex:10%">
-    <h1>Stack</h1>
-    <div id="stack"></div>
-  </div>
-  <div id="right">
-    <h1>Battlefield</h1>
-    <div id="bf-theirs"></div>
-    <div id="combat">Combat Arena</div>
-    <div id="bf-mine"></div>
-    <h1>Hand</h1>
-    <div id="hand"></div>
-  </div>
+  <div id="stack"></div>
+  <div id="bf-theirs"></div>
+  <div id="combat">Combat Arena</div>
+  <div id="bf-mine"></div>
+  <div id="hand"></div>
 </body>
 <script src="{{ url_for('static', filename='game.js') }}"></script>
 <script>
