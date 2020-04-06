@@ -72,12 +72,25 @@ def create_data_url(filename):
     return f'data:{mimetype};base64,{data}'
 
 
+KEYWORDS = {
+    'flying': {'en': 'Flying', 'de': 'Fliegend', 'ko': '비행'},
+    'trample': {'en': 'Trample', 'de': 'Trampelschaden', 'ko':'돌진'},
+    'haste': {'en': 'Haste', 'de': 'Eile', 'ko':'급행'},
+    }
+
+
 def str_ability(a, lang):
     if 'cost' in a:
         return parse_symbols_html(f"{a['cost']}: {describe_effect(a['effect'], lang)}")
     if 'keyword' in a:
-        return a['keyword'] #TODO: translate
+        return get_lang(KEYWORDS[a['keyword']], lang)
     if 'trigger' in a:
+        if a['trigger'] == 'step END':
+            return get_lang({
+                'en': 'At the end of the turn {}',
+                'de': '{} am Ende des Zuges',
+                'ko': '턴종료에 {}',
+                }, lang).format(describe_effect(a['effect'], lang))
         return str(a)
 
 
@@ -108,7 +121,7 @@ def art_svg(art_id, lang):
     return render_template('card.svg',
         name = get_lang(card['names'], lang),
         cost = cost,
-        type = card['type'],
+        type = get_lang(cards._types[card['type']], lang),
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
         attribution = art_card['attribution'],
         image_url = create_data_url('client/'+art_card['image']),

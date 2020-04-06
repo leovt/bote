@@ -97,6 +97,13 @@ def describe_effect(script, lang):
                 }[lang])
             else:
                 assert False, f'bad argument {tokens[1]}.'
+        elif tokens[0] == 'bury':
+                assert tokens[1] == '$self'
+                lines.append({
+                    'en': f'Bury this creature',
+                    'de': f'Begrabe diese Kreatur',
+                    'ko': f'이생물이 죽어요',
+                }[lang])
         else:
             assert False, f'Text for {tokens[0]} not implemented.'
     return ' '.join(lines)
