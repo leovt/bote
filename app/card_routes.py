@@ -85,11 +85,10 @@ def parse_symbols_html(text):
     def repl(match):
         symb = match.group(1).lower()
         print(match.groups(), symb)
-        href = url_for('static', filename='card_includes.svg')
         if symb in 'rygbwx':
-            href += '#energy_' + symb
+            href = '#energy_' + symb
         elif symb == 't':
-            href += '#tap'
+            href = '#tap'
         else:
             return match.group(0)
         return f'<svg class="icon"><use xlink:href="{href}" width="100%" height="100%"/></svg>'
@@ -112,7 +111,7 @@ def art_svg(art_id, lang):
         type = card['type'],
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
         attribution = art_card['attribution'],
-        image_url = url_for('static', filename=art_card['image']),
+        image_url = create_data_url('client/'+art_card['image']),
         attributes = [str_ability(a, lang) for a in card.get('abilities', [])],
         frame = art_card['frame'],
     ), 200, {'Content-Type': 'image/svg+xml'}
