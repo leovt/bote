@@ -85,11 +85,10 @@ def parse_symbols_html(text):
     def repl(match):
         symb = match.group(1).lower()
         print(match.groups(), symb)
-        href = url_for('static', filename='card_includes.svg')
         if symb in 'rygbwx':
-            href += '#energy_' + symb
+            href = '#energy_' + symb
         elif symb == 't':
-            href += '#tap'
+            href = '#tap'
         else:
             return match.group(0)
         return f'<svg class="icon"><use xlink:href="{href}" width="100%" height="100%"/></svg>'
