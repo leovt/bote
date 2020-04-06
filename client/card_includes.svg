@@ -16,23 +16,28 @@
          in="noise1" result="noise2" />
          <feComposite in="SourceGraphic" in2="noise2" operator="arithmetic" k1="0.7" k2="0.3" k3="0"/>
       </filter>
-    <symbol viewport="0 0 28 28" id="energy_x">
+    <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_x">
       <circle cx="14" cy="14" r="13" fill="lightgrey" stroke="grey" />
     </symbol>
-    <symbol viewport="0 0 28 28" id="energy_r">
+    <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_r">
       <circle cx="14" cy="14" r="13" fill="lightpink" stroke="red" />
     </symbol>
-    <symbol viewport="0 0 28 28" id="energy_y">
+    <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_y">
       <circle cx="14" cy="14" r="13" fill="cornsilk" stroke="gold" />
     </symbol>
-    <symbol viewport="0 0 28 28" id="energy_b">
+    <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_b">
       <circle cx="14" cy="14" r="13" fill="lightblue" stroke="blue" />
     </symbol>
-    <symbol viewport="0 0 28 28" id="energy_g">
+    <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_g">
       <circle cx="14" cy="14" r="13" fill="lightgreen" stroke="green" />
     </symbol>
-    <symbol viewport="0 0 28 28" id="energy_w">
+    <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_w">
       <circle cx="14" cy="14" r="13" fill="white" stroke="lightgrey" />
+    </symbol>
+    <symbol viewBox="0 0 28 28" width="28" height="28" id="tap">
+      <circle cx="14" cy="14" r="13" fill="grey" stroke="grey" />
+      <path d="M17 14 20 19.2 23 14 21 14 A 7 7 0 0 0 14 7 L 14 9 A 5 5 0 0 1 19 14 Z" fill="black"/>
+      <path d="M11 14 8 8.8 5 14 7 14 A 7 7 0 0 0 14 21 L 14 19 A 5 5 0 0 1 9 14 Z" fill="white"/>
     </symbol>
     <g id="frame_source" filter="url(#noise)">
       <rect fill="sienna" width="268" height="386" x="7" y="7" />
@@ -52,7 +57,7 @@
 
   <use xlink:href="#energy_x" x="5"  y="450" />
   <use xlink:href="#energy_x" transform="translate(40 450)scale(5)"/>
-  <use xlink:href="#energy_r" x="205"  y="450" />
+  <use xlink:href="#energy_r" x="205" y="450"/>
   <use xlink:href="#energy_r" transform="translate(240 450)scale(5)"/>
   <use xlink:href="#energy_y" x="5"  y="625" />
   <use xlink:href="#energy_y" transform="translate(40 625)scale(5)"/>

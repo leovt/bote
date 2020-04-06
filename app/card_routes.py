@@ -1,10 +1,12 @@
 import base64
 import mimetypes
+import re
 from flask import abort, jsonify, request, render_template, redirect, url_for
 
 from app import app
 import cards
 from abilities import describe_effect
+import energy
 
 
 @app.route('/card/<card_id>')
@@ -72,12 +74,27 @@ def create_data_url(filename):
 
 def str_ability(a, lang):
     if 'cost' in a:
-        return f"{a['cost']}: {describe_effect(a['effect'], lang)}"
+        return parse_symbols_html(f"{a['cost']}: {describe_effect(a['effect'], lang)}")
     if 'keyword' in a:
         return a['keyword'] #TODO: translate
     if 'trigger' in a:
         return str(a)
 
+
+def parse_symbols_html(text):
+    def repl(match):
+        symb = match.group(1).lower()
+        print(match.groups(), symb)
+        href = url_for('static', filename='card_includes.svg')
+        if symb in 'rygbwx':
+            href += '#energy_' + symb
+        elif symb == 't':
+            href += '#tap'
+        else:
+            return match.group(0)
+        return f'<svg class="icon"><use xlink:href="{href}" width="100%" height="100%"/></svg>'
+
+    return re.sub(r'\{(\w+)\}', repl, text)
 
 
 @app.route('/card/svg/<art_id>/<lang>')
@@ -86,9 +103,12 @@ def art_svg(art_id, lang):
     if not art_card:
         abort(404)
     card = cards.card_spec(art_card['card_id'])
+    cost = card.get('cost') or ''
+    if cost:
+        cost = energy.Energy.parse(cost).symbols()
     return render_template('card.svg',
         name = get_lang(card['names'], lang),
-        cost = card.get('cost',''),
+        cost = cost,
         type = card['type'],
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
         attribution = art_card['attribution'],

@@ -56,6 +56,18 @@ class Energy(tuple):
             ret.append(0)
         return ret
 
+    def symbols(self):
+        symbols = [
+            (self.red, 'r'),
+            (self.yellow, 'y'),
+            (self.green, 'g'),
+            (self.blue, 'b'),
+            (self.white, 'w'),
+        ]
+        symbols.sort(reverse=True)
+        symbols.append((self.total - self.red - self.green - self.yellow - self.blue - self.white, 'x'))
+        return ''.join(a*b for (a,b) in symbols)
+
     def __str__(self):
         return ''.join('{%s}' % x for x in self.decompose())
 

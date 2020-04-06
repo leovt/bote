@@ -5,7 +5,16 @@
    width="282" height="400"
    viewBox="0 0 282 400"
    version="1.1">
-  <rect id="outer_border"
+   <style>
+          .icon {
+              display: inline-block;
+              width: 1em;
+              height: 1em;
+              top: .125em;
+              position: relative;
+          }
+   </style>
+   <rect id="outer_border"
        style="fill:#000000"
        width="282"
        height="400"
@@ -44,6 +53,13 @@
           x="21"
           y="30"
           >{{name}}</text>
+    {% if cost %}
+    <g>
+      {% for symbol in cost|reverse %}
+      <use xlink:href="{{ url_for('static', filename='card_includes.svg') }}#energy_{{ symbol }}" x="{{ 240 - 20 * (loop.index-1) }}"  y="10" />
+      {% endfor %}
+    </g>
+    {% endif %}
           <text id="cost"
              style="font-size:18px"
              x="261"
