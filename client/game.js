@@ -329,8 +329,7 @@ function build_question_ui(question){
     var first = true;
     var makeOnclick = function(action_id) {
       return function () {
-        document.getElementById(`action-${action_id}`).checked = true;
-        get_and_send_answer();
+        send_answer(action_id);
       };
     };
     forEachKeyValue(question.choices, (action_id, action) => {
@@ -432,6 +431,7 @@ function build_question_ui(question){
     });
   }
   else if (question.question == 'OrderBlockers') {
+    make_ans_button("Confirm Blocker Order", get_and_send_answer);
     choices.innerHTML = "";
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(document.createTextNode(action.attacker));
