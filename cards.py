@@ -44,7 +44,7 @@ class RuleCard:
                                        parse_effect(ab_spec['effect']),
                                        ab_spec.get('energy_ability', False)))
             else:
-                print(f'{card_id}: Abilities other than activatable are not implemented')
+                abilities.append(ab_spec)
 
         return RuleCard(
             card_id = spec['card_id'],
@@ -55,6 +55,9 @@ class RuleCard:
             strength = spec.get('strength', 0),
             token = spec.get('token', False),
             abilities = abilities)
+
+    def has_keyword_ability(self, keyword):
+        return any(ability.get('keyword') == keyword for ability in self.abilities)
 
 
 @dataclass(eq=False, frozen=True)

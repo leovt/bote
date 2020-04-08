@@ -111,6 +111,7 @@ class Permanent:
     attacking: bool = False
     blocking: bool = False
     blockers: list = field(default_factory=list)
+    on_battlefield_at_begin_of_turn : bool = False
 
     @property
     def types(self):
@@ -228,6 +229,8 @@ class Game:
         if event.step == STEP.UNTAP:
             for player in self.players:
                 player.sources_played_this_turn = 0
+            for permanent in self.battlefield:
+                permanent.on_battlefield_at_begin_of_turn = True
 
     def handle_ClearPoolEvent(self, event):
         event.player.energy_pool.clear()
@@ -455,7 +458,10 @@ def turn_based_actions(game):
         yield from end_of_step(game)
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = {next(game.unique_ids): permanent for permanent in
-            game.battlefield.creatures.controlled_by(game.active_player)}
+            game.battlefield.creatures.controlled_by(game.active_player)
+            if permanent.on_battlefield_at_begin_of_turn or
+            permanent.card.has_keyword_ability('haste')
+            }
         choices = {key: c.card for key, c in candidates.items()}
         question = DeclareAttackers(game, game.active_player, choices)
         yield QuestionEvent(question)
