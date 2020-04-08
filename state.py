@@ -152,6 +152,7 @@ class Player:
     energy_pool: ObjectSet = field(default_factory=energy.EnergyPool)
     has_passed: bool = False
     has_drawn_from_empty_library: bool = False
+    sources_played_this_turn: int = 0
 
     def __str__(self):
         return self.name
@@ -224,6 +225,9 @@ class Game:
         assert event.active_player in self.players
         self.step = event.step
         self.active_player = event.active_player
+        if event.step == STEP.UNTAP:
+            for player in self.players:
+                player.sources_played_this_turn = 0
 
     def handle_ClearPoolEvent(self, event):
         event.player.energy_pool.clear()
@@ -253,6 +257,7 @@ class Game:
     def handle_PlaySourceEvent(self, event):
         player = self.get_player(event.player)
         player.hand.discard(event.card)
+        player.sources_played_this_turn += 1
 
     def handle_CastSpellEvent(self, event):
         player = self.get_player(event.player)
@@ -590,7 +595,7 @@ def draw_card(game, player):
         yield DrawEmptyEvent(player)
 
 def can_play_source(player):
-    return True
+    return player.sources_played_this_turn == 0
 
 def play_source(game, player, card):
     yield PlaySourceEvent(player.name, card)
