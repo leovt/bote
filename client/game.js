@@ -99,13 +99,6 @@ function handleGameEvent(event) {
       forEachKeyValue(attackers, (key, attacker) => attacker.destroy());
       attackers = null;
     }
-    passText = {
-      'BEGIN_COMBAT': 'Pass, go to declare attackers',
-      'DECLARE_ATTACKERS': 'Pass, go to declare blockers',
-      'DECLARE_BLOCKERS': 'Pass, go to combat damage',
-      'END': 'Pass, end the turn'
-    }[event.step];
-    if (!passText) passText = 'Pass';
   }
   if (event.event_id == 'AttackEvent') {
     let attacker = attackers[event.attacker.card.card_id];
@@ -170,7 +163,7 @@ function log_refresh () {
         var pass_oc = pass_only_choice(result.question);
         var autopass = document.getElementById('autopass');
         if (autopass.checked && pass_oc) {
-          send_answer(pass_oc);
+          window.setTimeout(send_answer, 1000, pass_oc);
         }
         else {
           build_question_ui(result.question);
@@ -178,13 +171,13 @@ function log_refresh () {
       }
       else {
         document.getElementById('confirm').innerText = "waiting for " + result.question.player.name;
+        window.log_refresh_timeout_id = window.setTimeout(log_refresh, 1000);
       }
     }
 
   });
   httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
   httpRequest.send();
-  window.log_refresh_timeout_id = window.setTimeout(log_refresh, 1000);
 }
 
 function make_input_with_label(type, value, name, label, checked){
@@ -351,7 +344,7 @@ function build_question_ui(question){
       first = false;
       choices.appendChild(document.createElement('br'));
       if (action.action == "pass") {
-        make_ans_button(passText, makeOnclick(action_id));
+        make_ans_button(action.text, makeOnclick(action_id));
       }
       if (action.action == 'play') {
         let card = document.getElementById(action.card_id);

@@ -618,7 +618,12 @@ def player_action(game, player):
         choices[key] = description
         actions[key] = effects
 
-    add_choice(None, action='pass', text='Pass Priority')
+    if game.stack:
+        pass_text = 'Pass, resolve %s' % game.stack[-1]
+    else:
+        pass_text = 'Pass, continue with %s' % NEXT_STEP[game.step]
+
+    add_choice(None, action='pass', text=pass_text)
 
     if (player is game.active_player and
         game.step in (STEP.PRECOMBAT_MAIN, STEP.POSTCOMBAT_MAIN) and
