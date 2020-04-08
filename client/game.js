@@ -145,7 +145,7 @@ function handleGameEvent(event) {
 function pass_only_choice(question) {
   if (question.question == 'ChooseAction') {
     var pass;
-    var count;
+    var count = 0;
     forEachKeyValue(question.choices, (action_id, action) => {
       if (action.action === 'pass') {
         pass = action_id;
