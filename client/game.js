@@ -238,8 +238,10 @@ function Attacker(card_id, choice_id) {
 
   cloneElement.classList.add('inmotion');
   cloneElement.classList.add('clone');
+  cloneElement.id += "_c";
   cardElement.classList.add('placeholder');
   placeholderElement.classList.add('placeholder');
+  placeholderElement.id += "_p";
 
   var fightbox = document.createElement('div');
   fightbox.setAttribute('class', 'fightbox');
