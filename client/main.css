@@ -1,5 +1,6 @@
 ul#users {
   list-style-type: none;
+  height: 30vh;
 }
 
 ul#users > li.user-here::before {
@@ -17,6 +18,14 @@ ul#users > li.robot_user::before {
   color: grey;
 }
 
+ul#games {
+  height: 30vh;
+}
+
+ul#chat {
+  height: 70vh;
+}
+
 .chat_message {
   background: lightblue;
   border: 1px solid black;
@@ -29,13 +38,12 @@ ul#users > li.robot_user::before {
   box-sizing: border-box;
 }
 
-#chat {
-  height: 50vh;
+.scroll-list {
   border: 1px solid black;
   overflow-y: scroll;
 }
 
-#chat li {
+.scroll-list li {
   padding-right: 0.5rem;
   padding-bottom: 0.5rem;
 }
@@ -84,4 +92,26 @@ div.player {
 
 div.player.ready {
   background: lightgreen;
+}
+
+#grid-lobby {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  column-gap: 1em;
+}
+
+#cell-users {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#cell-games {
+  grid-column: 1;
+  grid-row: 2
+}
+
+#cell-chat {
+  grid-column: 2;
+  grid-row: 1 / 3;
 }

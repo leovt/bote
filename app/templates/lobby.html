@@ -1,17 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
+  <div id="grid-lobby">
+    <div id="cell-users">
     <h2>Users</h2>
-    <ul id="users">
+    <ul id="users" class="scroll-list">
       <li class="robot_user">__ai__random__ <button onclick="duel('__ai__random__')">Duel</button></li>
     </ul>
+    </div>
+    <div id="cell-games">
     <h2>My Games</h2>
-    <ul id="games"></ul>
+    <ul id="games" class="scroll-list"></ul>
+  </div>
+  <div id="cell-chat">
     <h2>Chat</h2>
-    <ul id="chat"></ul>
+    <ul id="chat" class="scroll-list"></ul>
     <label for="chat_msg">Chat:</label>
     <input type='text' id="chat_msg" onkeyup="if (event.keyCode === 13) {send_msg();}"></input>
     <button onclick="send_msg();">Send</button>
+    </div>
+  </div>
 {% endblock %}
 
 {% block afterbody %}
