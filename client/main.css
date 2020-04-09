@@ -21,15 +21,23 @@ ul#users > li.robot_user::before {
   background: lightblue;
   border: 1px solid black;
   border-radius: 0.5rem;
-  box-shadow: 0.4rem grey;
+  box-shadow: 0.2rem 0.2rem 0.3rem gray;
   padding: 0.6rem;
   display: inline-block;
+  max-width: 100%;
+  word-wrap: break-word;
+  box-sizing: border-box;
 }
 
 #chat {
-  height: 50%;
+  height: 50vh;
   border: 1px solid black;
-  overflow: scroll;
+  overflow-y: scroll;
+}
+
+#chat li {
+  padding-right: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 .card_list {
