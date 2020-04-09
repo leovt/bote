@@ -468,6 +468,8 @@ def turn_based_actions(game):
         attackers_chosen = game.answer
         if attackers_chosen:
             for i in attackers_chosen:
+                if not candidates[i].card.has_keyword_ability('vigilance'):
+                    yield TapEvent(candidates[i])
                 yield AttackEvent(candidates[i], game.active_player.next_in_turn.name)
             yield from open_priority(game)
         else:
