@@ -158,6 +158,9 @@ function log_refresh () {
     result = JSON.parse(httpRequest.responseText);
     forEachKeyValue(result.event_log, (key, event) => handleGameEvent(event));
     if (result.question) {
+      var btn = document.getElementById('confirm');
+      btn.innerText = "...";
+      btn.disabled = true;
       if (result.question.player.is_me) {
         console.log(result.question);
         var pass_oc = pass_only_choice(result.question);
@@ -170,7 +173,7 @@ function log_refresh () {
         }
       }
       else {
-        document.getElementById('confirm').innerText = "waiting for " + result.question.player.name;
+        btn.innerText = "waiting for " + result.question.player.name;
         window.log_refresh_timeout_id = window.setTimeout(log_refresh, 1000);
       }
     }
@@ -332,6 +335,8 @@ function build_question_ui(question){
         send_answer(action_id);
       };
     };
+    var btn = document.getElementById('confirm');
+    btn.innerText = question.question;
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(make_input_with_label(
         type = 'radio',
