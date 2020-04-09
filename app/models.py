@@ -31,7 +31,9 @@ def load_user(uid):
 class Deck(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    owner = db.relationship("User")
     name = db.Column(db.String)
+    public = db.Column(db.Boolean, nullable=False, default=False)
     cards = db.relationship('DeckCard', backref='deck', lazy='dynamic')
 
 class DeckCard(db.Model):
