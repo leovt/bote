@@ -125,6 +125,7 @@ def save_deck(deck_id):
     if request.json is None:
         abort(415)
     deck.name = request.json['name']
+    deck.public = request.json['public']
     art_ids = {c.art_id for c in deck.cards}
     print("art_ids", art_ids)
     print("json", request.json)

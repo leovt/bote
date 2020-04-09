@@ -31,10 +31,11 @@ def game(game_id):
     if game.status == 'choose_deck':
         if (game.user1 == current_user.username and not game.deck1) or \
             (game.user2 == current_user.username and not game.deck2):
-            decks = Deck.query.filter_by(owner_id=current_user.id)
+            my_decks = Deck.query.filter_by(owner_id=current_user.id)
+            pub_decks = Deck.query.filter(Deck.owner_id != current_user.id, Deck.public == True)
         else:
-            decks = []
-        return render_template('choose_deck.html', game=game, decks=decks)
+            my_decks = pub_decks = []
+        return render_template('choose_deck.html', game=game, my_decks=my_decks, pub_decks=pub_decks)
     return render_template('game.html')
 
 
@@ -45,10 +46,14 @@ def choose_deck(game_id):
     if not game:
         abort(404)
     deck = Deck.query.get(request.json['deck_id'])
-    if not deck or deck.owner_id != current_user.id:
+    if not deck:
         abort(400)
-    game.choose_deck(current_user.username, deck)
-    return ('', 204)
+
+    if deck.public or deck.owner_id == current_user.id:
+        game.choose_deck(current_user.username, deck)
+        return ('', 204)
+
+    abort(400)
 
 
 @app.route('/game/create', methods=["POST"])

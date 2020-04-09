@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <p>Name: <input type="text" value="{{ deck.name }}" id="name"></input><button onclick="save_deck()">Save Deck</button></p>
+    <p><label for="name">Name: </label><input type="text" value="{{ deck.name }}" id="name"></input></p>
+    <p><label for="public">Allow all users to use this deck: </label><input type="checkbox" {% if deck.public %}checked {% endif %}id="public"></input></p>
+    <p><button onclick="save_deck()">Save Deck</button></p>
     <h2>Cards in Deck</h2>
     <div class="card_list" id=deck></div>
     <h2>Cards available</h2>

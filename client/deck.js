@@ -49,6 +49,7 @@ function save_deck() {
   httpRequest.addEventListener("load", function(){});
   httpRequest.send(JSON.stringify({
     name: document.getElementById('name').value,
-    cards: deck
+    cards: deck,
+    public: document.getElementById('public').checked,
   }));
 }

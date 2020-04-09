@@ -3,7 +3,7 @@
 {% block content %}
     <h2>List of your decks</h2>
     {% for deck in decks %}
-    <p><a href="/deck/{{ deck.id }}">{{ deck.name }}</a></p>
+    <p><a href="/deck/{{ deck.id }}">{{ deck.name }}</a>{% if deck.public %} (public){% endif %}</p>
     {% endfor %}
     <form method="POST">
       <button type="submit">Create a new Deck</button>

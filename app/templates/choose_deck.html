@@ -17,14 +17,20 @@
       <p>Waiting...</p>
       {% endif %}
     </div>
-    {% if decks %}
+    {% if my_decks %}
     <h2>Choose your deck</h2>
     <ul>
-    {% for deck in decks %}
+    {% for deck in my_decks %}
     <li><button onclick="choose_deck('{{ deck.id }}');">{{ deck.name }}</button></li>
     {% endfor %}
     </ul>
     {% endif %}
+    <h2>Or choose a public deck</h2>
+    <ul>
+    {% for deck in pub_decks %}
+    <li><button onclick="choose_deck('{{ deck.id }}');">{{ deck.name }}</button>by {{ deck.owner.username }}</li>
+    {% endfor %}
+    </ul>
     <script>
 function choose_deck(deck_id) {
   var httpRequest = new XMLHttpRequest();
