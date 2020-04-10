@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from enum import Enum
 import random
 from collections import defaultdict
 import energy
@@ -8,40 +7,7 @@ from abilities import ActivatableAbility
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace, unique_identifiers
-
-class STEP(Enum):
-    UNTAP = 11
-    UPKEEP = 12
-    DRAW = 13
-
-    PRECOMBAT_MAIN = 21
-
-    BEGIN_COMBAT = 31
-    DECLARE_ATTACKERS = 32
-    DECLARE_BLOCKERS = 33
-    FIRST_STRIKE_DAMAGE = 34
-    SECOND_STRIKE_DAMAGE = 35
-    END_OF_COMBAT = 36
-
-    POSTCOMBAT_MAIN = 41
-
-    END = 51
-    CLEANUP = 52
-
-    def serialize(self):
-        return self.name
-
-STEPS = [
-        STEP.UNTAP, STEP.UPKEEP, STEP.DRAW,
-        STEP.PRECOMBAT_MAIN,
-        STEP.BEGIN_COMBAT, STEP.DECLARE_ATTACKERS, STEP.DECLARE_BLOCKERS, STEP.FIRST_STRIKE_DAMAGE, STEP.SECOND_STRIKE_DAMAGE, STEP.END_OF_COMBAT,
-        STEP.POSTCOMBAT_MAIN,
-        STEP.END, STEP.CLEANUP]
-
-
-NEXT_STEP = {step:next_step for step, next_step in zip(STEPS, STEPS[1:])}
-
-
+from step import STEP, NEXT_STEP
 
 class ObjectView:
     def filter(self, predicate):
