@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
-import random
 from collections import defaultdict
 import energy
-from cards import Card, ArtCard, RuleCard
+from library import make_library
 from abilities import ActivatableAbility, TriggeredAbility
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace, unique_identifiers
 from step import STEP, NEXT_STEP
+
 
 class ObjectView:
     def filter(self, predicate):
@@ -195,7 +195,7 @@ class Game:
         event.new_total = event.player.energy_pool.energy
 
     def handle_DrawCardEvent(self, event):
-        card_popped = event.player.library.pop()
+        card_popped = event.player.library.pop_given(event.card)
         assert card_popped is event.card
         card_popped.known_identity = event.card_id
         event.player.hand.add(card_popped)
@@ -207,7 +207,7 @@ class Game:
         player = self.get_player(event.player)
         for card in player.library:
             card.known_identity = None
-        random.shuffle(player.library)
+        player.library.shuffle()
 
     def handle_StepEvent(self, event):
         assert event.active_player in self.players
@@ -368,10 +368,6 @@ class Game:
         return self.question
 
 
-def make_library(deck, player):
-    return [Card(ArtCard.get_by_id(art_id), player)
-            for art_id, count in deck.items()
-            for _ in range(count)]
 
 
 def setup_duel(name1, deck1, name2, deck2):
@@ -601,7 +597,7 @@ def discard_excess_cards(game):
 
 def draw_card(game, player):
     if player.library:
-        card = player.library[-1]
+        card = player.library.top()
         card_id = next(game.unique_ids)
         yield DrawCardEvent(player, card, card_id)
     else:
