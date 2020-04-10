@@ -3,7 +3,7 @@ import random
 from collections import defaultdict
 import energy
 from cards import Card, ArtCard, RuleCard
-from abilities import ActivatableAbility
+from abilities import ActivatableAbility, TriggeredAbility
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace, unique_identifiers
@@ -57,6 +57,26 @@ class Spell:
     def serialize_for(self, player):
         return {'controller': self.controller.name,
                 'card': self.card.serialize_for(player)}
+
+@dataclass(eq=False)
+class AbilityOnStack:
+    aos_id: str
+    permanent: object
+    ability: object
+
+    def resolve(self, game):
+        yield from self.ability.effect(self.permanent)
+
+    def __str__(self):
+        return f'ability of {self.permanent.card.name}'
+
+    def serialize_for(self, player):
+        return {'aos_id': self.aos_id,
+                'controller': self.permanent.controller.name,
+                'card': self.permanent.card.serialize_for(player),
+                'ability': self.ability.serialize_for(player),
+        }
+
 
 def cast_spell(game, player, card):
     yield PayEnergyEvent(player, card.cost)
@@ -145,6 +165,7 @@ class Game:
     question = None
     answer = None
     unique_ids: iter = field(default_factory=unique_identifiers)
+    triggers: list = field(default_factory=list)
 
     def log(self, event):
         print(event)
@@ -192,6 +213,7 @@ class Game:
         assert event.active_player in self.players
         self.step = event.step
         self.active_player = event.active_player
+        self.triggers.append(('BEGIN_OF_STEP', event.step))
         if event.step == STEP.UNTAP:
             for player in self.players:
                 player.sources_played_this_turn = 0
@@ -233,6 +255,9 @@ class Game:
         assert player in self.players
         player.hand.discard(event.card)
         self.stack.append(Spell(player, event.card))
+
+    def handle_ActivateAbilityEvent(self, event):
+        self.stack.append(AbilityOnStack(event.aos_id, event.permanent, event.ability))
 
     def handle_ResolveEvent(self, event):
         tos_popped = self.stack.pop()
@@ -386,9 +411,14 @@ def game_events(game):
     try:
         while True:
             if game.priority_player:
-                yield from state_based_actions(game)
-                while check_triggers(game):
+                while True:
                     yield from state_based_actions(game)
+                    triggered_abilities = check_triggers(game)
+                    if not triggered_abilities:
+                        break
+                    for (permanent, ability) in triggered_abilities:
+                        yield ActivateAbilityEvent(next(game.unique_ids), permanent, ability)
+
 
                 if game.priority_player.has_passed:
                     if game.stack:
@@ -540,9 +570,18 @@ def state_based_actions(game):
         if aura.attachment not in game.battlefield:
             yield from destroy(aura)
 
-
 def check_triggers(game):
-    pass
+    has_triggered = []
+    triggers = list(game.triggers)
+    for trigger in triggers:
+        game.triggers.remove(trigger)
+        for permanent in game.battlefield:
+            for ability in permanent.card.abilities:
+                if isinstance(ability, TriggeredAbility):
+                    if ability.trigger == trigger:
+                        has_triggered.append((permanent, ability))
+    return has_triggered
+
 
 def open_priority(game):
     yield ResetPassEvent()
@@ -611,7 +650,7 @@ def player_action(game, player):
             if isinstance(ability, ActivatableAbility):
                 if all(cost.can_pay(permanent, permanent.card) for cost in ability.cost):
                     add_choice([(cost.pay, (permanent, permanent.card))
-                        for cost in ability.cost] + [(ability.effect, (player,))],
+                        for cost in ability.cost] + [(ability.effect, (permanent,))],
                         action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
                         text=f'activate {permanent.card.name}:{ability}')
     question = ChooseAction(game, player, choices)

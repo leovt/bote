@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 
 import energy
-
-from event import Event, PayEnergyEvent, TapEvent
+from step import STEP
+from event import Event, PayEnergyEvent, TapEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent
 
 class EnergyCost:
     def __init__(self, energy):
@@ -46,6 +46,21 @@ class ActivatableAbility:
     def __str__(self):
         return '%s: activate ability' % ', '.join(str(x) for x in self.cost)
 
+    def serialize_for(self, player):
+        return {}
+
+@dataclass
+class TriggeredAbility:
+    trigger: object
+    effect: object
+
+    def __str__(self):
+        return 'triggered ability'
+
+    def serialize_for(self, player):
+        return {}
+
+
 def parse_cost(string):
     components = string.split(',')
     cost = []
@@ -60,19 +75,32 @@ def parse_cost(string):
     return cost
 
 def parse_effect(string):
-    def _effect(controller):
+    def _effect(permanent):
         for line in string.splitlines():
             tokens = line.split()
             args = []
             for token in tokens:
                 if token == '$controller':
-                    args.append(controller)
+                    args.append(permanent.controller)
+                elif token == '$self':
+                    args.append(permanent)
                 elif energy.Energy.parse(token):
                     args.append(energy.Energy.parse(token))
                 else:
                     args.append(token)
-            yield Event.from_id(*args)
+            if args[0] == 'bury':
+                yield ExitTheBattlefieldEvent(args[1])
+                yield PutInGraveyardEvent(args[1].card)
+            else:
+                yield Event.from_id(*args)
     return _effect
+
+
+def parse_trigger(string):
+    tokens = string.split()
+    if tokens[0] == 'BEGIN_OF_STEP':
+        return tokens[0], STEP[tokens[1]]
+    assert False, 'Unknown trigger %r' % string
 
 
 def describe_effect(script, lang):

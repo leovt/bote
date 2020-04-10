@@ -129,6 +129,13 @@ class CastSpellEvent(Event):
     player: object
     card: object
 
+@event_id('activate_ability')
+@dataclass(repr=False)
+class ActivateAbilityEvent(Event):
+    aos_id: str
+    permanent: object
+    ability: object
+
 @event_id('resolve_tos')
 @dataclass(repr=False)
 class ResolveEvent(Event):

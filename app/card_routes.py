@@ -33,7 +33,7 @@ def get_lang(names, lang):
     if name:
         return name
     return next(names.values())
-    
+
 
 @app.route('/card/svg/<art_id>')
 def art_svg_redirect(art_id):
@@ -85,13 +85,13 @@ def str_ability(a, lang):
     if 'keyword' in a:
         return get_lang(KEYWORDS[a['keyword']], lang)
     if 'trigger' in a:
-        if a['trigger'] == 'step END':
+        if a['trigger'] == 'BEGIN_OF_STEP END':
             return get_lang({
                 'en': 'At the end of the turn {}',
                 'de': '{} am Ende des Zuges',
                 'ko': '턴종료에 {}',
                 }, lang).format(describe_effect(a['effect'], lang))
-        return str(a)
+    return str(a)
 
 
 def parse_symbols_html(text):

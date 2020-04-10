@@ -30,12 +30,12 @@ html, body {
 
 #stepconfirm {
   grid-column: 2;
-  grid-row: 5 / span 4;
+  grid-row: 5 / span 5;
 }
 
 #my-stats {
   grid-column: 2;
-  grid-row: 9 / span 4;
+  grid-row: 10 / span 3;
 }
 
 #stack {
@@ -158,4 +158,9 @@ html, body {
 
 #stepindicator {
   pointer-events: none;
+}
+
+.ability {
+  border: 1px solid black;
+  padding: 0.3em;
 }

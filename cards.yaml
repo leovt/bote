@@ -88,7 +88,7 @@ cards:
     abilities:
       - keyword: haste
       - keyword: trample
-      - trigger: step END
+      - trigger: BEGIN_OF_STEP END
         effect: bury $self
 
     art:

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import functools
 import yaml
 import energy
-from abilities import ActivatableAbility, parse_cost, parse_effect
+from abilities import ActivatableAbility, TriggeredAbility, parse_cost, parse_effect, parse_trigger
 
 def instance_loader(loader):
     cache = {}
@@ -43,6 +43,11 @@ class RuleCard:
                     ActivatableAbility(parse_cost(ab_spec['cost']),
                                        parse_effect(ab_spec['effect']),
                                        ab_spec.get('energy_ability', False)))
+            if 'trigger' in ab_spec:
+                abilities.append(TriggeredAbility(
+                    parse_trigger(ab_spec['trigger']),
+                    parse_effect(ab_spec['effect'])))
+
             else:
                 abilities.append(ab_spec)
 
@@ -57,7 +62,7 @@ class RuleCard:
             abilities = abilities)
 
     def has_keyword_ability(self, keyword):
-        return any(ability.get('keyword') == keyword for ability in self.abilities)
+        return any(ability.get('keyword') == keyword for ability in self.abilities if isinstance(ability, dict))
 
 
 @dataclass(eq=False, frozen=True)

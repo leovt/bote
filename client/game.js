@@ -65,6 +65,23 @@ function handleGameEvent(event) {
     let tgt = document.getElementById('stack');
     animatedMove(getCardElement(event.card), tgt);
   }
+  if (event.event_id == 'ActivateAbilityEvent') {
+    let stack = document.getElementById('stack');
+    let card = getCardElement(event.permanent.card);
+    let rect = card.getBoundingClientRect();
+    let item = document.createElement('div');
+    item.innerText = "Effect of " + event.permanent.card.name;
+    item.className = "card ability";
+    item.id = event.aos_id;
+    stack.appendChild(item);
+  }
+  if (event.event_id == 'ResolveEvent') {
+    let stack = document.getElementById('stack');
+    let aos_id = event.tos.aos_id;
+    if (aos_id) {
+      stack.removeChild(document.getElementById(aos_id));
+    }
+  }
   if (event.event_id == 'TapEvent') {
     getCardElement(event.permanent.card).classList.add('tap');
   }
