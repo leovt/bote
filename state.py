@@ -79,7 +79,7 @@ class AbilityOnStack:
 
 
 def cast_spell(game, player, card):
-    yield PayEnergyEvent(player, card.cost)
+    yield PayEnergyEvent(player.name, card.cost)
     yield CastSpellEvent(player.name, card)
 
 
@@ -187,21 +187,25 @@ class Game:
         self.answer = None
 
     def handle_PayEnergyEvent(self, event):
-        event.player.energy_pool.pay(event.energy)
-        event.new_total = event.player.energy_pool.energy
+        player = self.get_player(event.player)
+        player.energy_pool.pay(event.energy)
+        event.new_total = player.energy_pool.energy
 
     def handle_AddEnergyEvent(self, event):
-        event.player.energy_pool.add(event.energy)
-        event.new_total = event.player.energy_pool.energy
+        player = self.get_player(event.player)
+        player.energy_pool.add(event.energy)
+        event.new_total = player.energy_pool.energy
 
     def handle_DrawCardEvent(self, event):
-        card_popped = event.player.library.pop_given(event.card)
+        player = self.get_player(event.player)
+        card_popped = player.library.pop_given(event.card)
         assert card_popped is event.card
         card_popped.known_identity = event.card_id
-        event.player.hand.add(card_popped)
+        player.hand.add(card_popped)
 
     def handle_DrawEmptyEvent(self, event):
-        event.player.has_drawn_from_empty_library = True
+        player = self.get_player(event.player)
+        player.has_drawn_from_empty_library = True
 
     def handle_ShuffleLibraryEvent(self, event):
         player = self.get_player(event.player)
@@ -210,9 +214,9 @@ class Game:
         player.library.shuffle()
 
     def handle_StepEvent(self, event):
-        assert event.active_player in self.players
+        self.active_player = self.get_player(event.active_player)
+        assert self.active_player
         self.step = event.step
-        self.active_player = event.active_player
         self.triggers.append(('BEGIN_OF_STEP', event.step))
         if event.step == STEP.UNTAP:
             for player in self.players:
@@ -221,7 +225,8 @@ class Game:
                 permanent.on_battlefield_at_begin_of_turn = True
 
     def handle_ClearPoolEvent(self, event):
-        event.player.energy_pool.clear()
+        player = self.get_player(event.player)
+        player.energy_pool.clear()
 
     def handle_PriorityEvent(self, event):
         self.priority_player = self.get_player(event.player)
@@ -231,7 +236,6 @@ class Game:
         player.has_passed = True
 
     def handle_EnterTheBattlefieldEvent(self, event):
-        #controller = self.get_player(event.controller)
         permanent = Permanent(event.card, event.controller, event.perm_id)
         self.battlefield.add(permanent)
 
@@ -286,8 +290,9 @@ class Game:
         event.permanent.damage.append(Damage(event.damage))
 
     def handle_PlayerDamageEvent(self, event):
-        event.player.life -= event.damage;
-        event.new_total = event.player.life;
+        player = self.get_player(event.player)
+        player.life -= event.damage;
+        event.new_total = player.life;
 
     def handle_RemoveFromCombatEvent(self, event):
         event.permanent.attacking = False
@@ -385,12 +390,12 @@ def start_game(game):
         for _ in range(7):
             yield from draw_card(game, player)
     p1 = game.players[0]
-    yield StepEvent(STEP.PRECOMBAT_MAIN, p1)
+    yield StepEvent(STEP.PRECOMBAT_MAIN, p1.name)
     yield PriorityEvent(p1.name)
 
 def end_of_step(game):
     for player in game.players:
-        yield ClearPoolEvent(player)
+        yield ClearPoolEvent(player.name)
     yield PriorityEvent(None)
 
     if game.step == STEP.END_OF_COMBAT:
@@ -398,9 +403,9 @@ def end_of_step(game):
             yield RemoveFromCombatEvent(permanent)
 
     if game.step == STEP.CLEANUP:
-        yield StepEvent(STEP.UNTAP, game.active_player.next_in_turn)
+        yield StepEvent(STEP.UNTAP, game.active_player.next_in_turn.name)
     else:
-        yield StepEvent(NEXT_STEP[game.step], game.active_player)
+        yield StepEvent(NEXT_STEP[game.step], game.active_player.name)
 
 def game_events(game):
     yield from start_game(game)
@@ -465,7 +470,7 @@ def turn_based_actions(game):
                 yield AttackEvent(candidates[i], game.active_player.next_in_turn.name)
             yield from open_priority(game)
         else:
-            yield StepEvent(STEP.END_OF_COMBAT, game.active_player)
+            yield StepEvent(STEP.END_OF_COMBAT, game.active_player.name)
     elif game.step == STEP.DECLARE_BLOCKERS:
         for player in game.players:
             attackers = {next(game.unique_ids): permanent for permanent in
@@ -510,7 +515,7 @@ def turn_based_actions(game):
         yield from open_priority(game)
     elif game.step == STEP.FIRST_STRIKE_DAMAGE:
         # TODO: do not skip this step if any attacker or blocker has first strike.
-        yield StepEvent(STEP.SECOND_STRIKE_DAMAGE, game.active_player)
+        yield StepEvent(STEP.SECOND_STRIKE_DAMAGE, game.active_player.name)
     elif game.step == STEP.SECOND_STRIKE_DAMAGE:
         for attacker in game.battlefield.filter(lambda x:x.attacking):
             remaining_strength = attacker.strength
@@ -524,7 +529,7 @@ def turn_based_actions(game):
                 yield DamageEvent(blocker, damage)
                 yield DamageEvent(attacker, blocker.strength)
             if remaining_strength:
-                yield PlayerDamageEvent(attacker.attacking, remaining_strength)
+                yield PlayerDamageEvent(attacker.attacking.name, remaining_strength)
         yield from open_priority(game)
     else:
         yield from open_priority(game)
@@ -549,12 +554,12 @@ def put_in_graveyard(permanent):
 def state_based_actions(game):
     for player in game.players:
         if player.life <= 0:
-            yield PlayerLosesEvent(player)
+            yield PlayerLosesEvent(player.name)
             # TODO: losing should not end the game if it is a multiplayer game
             raise EndOfGameException
     for player in game.players:
         if player.has_drawn_from_empty_library:
-            yield PlayerLosesEvent(player)
+            yield PlayerLosesEvent(player.name)
             # TODO: losing should not end the game if it is a multiplayer game
             raise EndOfGameException
     for creature in {c for c in game.battlefield.creatures if c.toughness <= 0}:
@@ -583,6 +588,7 @@ def open_priority(game):
     yield ResetPassEvent()
     yield PriorityEvent(game.active_player.name)
 
+
 def discard_excess_cards(game):
     player = game.active_player
     while len(player.hand)>7:
@@ -599,9 +605,9 @@ def draw_card(game, player):
     if player.library:
         card = player.library.top()
         card_id = next(game.unique_ids)
-        yield DrawCardEvent(player, card, card_id)
+        yield DrawCardEvent(player.name, card, card_id)
     else:
-        yield DrawEmptyEvent(player)
+        yield DrawEmptyEvent(player.name)
 
 def can_play_source(player):
     return player.sources_played_this_turn == 0

@@ -8,7 +8,9 @@ class Event:
         return event_classes[event_id](*args)
 
     def serialize_for(self, player):
-        def try_serialize(value):
+        def try_serialize(key, value):
+            if 'player' in key:
+                return {'name': value, 'is_me': value==player.name}
             if hasattr(value, 'serialize_for'):
                 return value.serialize_for(player)
             elif hasattr(value, 'serialize'):
@@ -19,7 +21,7 @@ class Event:
                 return str(value)
         d = {'event_id': self.__class__.__name__}
         d.update({
-            key: try_serialize(value) for key, value in self.__dict__.items()})
+            key: try_serialize(key, value) for key, value in self.__dict__.items()})
         return d
 
     def __str__(self):
@@ -62,8 +64,8 @@ class DrawCardEvent(Event):
 
     def serialize_for(self, player):
         d = {'event_id': self.__class__.__name__,
-             'player': self.player.serialize_for(player)}
-        if self.player is player:
+             'player': {'name': self.player, 'is_me': self.player==player.name}}
+        if self.player==player.name:
             d['card'] = self.card.serialize_for(player)
         else:
             d['card_id'] = self.card_id
