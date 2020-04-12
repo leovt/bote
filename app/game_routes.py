@@ -1,3 +1,6 @@
+import time
+import yaml
+
 from flask import abort, jsonify, request, render_template
 from flask_login import login_required, current_user
 
@@ -97,6 +100,23 @@ def answer(game_id):
 
     game.question = None
     game.answer = ans
+    return ('', 204)
+
+
+@app.route('/game/<game_id>/save', methods=["POST"])
+@login_required
+def savegame(game_id):
+    if current_user.username != "Leo":
+        abort(404)
+
+    game = games.get(game_id)
+    if not game:
+        abort(404)
+
+    now = time.strftime("%Y-%m-%d-%H-%M-%S")
+    with open(f'savegames/game_{now}.yaml', 'w') as out:
+        yaml.dump(game.game.serialize(), out)
+
     return ('', 204)
 
 

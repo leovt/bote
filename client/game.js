@@ -676,3 +676,9 @@ function make_ans_button(label, onclick){
   btn.innerText = label;
   div.onclick = onclick;
 }
+
+function savegame() {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.open("POST", `${game_uri}/save`);
+  httpRequest.send();
+}

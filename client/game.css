@@ -63,6 +63,10 @@ html, body {
   grid-row: 10 / span 3;
 }
 
+#debug {
+  grid-column: 1;
+  grid-row: 11 / span 2;
+}
 
 #bf-theirs {
   transform: rotate(180deg);
