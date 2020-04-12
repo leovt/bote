@@ -80,6 +80,7 @@ class ArtCard:
 
 @dataclass(eq=False)
 class Card:
+    secret_id: str
     art_card: object
     owner: object
     known_identity: str = None

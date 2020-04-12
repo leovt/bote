@@ -60,9 +60,11 @@ class Library:
                 raise ValueError('Library.pop_given: given item does not match top')
 
 
-def make_library(deck, player):
-    cards = [Card(ArtCard.get_by_id(art_id), player)
-             for art_id, count in deck.items()
-             for _ in range(count)
-            ]
+def make_library(deck, player, game):
+    cards = []
+    for art_id, count in deck.items():
+        for _ in range(count):
+            card = Card(next(game.unique_ids), ArtCard.get_by_id(art_id), player)
+            game.cards[card.secret_id] = card
+            cards.append(card.secret_id)
     return Library(cards)

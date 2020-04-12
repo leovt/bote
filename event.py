@@ -7,21 +7,33 @@ class Event:
     def from_id(event_id, *args):
         return event_classes[event_id](*args)
 
-    def serialize_for(self, player):
-        def try_serialize(key, value):
-            if 'player' in key:
-                return {'name': value, 'is_me': value==player.name}
-            if hasattr(value, 'serialize_for'):
-                return value.serialize_for(player)
+    def serialize_for(self, player, game):
+        def serialize_field(key, value):
+            if 'player' in key or 'controller' in key or 'owner' in key:
+                return key, {'name': value, 'is_me': value==player.name}
+            elif 'card_secret_id' == key:
+                return 'card', game.cards[value].serialize_for(player)
+            elif 'energy' == key:
+                return key, str(value)
+            elif isinstance(value, (int, str, type(None))):
+                return key, value
+            elif hasattr(value, 'serialize_for'):
+                return key, value.serialize_for(player)
             elif hasattr(value, 'serialize'):
-                return value.serialize()
-            elif isinstance(value, list):
-                return [try_serialize(x) for x in value]
+                return key, value.serialize()
             else:
-                return str(value)
+                return key, value
         d = {'event_id': self.__class__.__name__}
-        d.update({
-            key: try_serialize(key, value) for key, value in self.__dict__.items()})
+        for key, value in self.__dict__.items():
+            nkey, nvalue = serialize_field(key, value)
+            if nkey:
+                d[nkey] = nvalue
+        assert 'card_secret_id' not in d
+        return d
+
+    def serialize(self):
+        d = {'event_id': self.event_id}
+        d.update(asdict(self))
         return d
 
     def __str__(self):
@@ -59,14 +71,14 @@ class AddEnergyEvent(Event):
 @dataclass(repr=False)
 class DrawCardEvent(Event):
     player: object
-    card: object
+    card_secret_id: str
     card_id: str
 
-    def serialize_for(self, player):
+    def serialize_for(self, player, game):
         d = {'event_id': self.__class__.__name__,
              'player': {'name': self.player, 'is_me': self.player==player.name}}
         if self.player==player.name:
-            d['card'] = self.card.serialize_for(player)
+            d['card'] = game.cards[self.card_secret_id].serialize_for(player)
         else:
             d['card_id'] = self.card_id
         return d
@@ -105,53 +117,54 @@ class PassedEvent(Event):
 @event_id('enter_the_battlefield')
 @dataclass(repr=False)
 class EnterTheBattlefieldEvent(Event):
-    card: object
+    card_secret_id: str
     controller: object
     perm_id: str
 
 @event_id('exit_the_battlefield')
 @dataclass(repr=False)
 class ExitTheBattlefieldEvent(Event):
-    permanent: object
+    perm_id: str
 
 @event_id('put_in_graveyard')
 @dataclass(repr=False)
 class PutInGraveyardEvent(Event):
-    card: object
+    card_secret_id: str
 
 @event_id('play_source')
 @dataclass(repr=False)
 class PlaySourceEvent(Event):
     player: object
-    card: object
+    card_secret_id: str
 
 @event_id('cast_spell')
 @dataclass(repr=False)
 class CastSpellEvent(Event):
+    stack_id: str
     player: object
-    card: object
+    card_secret_id: str
 
 @event_id('activate_ability')
 @dataclass(repr=False)
 class ActivateAbilityEvent(Event):
-    aos_id: str
-    permanent: object
-    ability: object
+    stack_id: str
+    perm_id: str
+    ability_index: int
 
 @event_id('resolve_tos')
 @dataclass(repr=False)
 class ResolveEvent(Event):
-    tos: object
+    stack_id: str
 
 @event_id('untap')
 @dataclass(repr=False)
 class UntapEvent(Event):
-    permanent: object
+    perm_id: str
 
 @event_id('tap')
 @dataclass(repr=False)
 class TapEvent(Event):
-    permanent: object
+    perm_id: str
 
 @event_id('reset_pass')
 @dataclass(repr=False)
@@ -161,19 +174,19 @@ class ResetPassEvent(Event):
 @event_id('attack')
 @dataclass(repr=False)
 class AttackEvent(Event):
-    attacker: object
-    player: object
+    attacker_id: str
+    player: str
 
 @event_id('block')
 @dataclass(repr=False)
 class BlockEvent(Event):
-    attacker: object
-    blockers: list
+    attacker_id: object
+    blocker_ids: list
 
 @event_id('damage')
 @dataclass(repr=False)
 class DamageEvent(Event):
-    permanent: object
+    perm_id: str
     damage: object
 
 @event_id('player_damage')
@@ -186,12 +199,12 @@ class PlayerDamageEvent(Event):
 @event_id('remove_from_combat')
 @dataclass(repr=False)
 class RemoveFromCombatEvent(Event):
-    permanent: object
+    perm_id: str
 
 @event_id('discard')
 @dataclass(repr=False)
 class DiscardEvent(Event):
-    card: object
+    card_secret_id: str
 
 @event_id('lose')
 @dataclass(repr=False)

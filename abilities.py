@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 import energy
 from step import STEP
@@ -32,7 +32,7 @@ class TapCost:
         return permanent and not permanent.tapped
 
     def pay(self, permanent, card):
-        yield TapEvent(permanent)
+        yield TapEvent(permanent.perm_id)
 
     def __str__(self):
         return '{T}'
@@ -81,16 +81,14 @@ def parse_effect(string):
             args = []
             for token in tokens:
                 if token == '$controller':
-                    args.append(permanent.controller)
+                    args.append(permanent.controller.name)
                 elif token == '$self':
-                    args.append(permanent)
-                elif energy.Energy.parse(token):
-                    args.append(energy.Energy.parse(token))
+                    args.append(permanent.perm_id)
                 else:
                     args.append(token)
             if args[0] == 'bury':
-                yield ExitTheBattlefieldEvent(args[1])
-                yield PutInGraveyardEvent(args[1].card)
+                yield ExitTheBattlefieldEvent(permanent.perm_id)
+                yield PutInGraveyardEvent(permanent.card.secret_id)
             else:
                 yield Event.from_id(*args)
     return _effect

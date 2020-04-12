@@ -126,7 +126,7 @@ def game_log(game_id):
     question = game.advance_game_state()
     response = {
         'status': game.status,
-        'event_log': dict(enumerate((e.serialize_for(player) for e in game.game.event_log[first:]), first)),
+        'event_log': dict(enumerate((e.serialize_for(player, game.game) for e in game.game.event_log[first:]), first)),
     }
     if question:
         response['question'] = question.serialize_for(player)
