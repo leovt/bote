@@ -20,6 +20,14 @@
     <button onclick="send_msg();">Send</button>
     </div>
   </div>
+  {% if savegames %}
+  <ul>
+    {% for game in savegames %}
+    <li><button onclick="loadsaved('{{ game }}')">{{ game }}</button></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
 {% endblock %}
 
 {% block afterbody %}

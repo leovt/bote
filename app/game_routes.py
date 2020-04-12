@@ -1,3 +1,4 @@
+import os
 import time
 import yaml
 
@@ -6,6 +7,8 @@ from flask_login import login_required, current_user
 
 from app import app
 from app.models import Deck, GameFrontend
+
+from state import Game
 
 
 games = {}
@@ -66,6 +69,28 @@ def create_game():
         abort(415)
 
     new_game = GameFrontend(current_user.username, request.json['opponent'])
+    games[new_game.id] = new_game
+    assert new_game.url()
+    return "", 201, {'location': new_game.url()}
+
+
+@app.route('/game/load', methods=["POST"])
+@login_required
+def load_game():
+    if current_user.username != "Leo":
+        abort(404)
+
+    if request.json is None:
+        abort(415)
+
+    fname = os.path.basename(request.json['filename'])
+
+    with open('savegames/'+fname, encoding='utf8') as stream:
+        data = yaml.safe_load(stream)
+
+    new_game = GameFrontend(data['players'][0], data['players'][1])
+    new_game.game = Game.deserialize(data)
+    new_game.status = 'started'
     games[new_game.id] = new_game
     assert new_game.url()
     return "", 201, {'location': new_game.url()}

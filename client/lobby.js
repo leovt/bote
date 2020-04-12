@@ -112,3 +112,17 @@ function update_users() {
 
 read_msg();
 update_users();
+
+function loadsaved(filename) {
+  var game_window = window.open('', '_blank');
+  game_window.document.write('Loading game ...');
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.open("POST", `/game/load`);
+  httpRequest.addEventListener("load", function () {
+    game_window.location.href = httpRequest.getResponseHeader('Location');
+  });
+  httpRequest.setRequestHeader('Content-Type', 'application/json');
+  httpRequest.send(JSON.stringify({
+    filename: filename
+  }));
+}

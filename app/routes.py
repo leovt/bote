@@ -1,3 +1,5 @@
+import os
+
 from flask import render_template, redirect, flash, url_for, request, abort, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
 
@@ -53,7 +55,11 @@ def change_password():
 def lobby():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
-    return render_template('lobby.html')
+    if current_user.username == 'Leo':
+        savegames = os.listdir('savegames')
+    else:
+        savegames = []
+    return render_template('lobby.html', savegames=savegames)
 
 global_chat_messages = []
 global_lobby_users_last_seen = {}
