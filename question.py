@@ -63,8 +63,8 @@ class DeclareBlockers(Question):
             id = self.id,
             question = 'DeclareBlockers',
             player = self.player.serialize_for(player),
-            choices = {key: {'candidate': str(choice['candidate']),
-                             'attackers': {k: str(v) for k, v in choice['attackers'].items()}}
+            choices = {key: {'candidate': choice['candidate'].serialize_for(player),
+                             'attackers': {k: v.serialize_for(player) for k, v in choice['attackers'].items()}}
                        for key, choice in self.choices.items()}
         )
 

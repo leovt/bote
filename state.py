@@ -199,6 +199,10 @@ class Game:
         for key, value in dict(event.__dict__).items():
             if key=='perm_id' and value in self.battlefield:
                 event.permanent = self.battlefield[value].serialize_for(self.players[0])
+            if key=='attacker_id' and value in self.battlefield:
+                event.attacker = self.battlefield[value].serialize_for(self.players[0])
+            if key=='blocker_ids':
+                event.blockers = [self.battlefield[x].serialize_for(self.players[0]) for x in value]
             if key=='stack_id' and self.stack and self.stack[-1].stack_id == value:
                 event.tos = self.stack[-1].serialize_for(self.players[0])
         assert is_simple(event.__dict__)

@@ -248,10 +248,15 @@ function forEachKeyValue(object, receiver) {
 
 function Attacker(card_id, choice_id) {
   var cardElement = document.getElementById(card_id);
+  cardElement.classList.remove('inmotion');
+  cardElement.classList.remove('placeholder');
+  cardElement.setAttribute('style', '');
+
   var cloneElement = cardElement.cloneNode(false);
   var placeholderElement = cardElement.cloneNode(false);
   var checkboxElement = document.getElementById(`attacker-${choice_id}`);
   var isAttacking = false;
+
 
   cloneElement.classList.add('inmotion');
   cloneElement.classList.add('clone');
@@ -318,6 +323,37 @@ function Attacker(card_id, choice_id) {
       attack();
   }
 
+  function addBlocker(blocker, choice_id) {
+    var cardElement = document.getElementById(blocker.card_id);
+    cardElement.classList.remove('inmotion');
+    cardElement.classList.add('placeholder');
+    cardElement.setAttribute('style', '');
+    var placeholderElement = cardElement.cloneNode(false);
+    placeholderElement.classList.add('selectable');
+
+    placeholderElement.id += "_blocking_" + card_id;
+
+    blockerDiv.appendChild(placeholderElement);
+
+    blocker.placeholders.push(placeholderElement);
+
+    function click() {
+      blocker.placeholders.forEach(element => element.classList.add('placeholder'));
+      if (blocker.blocking === choice_id) {
+        blocker.blocking = "noblock";
+        cardElement.classList.remove('placeholder');
+      }
+      else {
+        blocker.blocking = choice_id;
+        cardElement.classList.add('placeholder');
+        placeholderElement.classList.remove('placeholder');
+      }
+    }
+
+    placeholderElement.addEventListener('click', click);
+  }
+
+
   cloneElement.onclick = toggle;
   cloneElement.classList.add('selectable');
 
@@ -332,7 +368,8 @@ function Attacker(card_id, choice_id) {
     'destroy': destroy,
     'fightbox': fightbox,
     'blockerDiv': blockerDiv,
-    'choice_id': choice_id
+    'choice_id': choice_id,
+    'addBlocker': addBlocker
   };
 }
 
@@ -433,25 +470,12 @@ function build_question_ui(question){
   else if (question.question == 'DeclareBlockers') {
     make_ans_button("Confirm Blockers", get_and_send_answer);
     forEachKeyValue(question.choices, (action_id, action) => {
-      choices.appendChild(document.createTextNode(action.candidate));
-      choices.appendChild(make_input_with_label(
-        type = 'radio',
-        value = 'noblock',
-        name = 'cand-' + action_id,
-        label = 'Do not block',
-        checked = true
-      ));
-      choices.appendChild(document.createTextNode(' or block one of: '));
+      blockers = {};
       forEachKeyValue(action.attackers, (attacker_id, attacker) => {
-        choices.appendChild(make_input_with_label(
-          type = 'radio',
-          value = attacker_id,
-          name = 'cand-' + action_id,
-          label = attacker,
-          checked = false
-        ));
+        blocker = {placeholders: [], blocking: 'noblock', card_id: action.candidate.card.card_id};
+        attackers[attacker.card.card_id].addBlocker(blocker, attacker_id);
+        blockers[action_id] = blocker;
       });
-      choices.appendChild(document.createElement('br'));
     });
   }
   else if (question.question == 'OrderBlockers') {
@@ -547,8 +571,7 @@ function get_answer() {
   if (question.question == 'DeclareBlockers'){
     answer = {};
     forEachKeyValue(question.choices, (action_id, action) => {
-      let attackers = document.getElementsByName('cand-' + action_id);
-      let value = Array.from(attackers).find(x => x.checked).value;
+      let value = blockers[action_id].blocking;
       if (value != 'noblock') answer[action_id] = value;
     });
   }
