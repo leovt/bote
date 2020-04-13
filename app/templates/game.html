@@ -4,6 +4,7 @@
   <link href="{{ url_for('static', filename='game.css') }}" rel="stylesheet">
 </head>
 <body>
+  <div id="main-grid">
   <div id="logarea">
     <ul id="log" style="overflow:scroll; height:300px;"></ul>
     <button onclick="log_refresh()">Refresh</button>
@@ -41,6 +42,7 @@
   <div id="hand"></div>
   <div id="debug">
     <p><button onclick="savegame()">Save Game State</button></p>
+  </div>
   </div>
 </body>
 <script src="{{ url_for('static', filename='game.js') }}"></script>
