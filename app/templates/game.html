@@ -14,31 +14,35 @@
     </div>
   </div>
   <img id="cardview"></img>
-  <div id="op-stats">
-    Opponents Stats
-    <p id="op-life"></p>
-    <p id="op-energy"></p>
+  <div id="op-stats" class="stats">
+    <div id="op-avatar" class="avatar"></div>
+    <div id="op-name" class="name">Opponent</div>
+    <div id="op-life" class="life">Life</div>
+    <div id="op-energy" class="energy">Energy</div>
     <div id="op-hand"></div>
     <div id="op-graveyard" class="graveyard"></div>
   </div>
   <div id="stepconfirm">
-    {% include 'steps.svg' %}
-    <p><button id="confirm">Confirm</button></p>
-    <p>
+    <div>
+      {% include 'steps.svg' %}
+    </div>
+    <div><button id="confirm">Confirm</button></div>
+    <div>
       <input type="checkbox" id="autopass"></input>
       <label for="autopass">Pass when no other choice</label>
-    </p>
+    </div>
   </div>
-  <div id="my-stats">
-    My Stats
-    <p id="my-life"></p>
-    <p id="my-energy"></p>
+  <div id="my-stats" class="stats">
+    <div id="my-avatar" class="avatar"></div>
+    <div id="my-name" class="name">My Name</div>
+    <div id="my-life" class="life">Life</div>
+    <div id="my-energy" class="energy">Energy</div>
     <div id="my-graveyard" class="graveyard"></div>
   </div>
   <div id="stack"></div>
-  <div id="bf-theirs"></div>
+  <div id="bf-theirs" class="battlefield"></div>
   <div id="combat">Combat Arena</div>
-  <div id="bf-mine"></div>
+  <div id="bf-mine" class="battlefield"></div>
   <div id="hand"></div>
   <div id="debug">
     <p><button onclick="savegame()">Save Game State</button></p>
