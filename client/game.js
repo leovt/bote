@@ -83,14 +83,14 @@ function handleGameEvent(event) {
     let item = document.createElement('div');
     item.innerText = "Effect of " + event.permanent.card.name;
     item.className = "card ability";
-    item.id = event.aos_id;
+    item.id = event.stack_id;
     stack.appendChild(item);
   }
   if (event.event_id == 'ResolveEvent') {
     let stack = document.getElementById('stack');
-    let aos_id = event.tos.aos_id;
-    if (aos_id) {
-      stack.removeChild(document.getElementById(aos_id));
+    let stack_id = event.tos.stack_id;
+    if (event.tos.ability) {
+      stack.removeChild(document.getElementById(stack_id));
     }
   }
   if (event.event_id == 'TapEvent') {
@@ -190,7 +190,6 @@ function log_refresh () {
       btn.innerText = "...";
       btn.disabled = true;
       if (result.question.player.is_me) {
-        console.log(result.question);
         var pass_oc = pass_only_choice(result.question);
         var autopass = document.getElementById('autopass');
         if (autopass.checked && pass_oc) {
