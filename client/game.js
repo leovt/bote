@@ -39,15 +39,25 @@ function getBackfaceCardElement(card_id){
   return element;
 }
 
+function write_message(message) {
+  let messages = document.getElementById('messages');
+  let entry = document.createElement('li');
+  entry.appendChild(document.createTextNode(message));
+  messages.appendChild(entry);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+
 function handleGameEvent(event) {
   log_count += 1;
-  console.log(event.event_id);
+
   let entry = document.createElement('li');
   entry.appendChild(document.createTextNode(JSON.stringify(event)));
   if (event.event_id == 'DrawCardEvent'){
     if (event.player.is_me) {
       let hand = document.getElementById('hand');
       hand.appendChild(getCardElement(event.card));
+      write_message(`You draw ${event.card.name}.`);
     } else {
       let hand = document.getElementById('op-hand');
       hand.appendChild(getBackfaceCardElement(event.card_id));
@@ -56,6 +66,7 @@ function handleGameEvent(event) {
   if (event.event_id == 'EnterTheBattlefieldEvent') {
     let tgt = document.getElementById(event.controller.is_me ? 'bf-mine' : 'bf-theirs');
     animatedMove(getCardElement(event.card), tgt);
+    write_message(`${event.card.name} enters the battlefield.`);
   }
   if (event.event_id == 'PutInGraveyardEvent' || event.event_id == 'DiscardEvent') {
     let tgt = document.getElementById(event.card.owner.is_me ? 'my-graveyard' : 'op-graveyard');
