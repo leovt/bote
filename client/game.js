@@ -38,7 +38,9 @@ function write_message(message) {
 }
 
 
-function handleGameEvent(event) {
+function handleGameEvent(event_no, event) {
+  // console.log({log_count: log_count, event_no: event_no, event_id: event.event_id});
+  console.assert(log_count == event_no);
   log_count += 1;
 
   let entry = document.createElement('li');
@@ -169,12 +171,17 @@ function pass_only_choice(question) {
   }
 }
 
+log_refresh_running = false;
 function log_refresh () {
+  if (log_refresh_running) {
+    return;
+  }
+  log_refresh_running = true;
   window.clearTimeout(window.log_refresh_timeout_id);
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     result = JSON.parse(httpRequest.responseText);
-    forEachKeyValue(result.event_log, (key, event) => handleGameEvent(event));
+    forEachKeyValue(result.event_log, (key, event) => handleGameEvent(key, event));
     if (result.question) {
       var btn = document.getElementById('confirm');
       btn.innerText = "...";
@@ -194,7 +201,7 @@ function log_refresh () {
         window.log_refresh_timeout_id = window.setTimeout(log_refresh, 1000);
       }
     }
-
+    log_refresh_running = false;
   });
   httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
   httpRequest.send();
@@ -252,8 +259,8 @@ function Attacker(card_id, choice_id) {
   cardElement.classList.remove('placeholder');
   cardElement.setAttribute('style', '');
 
-  var cloneElement = cardElement.cloneNode(false);
-  var placeholderElement = cardElement.cloneNode(false);
+  var cloneElement = cardElement.cloneNode(true);
+  var placeholderElement = cardElement.cloneNode(true);
   var checkboxElement = document.getElementById(`attacker-${choice_id}`);
   var isAttacking = false;
 
@@ -269,6 +276,7 @@ function Attacker(card_id, choice_id) {
   fightbox.setAttribute('class', 'fightbox');
 
   var blockerDiv = document.createElement('div');
+  blockerDiv.setAttribute('class', 'blockers');
   fightbox.appendChild(blockerDiv);
 
   fightbox.appendChild(placeholderElement);
@@ -328,7 +336,7 @@ function Attacker(card_id, choice_id) {
     cardElement.classList.remove('inmotion');
     cardElement.classList.add('placeholder');
     cardElement.setAttribute('style', '');
-    var placeholderElement = cardElement.cloneNode(false);
+    var placeholderElement = cardElement.cloneNode(true);
     placeholderElement.classList.add('selectable');
 
     placeholderElement.id += "_blocking_" + card_id;
@@ -425,7 +433,7 @@ function build_question_ui(question){
           menu.setAttribute('id', 'menu-'+action.card_id);
           menu.setAttribute('class', 'menu');
           menu.setAttribute('style', 'display: none;');
-          document.body.appendChild(menu);
+          card.appendChild(menu);
         }
         let button = document.createElement('button');
         button.appendChild(document.createTextNode(action.text));
@@ -436,7 +444,14 @@ function build_question_ui(question){
           if (!menu)
             return;
           let rect = this.getBoundingClientRect();
-          menu.setAttribute('style', `left:${rect.right}px; top:${rect.top}px`);
+          menu.setAttribute('style', '');
+        };
+        card.onmouseleave = function (event) {
+          let menu = document.getElementById('menu-'+this.id);
+          if (!menu)
+            return;
+          let rect = this.getBoundingClientRect();
+          menu.setAttribute('style', 'display: none;');
         };
       }
     });

@@ -87,6 +87,7 @@ html, body, #main-grid {
   transition: transform 0.7s;
   display: inline-block;
   margin: 3px;
+  position: relative;
 }
 
 .card img{
@@ -145,6 +146,8 @@ html, body, #main-grid {
 
 .menu {
   position: absolute;
+  left: 70%;
+  top: 20%;
   z-index: 1000;
 }
 
@@ -160,7 +163,7 @@ html, body, #main-grid {
   margin: 0px;
 }
 
-.fightbox>div {
+.fightbox > .blockers {
   transform: rotate(180deg);
 }
 
