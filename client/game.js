@@ -1,42 +1,32 @@
-document.onmouseover = function(e){
-   var element = window.event ? event.srcElement: e.target;
-   if(element.classList.contains("card")){
-     var cardview = document.getElementById('cardview');
-     cardview.src = element.src;
-     cardview.style.visibility = "visible";
-   }
-};
-
-document.onmouseout = function(e){
-  var element = window.event ? event.srcElement: e.target;
-  if(element.classList.contains("card")){
+function _getCardElement(card_id, url){
+  var element = document.getElementById(card_id);
+  if (!element) {
+    element = document.createElement('div');
+    var img = document.createElement('img');
+    img.onmouseover = function() {
+      var cardview = document.getElementById('cardview');
+      cardview.src = img.src;
+      cardview.style.visibility = "visible";
+    };
+    img.onmouseout = function() {
       var cardview = document.getElementById('cardview');
       cardview.style.visibility = "hidden";
-    }
-};
+    };
 
-
-
-function getCardElement(card){
-  var element = document.getElementById(card.card_id);
-  if (!element) {
-    element = document.createElement('img');
-    element.setAttribute('id', card.card_id);
+    element.setAttribute('id', card_id);
     element.setAttribute('class', 'card');
+    element.appendChild(img);
   }
-  element.setAttribute('src', card.url);
+  element.firstChild.setAttribute('src', url);
   return element;
 }
 
 function getBackfaceCardElement(card_id){
-  var element = document.getElementById(card_id);
-  if (!element) {
-    element = document.createElement('img');
-    element.setAttribute('id', card_id);
-    element.setAttribute('class', 'card');
-    element.setAttribute('src', BACKFACE_URL);
-  }
-  return element;
+  return _getCardElement(card_id, BACKFACE_URL);
+}
+
+function getCardElement(card){
+  return _getCardElement(card.card_id, card.url);
 }
 
 function write_message(message) {
