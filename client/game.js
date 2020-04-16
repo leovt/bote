@@ -136,6 +136,10 @@ const gameEventHandler = {
 
   StepEvent: function(event) {
     indicate_step(event);
+    ['playable', 'discardable', 'activateable', 'selectable',
+     'placeholder', 'inmotion'].forEach(
+       className => Array.from(document.getElementsByClassName(className)).forEach(
+         element => element.classList.remove(className)));
     if (event.step == 'BEGIN_COMBAT') {
       let combat = document.getElementById('combat');
       combat.innerHTML = '';
@@ -145,6 +149,7 @@ const gameEventHandler = {
         combat.classList.add('opponent-attacking');
       }
       attackers = {};
+      blockers = {};
     }
     if (event.step == 'POSTCOMBAT_MAIN') {
       forEachKeyValue(attackers, (key, attacker) => attacker.destroy());
@@ -165,9 +170,14 @@ const gameEventHandler = {
 
   BlockEvent: function(event) {
     let attacker = attackers[event.attacker.card.card_id];
-    event.blockers.forEach(blocker => {
-      let card = getCardElement(blocker.card);
-      animatedMove(card, attacker.blockerDiv);
+    forEachKeyValue(event.blockers, (id, evt_blocker) => {
+      blocker = blockers[evt_blocker.card.card_id];
+      if (!blocker) {
+        blocker = Blocker(evt_blocker.card.card_id);
+        blockers[evt_blocker.card.card_id] = blocker;
+        attacker.addBlocker(blocker, event.attacker.card.card_id);
+      }
+      blocker.block(event.attacker.card.card_id);
     });
   },
 
@@ -369,27 +379,21 @@ function Attacker(card_id, choice_id) {
   function addBlocker(blocker, choice_id) {
     var cardElement = document.getElementById(blocker.card_id);
     cardElement.classList.remove('inmotion');
-    cardElement.classList.add('placeholder');
+    cardElement.classList.add('selectable');
     cardElement.setAttribute('style', '');
     var placeholderElement = cardElement.cloneNode(true);
-    placeholderElement.classList.add('selectable');
+    placeholderElement.classList.add('placeholder');
 
     placeholderElement.id += "_blocking_" + card_id;
-
     blockerDiv.appendChild(placeholderElement);
-
-    blocker.placeholders.push(placeholderElement);
+    blocker.placeholders[choice_id] = placeholderElement;
 
     function click() {
-      blocker.placeholders.forEach(element => element.classList.add('placeholder'));
-      if (blocker.blocking === choice_id) {
-        blocker.blocking = "noblock";
-        cardElement.classList.remove('placeholder');
+      if (blocker.blocking() === choice_id) {
+        blocker.block("noblock");
       }
       else {
-        blocker.blocking = choice_id;
-        cardElement.classList.add('placeholder');
-        placeholderElement.classList.remove('placeholder');
+        blocker.block(choice_id);
       }
     }
 
@@ -416,6 +420,38 @@ function Attacker(card_id, choice_id) {
   };
 }
 
+function Blocker(card_id, action_id) {
+  var placeholders = {};
+  var blocking = 'noblock';
+  var cardElement = document.getElementById(card_id);
+
+  function block(choice_id) {
+    forEachKeyValue(placeholders, function(ch_id, element) {
+      if (ch_id === choice_id) {
+        element.classList.remove('placeholder');
+      }
+      else {
+        element.classList.add('placeholder');
+      }
+    });
+    if (choice_id === 'noblock') {
+      cardElement.classList.remove('placeholder');
+    }
+    else {
+      cardElement.classList.add('placeholder');
+    }
+    blocking = choice_id;
+  }
+
+  return {
+    placeholders: placeholders,
+    blocking: function() {return blocking;},
+    card_id: card_id,
+    action_id: action_id,
+    cardElement: cardElement,
+    block: block,
+  };
+}
 
 function build_question_ui(question){
   if (window.question && window.question.id === question.id) {
@@ -524,12 +560,17 @@ function build_question_ui(question){
   else if (question.question == 'DeclareBlockers') {
     write_message("Declare your blockers and confirm by clicking on the turn indicator.");
     make_ans_button("Confirm Blockers", get_and_send_answer);
+    blockers = {};
+    var count = 0;
     forEachKeyValue(question.choices, (action_id, action) => {
-      blockers = {};
+      count += 1;
       forEachKeyValue(action.attackers, (attacker_id, attacker) => {
-        blocker = {placeholders: [], blocking: 'noblock', card_id: action.candidate.card.card_id};
+        blocker = blockers[action.candidate.card.card_id];
+        if (!blocker) {
+          blocker = Blocker(action.candidate.card.card_id, action_id);
+          blockers[action.candidate.card.card_id] = blocker;
+        }
         attackers[attacker.card.card_id].addBlocker(blocker, attacker_id);
-        blockers[action_id] = blocker;
       });
     });
   }
@@ -625,9 +666,8 @@ function get_answer() {
   }
   if (question.question == 'DeclareBlockers'){
     answer = {};
-    forEachKeyValue(question.choices, (action_id, action) => {
-      let value = blockers[action_id].blocking;
-      if (value != 'noblock') answer[action_id] = value;
+    forEachKeyValue(blockers, (card_id, blocker) => {
+      if (blocker.blocking() != 'noblock') answer[blocker.action_id] = blocker.blocking();
     });
   }
   if (question.question == 'OrderBlockers'){
