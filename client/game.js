@@ -37,12 +37,18 @@ function write_message(message) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-
 function handleGameEvent(event_no, event) {
   // console.log({log_count: log_count, event_no: event_no, event_id: event.event_id});
   console.assert(log_count == event_no);
   log_count += 1;
-  if (event.event_id == 'DrawCardEvent'){
+  let handler = gameEventHandler[event.event_id];
+  if (handler) {
+    handler(event);
+  }
+}
+
+const gameEventHandler = {
+  DrawCardEvent: function(event) {
     if (event.player.is_me) {
       let hand = document.getElementById('hand');
       hand.appendChild(getCardElement(event.card));
@@ -52,27 +58,34 @@ function handleGameEvent(event_no, event) {
       hand.appendChild(getBackfaceCardElement(event.card_id));
       write_message(`${event.player.name} draws a card.`);
     }
-  }
-  if (event.event_id == 'EnterTheBattlefieldEvent') {
+  },
+
+  EnterTheBattlefieldEvent: function(event) {
     let tgt = document.getElementById(event.controller.is_me ? 'bf-mine' : 'bf-theirs');
     animatedMove(getCardElement(event.card), tgt);
     write_message(`${event.card.name} enters the battlefield.`);
-  }
-  if (event.event_id == 'PutInGraveyardEvent') {
+  },
+
+  PutInGraveyardEvent: function(event) {
     write_message(`${event.card.name} went to the graveyard.`);
     let tgt = document.getElementById(event.card.owner.is_me ? 'my-graveyard' : 'op-graveyard');
     animatedMove(getCardElement(event.card), tgt);
-  }
-  if (event.event_id == 'DiscardEvent') {
+  },
+
+  DiscardEvent: function(event) {
     write_message(` discarded ${event.card.name}.`);
     let tgt = document.getElementById(event.card.owner.is_me ? 'my-graveyard' : 'op-graveyard');
     animatedMove(getCardElement(event.card), tgt);
-  }
-  if (event.event_id == 'CastSpellEvent' && event.card) {
-    let tgt = document.getElementById('stack');
-    animatedMove(getCardElement(event.card), tgt);
-  }
-  if (event.event_id == 'ActivateAbilityEvent') {
+  },
+
+  CastSpellEvent: function(event) {
+    if (event.card) {
+      let tgt = document.getElementById('stack');
+      animatedMove(getCardElement(event.card), tgt);
+    }
+  },
+
+  ActivateAbilityEvent: function(event) {
     let stack = document.getElementById('stack');
     let card = getCardElement(event.permanent.card);
     let rect = card.getBoundingClientRect();
@@ -81,34 +94,46 @@ function handleGameEvent(event_no, event) {
     item.className = "card ability";
     item.id = event.stack_id;
     stack.appendChild(item);
-  }
-  if (event.event_id == 'ResolveEvent') {
+  },
+
+  ResolveEvent: function(event) {
     let stack = document.getElementById('stack');
     let stack_id = event.tos.stack_id;
     if (event.tos.ability) {
       stack.removeChild(document.getElementById(stack_id));
     }
-  }
-  if (event.event_id == 'TapEvent') {
+  },
+
+  TapEvent: function(event) {
     getCardElement(event.permanent.card).classList.add('tap');
-  }
-  if (event.event_id == 'UntapEvent') {
+  },
+
+  UntapEvent: function(event) {
     getCardElement(event.permanent.card).classList.remove('tap');
-  }
-  if (event.event_id == 'AddEnergyEvent' || event.event_id == 'PayEnergyEvent') {
+  },
+
+  AddEnergyEvent: function(event) {
     document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
             .innerText = `Energy: ${event.new_total}`;
-  }
-  if (event.event_id == 'ClearPoolEvent') {
+  },
+
+  PayEnergyEvent: function(event) {
+    document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
+            .innerText = `Energy: ${event.new_total}`;
+  },
+
+  ClearPoolEvent: function(event) {
     document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
             .innerText = "Energy: {0}";
-  }
-  if (event.event_id == 'PlayerDamageEvent') {
+  },
+
+  PlayerDamageEvent: function(event) {
     write_message(`${event.player.name} received ${event.damage} damage.`);
     document.getElementById(event.player.is_me ? 'my-life' : 'op-life')
             .innerText = `Life: ${event.new_total}`;
-  }
-  if (event.event_id == 'StepEvent') {
+  },
+
+  StepEvent: function(event) {
     indicate_step(event);
     if (event.step == 'BEGIN_COMBAT') {
       let combat = document.getElementById('combat');
@@ -124,8 +149,9 @@ function handleGameEvent(event_no, event) {
       forEachKeyValue(attackers, (key, attacker) => attacker.destroy());
       attackers = null;
     }
-  }
-  if (event.event_id == 'AttackEvent') {
+  },
+
+  AttackEvent: function(event) {
     write_message(`${event.player.name} received ${event.damage} damage.`);
     let attacker = attackers[event.attacker.card.card_id];
     if (!attacker) {
@@ -134,28 +160,32 @@ function handleGameEvent(event_no, event) {
     }
     attacker.attack();
     attacker.stopInteracting();
-  }
-  if (event.event_id == 'BlockEvent') {
+  },
+
+  BlockEvent: function(event) {
     let attacker = attackers[event.attacker.card.card_id];
     event.blockers.forEach(blocker => {
       let card = getCardElement(blocker.card);
       animatedMove(card, attacker.blockerDiv);
     });
-  }
-  if (event.event_id == 'RemoveFromCombatEvent' && attackers) {
-    let attacker = attackers[event.permanent.card.card_id];
-    if (attacker) {
-      attacker.retreat();
+  },
+
+  RemoveFromCombatEvent: function(event) {
+    if (attackers) {
+      let attacker = attackers[event.permanent.card.card_id];
+      if (attacker) {
+        attacker.retreat();
+      }
+      else {
+        let card = getCardElement(event.permanent.card);
+        if (event.permanent.controller.is_me)
+          animatedMove(card, document.getElementById('bf-mine'));
+        else
+          animatedMove(card, document.getElementById('bf-theirs'));
+      }
     }
-    else {
-      let card = getCardElement(event.permanent.card);
-      if (event.permanent.controller.is_me)
-        animatedMove(card, document.getElementById('bf-mine'));
-      else
-        animatedMove(card, document.getElementById('bf-theirs'));
-    }
-  }
-}
+  },
+};
 
 
 function pass_only_choice(question) {
