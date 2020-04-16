@@ -42,9 +42,6 @@ function handleGameEvent(event_no, event) {
   // console.log({log_count: log_count, event_no: event_no, event_id: event.event_id});
   console.assert(log_count == event_no);
   log_count += 1;
-
-  let entry = document.createElement('li');
-  entry.appendChild(document.createTextNode(JSON.stringify(event)));
   if (event.event_id == 'DrawCardEvent'){
     if (event.player.is_me) {
       let hand = document.getElementById('hand');
@@ -53,6 +50,7 @@ function handleGameEvent(event_no, event) {
     } else {
       let hand = document.getElementById('op-hand');
       hand.appendChild(getBackfaceCardElement(event.card_id));
+      write_message(`${event.player.name} draws a card.`);
     }
   }
   if (event.event_id == 'EnterTheBattlefieldEvent') {
@@ -60,7 +58,13 @@ function handleGameEvent(event_no, event) {
     animatedMove(getCardElement(event.card), tgt);
     write_message(`${event.card.name} enters the battlefield.`);
   }
-  if (event.event_id == 'PutInGraveyardEvent' || event.event_id == 'DiscardEvent') {
+  if (event.event_id == 'PutInGraveyardEvent') {
+    write_message(`${event.card.name} went to the graveyard.`);
+    let tgt = document.getElementById(event.card.owner.is_me ? 'my-graveyard' : 'op-graveyard');
+    animatedMove(getCardElement(event.card), tgt);
+  }
+  if (event.event_id == 'DiscardEvent') {
+    write_message(` discarded ${event.card.name}.`);
     let tgt = document.getElementById(event.card.owner.is_me ? 'my-graveyard' : 'op-graveyard');
     animatedMove(getCardElement(event.card), tgt);
   }
@@ -100,6 +104,7 @@ function handleGameEvent(event_no, event) {
             .innerText = "Energy: {0}";
   }
   if (event.event_id == 'PlayerDamageEvent') {
+    write_message(`${event.player.name} received ${event.damage} damage.`);
     document.getElementById(event.player.is_me ? 'my-life' : 'op-life')
             .innerText = `Life: ${event.new_total}`;
   }
@@ -121,6 +126,7 @@ function handleGameEvent(event_no, event) {
     }
   }
   if (event.event_id == 'AttackEvent') {
+    write_message(`${event.player.name} received ${event.damage} damage.`);
     let attacker = attackers[event.attacker.card.card_id];
     if (!attacker) {
       attacker = Attacker(event.attacker.card.card_id, null);
@@ -149,9 +155,6 @@ function handleGameEvent(event_no, event) {
         animatedMove(card, document.getElementById('bf-theirs'));
     }
   }
-  let list = document.getElementById('log');
-  list.appendChild(entry);
-  list.scrollTop = list.scrollHeight; //Scroll to bottom of log
 }
 
 
@@ -453,10 +456,14 @@ function build_question_ui(question){
           let rect = this.getBoundingClientRect();
           menu.setAttribute('style', 'display: none;');
         };
+        if (menu.childElementCount == 1) {
+          card.onclick = makeOnclick(action_id);
+        }
       }
     });
   }
   else if (question.question == 'DeclareAttackers') {
+    write_message("Declare your attackers and confirm by clicking on the turn indicator.");
     make_ans_button("Skip Attack", get_and_send_answer);
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(make_input_with_label(
@@ -483,6 +490,7 @@ function build_question_ui(question){
     });
   }
   else if (question.question == 'DeclareBlockers') {
+    write_message("Declare your blockers and confirm by clicking on the turn indicator.");
     make_ans_button("Confirm Blockers", get_and_send_answer);
     forEachKeyValue(question.choices, (action_id, action) => {
       blockers = {};
