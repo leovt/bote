@@ -37,10 +37,11 @@ function write_message(message) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-function handleGameEvent(event_no, event) {
-  // console.log({log_count: log_count, event_no: event_no, event_id: event.event_id});
-  console.assert(log_count == event_no);
-  log_count += 1;
+nextEvent = 0;
+function handleGameEvent(event) {
+  //console.log({nextEvent: nextEvent, event_no: event.event_no, event_id: event.event_id});
+  console.assert(event.event_no >= nextEvent);
+  nextEvent = event.event_no + 1;
   let handler = gameEventHandler[event.event_id];
   if (handler) {
     handler(event);
@@ -214,7 +215,7 @@ function log_refresh () {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     result = JSON.parse(httpRequest.responseText);
-    forEachKeyValue(result.event_log, (key, event) => handleGameEvent(key, event));
+    result.event_log.forEach(handleGameEvent);
     if (result.question) {
       var btn = document.getElementById('confirm');
       btn.innerText = "...";
@@ -236,7 +237,8 @@ function log_refresh () {
     }
     log_refresh_running = false;
   });
-  httpRequest.open("GET", `${game_uri}/log?first=${log_count}`);
+  let filter = Object.getOwnPropertyNames(gameEventHandler).join("_");
+  httpRequest.open("GET", `${game_uri}/log?first=${nextEvent}&filter=${filter}`);
   httpRequest.send();
 }
 

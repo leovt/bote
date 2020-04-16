@@ -168,10 +168,24 @@ def game_log(game_id):
     if first < 0:
         abort(400)
 
+    filter = request.args.get('filter')
+    if filter:
+        filter = set(x.strip() for x in filter.split('_'))
+
+    # call advance_game_state before preparing the event_log,
+    # otherwise events created by advance_game_state would be missed
     question = game.advance_game_state()
+
+    event_log = []
+    for event_no, event in enumerate(game.game.event_log[first:], first):
+        serialized = event.serialize_for(player, game.game)
+        serialized['event_no'] = event_no
+        if filter is None or serialized['event_id'] in filter:
+            event_log.append(serialized)
+
     response = {
         'status': game.status,
-        'event_log': dict(enumerate((e.serialize_for(player, game.game) for e in game.game.event_log[first:]), first)),
+        'event_log': event_log,
     }
     if question:
         response['question'] = question.serialize_for(player)
