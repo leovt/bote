@@ -795,9 +795,10 @@ function animatedMove(element, target, delay=900){
 
 function make_ans_button(label, onclick){
   let btn = document.getElementById('confirm');
-  let div = document.getElementById('stepconfirm');
+  let div = document.getElementById('stepdial');
   btn.disabled = false;
   btn.innerText = label;
+  btn.onclick = onclick;
   div.onclick = onclick;
 }
 
