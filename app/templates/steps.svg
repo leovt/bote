@@ -19,8 +19,6 @@ viewBox="-100.5 -100.5 201 201"  >
     transition: transform 0.7s ease-out;
   }
 </style>
-<path d="M0,10 A10 10 0 0 1 0,-10 L43 0Z" id="indicator" style="transform: rotate(172.5deg);"/>
-
 <g transform="rotate(165)">
   <path d="M100,0 A100 100 0 0 1 96.59258,25.88190 L48.29629,12.94095 50,0Z" class="segment" />
   <text x="96" y="4" text-anchor="end" transform="rotate(7.5)" class="label">Untap</text>
@@ -119,5 +117,11 @@ viewBox="-100.5 -100.5 201 201"  >
   <path d="M100,0 L96.59258,25.88190 48.29629,12.94095 50,0Z" class="segment" />
   <text x="96" y="4" text-anchor="end" transform="rotate(7.5)" class="label">End</text>
 </g>
+
+<g id="indicator">
+  <path d="M0,10 A10 10 0 0 1 0,-10 L43 0Z" style="transform: rotate(0deg);"/>
+  <path d="M40 30 A50 50 0 1 1 40 -30 L25 -30 20 -15 A25 25 0 1 0 20 15 L35 15Z" id="arrow"/>
+</g>
+
 
 </svg>

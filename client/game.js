@@ -230,6 +230,8 @@ function log_refresh () {
       var btn = document.getElementById('confirm');
       btn.innerText = "...";
       btn.disabled = true;
+      var arrow = document.getElementById('arrow');
+      arrow.style.fill = "lightgrey";
       if (result.question.player.is_me) {
         var pass_oc = pass_only_choice(result.question);
         var autopass = document.getElementById('autopass');
@@ -462,6 +464,7 @@ function build_question_ui(question){
   window.question = question;
   document.getElementById('answer').setAttribute('style', '');
   var choices = document.getElementById('choices');
+  var arrow = document.getElementById('arrow');
   choices.innerHTML = "";
   if (question.question == 'ChooseAction'){
     var first = true;
@@ -484,6 +487,7 @@ function build_question_ui(question){
       choices.appendChild(document.createElement('br'));
       if (action.action == "pass") {
         make_ans_button(action.text, makeOnclick(action_id));
+        arrow.style.fill = "lightgreen";
       }
       if (action.action == 'play') {
         let card = document.getElementById(action.card_id);
@@ -533,6 +537,7 @@ function build_question_ui(question){
   else if (question.question == 'DeclareAttackers') {
     write_message("Declare your attackers and confirm by clicking on the turn indicator.");
     make_ans_button("Skip Attack", get_and_send_answer);
+    arrow.style.fill = "orange";
     forEachKeyValue(question.choices, (action_id, action) => {
       choices.appendChild(make_input_with_label(
         type = 'checkbox',
@@ -560,6 +565,7 @@ function build_question_ui(question){
   else if (question.question == 'DeclareBlockers') {
     write_message("Declare your blockers and confirm by clicking on the turn indicator.");
     make_ans_button("Confirm Blockers", get_and_send_answer);
+    arrow.style.fill = "orange";
     blockers = {};
     var count = 0;
     forEachKeyValue(question.choices, (action_id, action) => {
