@@ -255,7 +255,14 @@ html, body, #main-grid {
 }
 
 .life {
+  transition: background 0.2s 0.8s ease-out, color 0.5s 1.0s ease-out;
   grid-area: life;
+}
+
+.life.hit {
+  transition: none;
+  background: red;
+  color: white;
 }
 
 .energy {

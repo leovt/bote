@@ -130,8 +130,10 @@ const gameEventHandler = {
 
   PlayerDamageEvent: function(event) {
     write_message(`${event.player.name} received ${event.damage} damage.`);
-    document.getElementById(event.player.is_me ? 'my-life' : 'op-life')
-            .innerText = `Life: ${event.new_total}`;
+    var element = document.getElementById(event.player.is_me ? 'my-life' : 'op-life');
+    element.innerText = `Life: ${event.new_total}`;
+    element.classList.add('hit');
+    window.setTimeout( () => element.classList.remove('hit'), 0);
   },
 
   StepEvent: function(event) {
