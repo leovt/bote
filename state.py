@@ -557,17 +557,25 @@ def turn_based_actions(game):
                 game.battlefield.attacking(player)}
             if not attackers:
                 continue
-            candidates = {next(game.unique_ids): permanent for permanent in
-                game.battlefield.creatures.controlled_by(player)}
+
+            candidates = {}
+            for cand in game.battlefield.creatures.controlled_by(player):
+                blockable = {k:attacker for k,attacker in attackers.items()
+                    if can_block(cand, attacker)}
+                if blockable:
+                    key = next(game.unique_ids)
+                    candidates[key] = {
+                        'candidate': cand,
+                        'attackers': blockable
+                    }
             if not candidates:
                 continue
-            blocking = {}
-            blocked_by = defaultdict(list)
-            question = DeclareBlockers(game, player,
-                {key: {'candidate': cand, 'attackers': attackers}
-                 for key, cand in candidates.items()})
+
+            question = DeclareBlockers(game, player, candidates)
             yield QuestionEvent(question)
 
+            blocking = {}
+            blocked_by = defaultdict(list)
             for cand, attacker in game.answer.items():
                 spec = question.choices[cand]
                 blocker = spec['candidate']
@@ -688,6 +696,12 @@ def draw_card(game, player):
         yield DrawCardEvent(player.name, card, card_id)
     else:
         yield DrawEmptyEvent(player.name)
+
+def can_block(blocker, attacker):
+    if blocker.tapped:
+        return False
+    # TODO: logic for flying, reach etc
+    return True
 
 def can_play_source(player):
     return player.sources_played_this_turn == 0
