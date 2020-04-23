@@ -95,4 +95,4 @@ class GameFrontend:
         return url_for('game', game_id=self.id)
 
     def __str__(self):
-        return f"BOTE Game {self.user1['name']} vs. {self.user2['name']}"
+        return f"BOTE Game {self.user1} vs. {self.user2}"

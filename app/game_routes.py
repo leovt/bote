@@ -88,7 +88,7 @@ def load_game():
     with open('savegames/'+fname, encoding='utf8') as stream:
         data = yaml.safe_load(stream)
 
-    new_game = GameFrontend(data['players'][0], data['players'][1])
+    new_game = GameFrontend(data['players'][0]['name'], data['players'][1]['name'])
     new_game.game = Game.deserialize(data)
     new_game.status = 'started'
     games[new_game.id] = new_game
