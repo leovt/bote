@@ -288,6 +288,8 @@ html, body, #main-grid {
   grid-area: gyd;
   padding: 1px;
   background-color: grey;
+  background-image: url('graveyard.png');
+  background-size: 10%;
 }
 
 .graveyard > .card {
