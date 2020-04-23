@@ -540,9 +540,12 @@ def turn_based_actions(game):
             permanent.card.has_keyword_ability('haste')
             }
         choices = {key: c.card for key, c in candidates.items()}
-        question = DeclareAttackers(game, game.active_player, choices)
-        yield QuestionEvent(question)
-        attackers_chosen = game.answer
+        if choices:
+            question = DeclareAttackers(game, game.active_player, choices)
+            yield QuestionEvent(question)
+            attackers_chosen = game.answer
+        else:
+            attackers_chosen = []
         if attackers_chosen:
             for i in attackers_chosen:
                 if not candidates[i].card.has_keyword_ability('vigilance'):
