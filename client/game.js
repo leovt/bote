@@ -583,20 +583,12 @@ function build_question_ui(question){
     });
   }
   else if (question.question == 'OrderBlockers') {
-    make_ans_button("Confirm Blocker Order", get_and_send_answer);
-    choices.innerHTML = "";
+    // TODO: Let the user order the blockers.
+    var answer = {};
     forEachKeyValue(question.choices, (action_id, action) => {
-      choices.appendChild(document.createTextNode(action.attacker));
-      var list = document.createElement('ol');
-      list.setAttribute('id', action_id);
-      choices.appendChild(list);
-      for (var blocker in action.blockers){
-        list.appendChild(make_reorderable_listitem(
-          value = blocker,
-          label = action.blockers[blocker]
-        ));
-      }
+      answer[action_id] = Object.getOwnPropertyNames(action.blockers);
     });
+    send_answer(answer);
   }
   else {
     choices.appendChild(document.createTextNode(JSON.stringify(question)));
