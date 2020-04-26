@@ -14,7 +14,15 @@
       <button onclick="get_and_send_answer()">Answer</button>
     </div>
   </div>
-  <img id="cardview"></img>
+  <div id="cardviewarea">
+    <img id="cardview"></img>
+    <iframe allow="camera; microphone" src="" id="videoconf"></iframe>
+    <button onclick="startVideo();">
+      <p>Click here to load videoconference for this game.</p>
+      <p>Video conferencing is provided by https://jitsi.org/jitsi-meet/.</p>
+      <p>Jitsi is not affiliated with this site.</p>
+    </button>
+  </div>
   <div id="op-stats" class="stats">
     <div id="op-avatar" class="avatar"></div>
     <div id="op-name" class="name">Opponent</div>
@@ -58,6 +66,7 @@
 <script>
 game_uri = document.URL;
 BACKFACE_URL = "{{ url_for('static', filename='backface.png') }}";
+VIDEOCONFERENCE_URL = 'https://meet.jit.si/{{ game.id }}';
 log_refresh();
 </script>
 </html>

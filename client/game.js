@@ -29,6 +29,12 @@ function getCardElement(card){
   return _getCardElement(card.card_id, card.url);
 }
 
+function startVideo() {
+  let iframe = document.getElementById('videoconf');
+  iframe.src = VIDEOCONFERENCE_URL;
+  iframe.style.visibility = 'visible';
+}
+
 function write_message(message) {
   let messages = document.getElementById('messages');
   let entry = document.createElement('li');

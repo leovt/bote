@@ -17,11 +17,38 @@ html, body, #main-grid {
   display: none;
 }
 
-#cardview {
+#cardviewarea {
   grid-column: 1;
   grid-row: 1 / span 10;
   align-self: center;
-  margin:10px;
+  background: olive;
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+#cardviewarea button {
+  margin: 10%;
+  width: 80%;
+  height: 80%;
+}
+
+#cardview {
+	visibility: hidden;
+	z-index: 10;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	max-height: 100%;
+}
+
+#videoconf {
+  visibility: hidden;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
 }
 
 #op-stats {
