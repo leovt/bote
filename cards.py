@@ -26,6 +26,7 @@ class RuleCard:
     token: bool = False
     toughness: int = 0
     strength: int = 0
+    effect: object = None
 
     @property
     def name(self):
@@ -51,6 +52,10 @@ class RuleCard:
             else:
                 abilities.append(ab_spec)
 
+        effect = None
+        if 'effect' in spec:
+            effect = parse_effect(spec['effect'])
+
         return RuleCard(
             card_id = spec['card_id'],
             types = {spec['type']},
@@ -59,7 +64,9 @@ class RuleCard:
             toughness = spec.get('toughness', 0),
             strength = spec.get('strength', 0),
             token = spec.get('token', False),
-            abilities = abilities)
+            abilities = abilities,
+            effect = effect,
+        )
 
     def has_keyword_ability(self, keyword):
         return any(ability.get('keyword') == keyword for ability in self.abilities if isinstance(ability, dict))

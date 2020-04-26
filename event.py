@@ -143,6 +143,7 @@ class CastSpellEvent(Event):
     stack_id: str
     player: object
     card_secret_id: str
+    target: str = None
 
 @event_id('activate_ability')
 @dataclass(repr=False)

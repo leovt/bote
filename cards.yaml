@@ -30,6 +30,10 @@ types:
     en: Source
     ko: 원
 
+  sorcery:
+    en: Sorcery
+    de: Hexerei
+
 cards:
   101:
     names:
@@ -131,6 +135,18 @@ cards:
       - keyword: flying
     art:
       10501:
+        image: ''
+        attribution: ''
+        frame: red
+
+  106:
+    names:
+      en: Magma Hammer
+    type: sorcery
+    effect: damage $target{creature,player} 5
+    cost: '{1}{R}{R}{R}{R}'
+    art:
+      10601:
         image: ''
         attribution: ''
         frame: red

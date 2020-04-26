@@ -2,7 +2,7 @@ from dataclasses import dataclass, field, asdict
 
 import energy
 from step import STEP
-from event import Event, PayEnergyEvent, TapEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent
+from event import Event, PayEnergyEvent, TapEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, DamageEvent
 
 class EnergyCost:
     def __init__(self, energy):
@@ -75,22 +75,42 @@ def parse_cost(string):
     return cost
 
 def parse_effect(string):
-    def _effect(permanent):
+    target_type = None
+    for line in string.splitlines():
+        for token in line.split():
+            if token.startswith('$target'):
+                target_type = token[8:-1].split(',')
+
+    def _effect(*, permanent=None, controller=None, card=None, target=None):
+        if permanent:
+            if controller is None:
+                controller = permanent.controller
+            if card is None:
+                card = permanent.card
+
         for line in string.splitlines():
             tokens = line.split()
             args = []
             for token in tokens:
                 if token == '$controller':
-                    args.append(permanent.controller.name)
+                    args.append(controller.name)
                 elif token == '$self':
                     args.append(permanent.perm_id)
+                elif token.startswith('$target'):
+                    args.append(target)
                 else:
                     args.append(token)
             if args[0] == 'bury':
                 yield ExitTheBattlefieldEvent(permanent.perm_id)
-                yield PutInGraveyardEvent(permanent.card.secret_id)
+                yield PutInGraveyardEvent(card.secret_id)
+            elif args[0] == 'damage':
+                if target['type'] == 'creature':
+                    yield DamageEvent(target['perm_id'], int(args[2]))
+                else:
+                    assert False, 'not implemented'
             else:
                 yield Event.from_id(*args)
+    _effect.target_type = target_type
     return _effect
 
 

@@ -501,6 +501,11 @@ function build_question_ui(question){
         card.classList.add('discardable');
         card.onclick = makeOnclick(action_id);
       }
+      if (action.action == 'target') {
+        let card = document.getElementById(action.card_id);
+        card.classList.add('selectable');
+        card.onclick = makeOnclick(action_id);
+      }
       if (action.action == 'activate') {
         let card = document.getElementById(action.card_id);
         card.classList.add('activateable');

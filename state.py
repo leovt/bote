@@ -35,6 +35,9 @@ class ObjectView:
     def sources(self):
         return self.filter(lambda x: 'source' in x.types)
 
+    def of_types(self, *types):
+        return self.filter(lambda x: any(t in x.types for t in types))
+
     def controlled_by(self, player):
         return self.filter(lambda x: x.controller is player)
 
@@ -62,9 +65,14 @@ class Spell:
     stack_id: str
     controller: object
     card: object
+    target: dict
 
     def resolve(self, game):
-        yield EnterTheBattlefieldEvent(self.card.secret_id, self.controller.name, next(game.unique_ids))
+        if 'creature' in self.card.types:
+            yield EnterTheBattlefieldEvent(self.card.secret_id, self.controller.name, next(game.unique_ids))
+        elif 'sorcery' in self.card.types or 'instant' in self.card.types:
+            yield from self.card.effect(card=self.card, controller=self.controller, target=self.target)
+            yield PutInGraveyardEvent(self.card.secret_id)
 
     def __str__(self):
         return f'cast {self.card.name} @{self.controller.name}'
@@ -81,7 +89,7 @@ class AbilityOnStack:
     ability: object
 
     def resolve(self, game):
-        yield from self.ability.effect(self.permanent)
+        yield from self.ability.effect(permanent=self.permanent)
 
     def __str__(self):
         return f'ability of {self.permanent.card.name}'
@@ -95,8 +103,28 @@ class AbilityOnStack:
 
 
 def cast_spell(game, player, card):
+    target = None
+    if card.effect and card.effect.target_type:
+        choices = {}
+        if 'creature' in card.effect.target_type:
+            choices = {next(game.unique_ids): {
+                                'action': 'target',
+                                'card_id': perm.card.known_identity,
+                                'perm_id': perm.perm_id,
+                                'text': f'target {perm}',
+                                'type': 'creature',
+                            }
+                            for perm in game.battlefield.creatures}
+        if not choices:
+            return
+        question = ChooseAction(game, player, choices)
+        yield QuestionEvent(question)
+        answer = game.answer
+        if answer in choices:
+            target = choices[answer]
+
     yield PayEnergyEvent(player.name, str(card.cost))
-    yield CastSpellEvent(next(game.unique_ids), player.name, card.secret_id)
+    yield CastSpellEvent(next(game.unique_ids), player.name, card.secret_id, target)
 
 
 @dataclass
@@ -195,7 +223,8 @@ class Game:
 
     def handle(self, event):
         handler = getattr(self, f'handle_{event.__class__.__name__}')
-        assert is_simple(event.__dict__)
+        assert is_simple(event.__dict__), event.__dict__
+        print(event)
         for key, value in dict(event.__dict__).items():
             if key=='perm_id' and value in self.battlefield:
                 event.permanent = self.battlefield[value].serialize_for(self.players[0])
@@ -205,9 +234,9 @@ class Game:
                 event.blockers = [self.battlefield[x].serialize_for(self.players[0]) for x in value]
             if key=='stack_id' and self.stack and self.stack[-1].stack_id == value:
                 event.tos = self.stack[-1].serialize_for(self.players[0])
-        assert is_simple(event.__dict__)
+        assert is_simple(event.__dict__), event.__dict__
         handler(event)
-        assert is_simple(event.__dict__)
+        assert is_simple(event.__dict__), event.__dict__
         self.log(event)
 
     def handle_QuestionEvent(self, event):
@@ -288,7 +317,7 @@ class Game:
         player = self.get_player(event.player)
         card = self.cards[event.card_secret_id]
         player.hand.discard(card)
-        self.stack.append(Spell(event.stack_id, player, card))
+        self.stack.append(Spell(event.stack_id, player, card, event.target))
 
     def handle_ActivateAbilityEvent(self, event):
         permanent = self.battlefield[event.perm_id]
@@ -736,20 +765,20 @@ def player_action(game, player):
         not game.stack):
         if can_play_source(player):
             for source in player.hand.sources:
-                add_choice([(play_source, (game, player, source))],
+                add_choice([(play_source, (game, player, source), {})],
                     action='play', card_id=source.known_identity, text=f'play {source.name}')
 
-        for card in player.hand.creatures:
+        for card in player.hand.of_types('creature', 'sorcery'):
             if player.energy_pool.can_pay(card.cost):
-                add_choice([(cast_spell, (game, player, card))],
+                add_choice([(cast_spell, (game, player, card), {})],
                     action='play', card_id=card.known_identity, text=f'cast {card.name}')
 
     for permanent in game.battlefield.controlled_by(player):
         for ab_key, ability in enumerate(permanent.abilities):
             if isinstance(ability, ActivatableAbility):
                 if all(cost.can_pay(permanent, permanent.card) for cost in ability.cost):
-                    add_choice([(cost.pay, (permanent, permanent.card))
-                        for cost in ability.cost] + [(ability.effect, (permanent,))],
+                    add_choice([(cost.pay, (permanent, permanent.card), {})
+                        for cost in ability.cost] + [(ability.effect, (), {'permanent': permanent})],
                         action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
                         text=f'activate {permanent.card.name}:{ability}')
     question = ChooseAction(game, player, choices)
@@ -758,5 +787,5 @@ def player_action(game, player):
     if actions[answer] is None:
         yield PassedEvent(player.name)
     else:
-        for func, arguments in actions[answer]:
-            yield from func(*arguments)
+        for func, arguments, kwarguments in actions[answer]:
+            yield from func(*arguments, **kwarguments)
