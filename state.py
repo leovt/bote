@@ -117,7 +117,7 @@ def cast_spell(game, player, card):
                             for perm in game.battlefield.creatures}
         if not choices:
             return
-        question = ChooseAction(game, player, choices)
+        question = ChooseAction(game, player, choices, 'target')
         yield QuestionEvent(question)
         answer = game.answer
         if answer in choices:
@@ -715,7 +715,7 @@ def discard_excess_cards(game):
         choices = {next(game.unique_ids): card for card in player.hand}
         question = ChooseAction(game, player, {key: dict(
             action='discard', card_id=card.known_identity, text=f'discard {card.name}')
-            for key, card in choices.items()})
+            for key, card in choices.items()}, 'discard')
         yield QuestionEvent(question)
         answer = game.answer
         if answer in choices:
@@ -781,7 +781,7 @@ def player_action(game, player):
                         for cost in ability.cost] + [(ability.effect, (), {'permanent': permanent})],
                         action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
                         text=f'activate {permanent.card.name}:{ability}')
-    question = ChooseAction(game, player, choices)
+    question = ChooseAction(game, player, choices, 'action')
     yield QuestionEvent(question)
     answer = game.answer
     if actions[answer] is None:

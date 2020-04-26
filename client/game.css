@@ -211,6 +211,24 @@ html, body, #main-grid {
   box-sizing: border-box;
 }
 
+#instruction {
+  visibility: hidden;
+  border: 1px solid black;
+  border-radius: 0.5rem;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  max-width: 100%;
+  word-wrap: break-word;
+  box-sizing: border-box;
+  grid-area: hand;
+}
+
+#instruction.active {
+  visibility: visible;
+  background: orangered;
+  color: white;
+}
+
 /* styling of the step indicator and confirm buttons */
 
 #stepconfirm {

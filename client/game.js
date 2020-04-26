@@ -232,6 +232,7 @@ function log_refresh () {
       var btn = document.getElementById('confirm');
       btn.innerText = "...";
       btn.disabled = true;
+      clear_instruction();
       var arrow = document.getElementById('arrow');
       arrow.style.fill = "lightgrey";
       if (result.question.player.is_me) {
@@ -464,7 +465,12 @@ function build_question_ui(question){
   }
   cleanupChooseActionUI();
   window.question = question;
-  document.getElementById('answer').setAttribute('style', '');
+  messages = {
+    action: "Choose an action (click on a highlighted card) or pass (click on the dial)",
+    target: "Choose the target",
+    discard: "Choose a card from your hand to discard"
+  };
+  write_instruction(messages[question.reason]);
   var choices = document.getElementById('choices');
   var arrow = document.getElementById('arrow');
   choices.innerHTML = "";
@@ -542,7 +548,7 @@ function build_question_ui(question){
     });
   }
   else if (question.question == 'DeclareAttackers') {
-    write_message("Declare your attackers and confirm by clicking on the turn indicator.");
+    write_instruction("Declare your attackers and confirm by clicking on the turn indicator.");
     make_ans_button("Skip Attack", get_and_send_answer);
     arrow.style.fill = "orange";
     forEachKeyValue(question.choices, (action_id, action) => {
@@ -570,7 +576,7 @@ function build_question_ui(question){
     });
   }
   else if (question.question == 'DeclareBlockers') {
-    write_message("Declare your blockers and confirm by clicking on the turn indicator.");
+    write_instruction("Declare your blockers and confirm by clicking on the turn indicator.");
     make_ans_button("Confirm Blockers", get_and_send_answer);
     arrow.style.fill = "orange";
     blockers = {};
@@ -686,6 +692,7 @@ function get_answer() {
     });
   }
   cleanupFunctions[question.question]();
+  clear_instruction();
   return answer;
 }
 
@@ -799,6 +806,18 @@ function make_ans_button(label, onclick){
   btn.innerText = label;
   btn.onclick = onclick;
   div.onclick = onclick;
+}
+
+function write_instruction(text){
+  let div = document.getElementById('instruction');
+  div.innerText = text;
+  div.classList.add('active');
+}
+
+function clear_instruction(){
+  let div = document.getElementById('instruction');
+  div.innerHTML = '';
+  div.classList.remove('active');
 }
 
 function savegame() {

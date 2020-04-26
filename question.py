@@ -1,15 +1,15 @@
 from tools import Namespace
-import tools
 
 class Question:
     def __str__(self):
         return '%s(%s, [...])' % (self.__class__.__name__, self.player)
 
 class ChooseAction(Question):
-    def __init__(self, game, player, choices):
+    def __init__(self, game, player, choices, reason):
         self.player = player
         self.choices = choices
         self.id = next(game.unique_ids)
+        self.reason = reason
 
     def validate(self, player, answer):
         return (player is self.player and
@@ -20,6 +20,7 @@ class ChooseAction(Question):
             id = self.id,
             question = 'ChooseAction',
             player = self.player.serialize_for(player),
+            reason = self.reason,
         )
         if player is self.player:
             ret.choices = self.choices
