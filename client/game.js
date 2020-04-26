@@ -508,7 +508,14 @@ function build_question_ui(question){
         card.onclick = makeOnclick(action_id);
       }
       if (action.action == 'target') {
-        let card = document.getElementById(action.card_id);
+        let card;
+        if (action.type === 'player') {
+          let is_me = (action.player == question.player.name && question.player.is_me);
+          card = document.getElementById(is_me ? 'my-avatar' : 'op-avatar');
+        }
+        else {
+          card = document.getElementById(action.card_id);
+        }
         card.classList.add('selectable');
         card.onclick = makeOnclick(action_id);
       }

@@ -107,14 +107,22 @@ def cast_spell(game, player, card):
     if card.effect and card.effect.target_type:
         choices = {}
         if 'creature' in card.effect.target_type:
-            choices = {next(game.unique_ids): {
+            choices.update({next(game.unique_ids): {
                                 'action': 'target',
                                 'card_id': perm.card.known_identity,
                                 'perm_id': perm.perm_id,
                                 'text': f'target {perm}',
                                 'type': 'creature',
                             }
-                            for perm in game.battlefield.creatures}
+                            for perm in game.battlefield.creatures})
+        if 'player' in card.effect.target_type:
+            choices.update({next(game.unique_ids): {
+                                'action': 'target',
+                                'player': player.name,
+                                'text': f'target {player.name}',
+                                'type': 'player',
+                            }
+                            for player in game.players})
         if not choices:
             return
         question = ChooseAction(game, player, choices, 'target')

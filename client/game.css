@@ -140,7 +140,7 @@ html, body, #main-grid {
   box-shadow: 0 0 15px 5px #4ef;
 }
 
-.card.selectable {
+.selectable {
   box-shadow: 0 0 15px 5px #f2f;
 }
 
