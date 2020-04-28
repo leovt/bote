@@ -42,7 +42,14 @@ def game(game_id):
         else:
             my_decks = pub_decks = []
         return render_template('choose_deck.html', game=game, my_decks=my_decks, pub_decks=pub_decks)
-    return render_template('game.html', game=game)
+
+    if game.user1 == current_user.username:
+        my_name = game.user1
+        op_name = game.user2
+    else:
+        my_name = game.user2
+        op_name = game.user1
+    return render_template('game.html', game=game, my_name=my_name, op_name=op_name)
 
 
 @app.route('/game/<game_id>/choose_deck', methods=['POST'])
