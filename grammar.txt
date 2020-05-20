@@ -23,12 +23,14 @@ keyword: /flying|trample|haste|cannot_block|cannot_attack/
 
 until_end_of_turn: "until end of turn"
 
-modifier: stat_mod
+modifier_list: modifier ("and" modifier)*
+
+modifier: _stat_mod -> stat_mod
         | keyword -> add_keyword
         | "not" keyword -> remove_keyword
         | "controlled by" _player_ref -> change_controller
 
-stat_mod: num_mod "/" num_mod
+_stat_mod: num_mod "/" num_mod
 
 num_mod: "+" number -> increase_stat
        | "-" number -> decrease_stat
@@ -54,13 +56,9 @@ _object: _chosen | all
 energy: energy_spec+
 
 energy_spec: number -> en_colorless
-            | "r" -> en_red
-            | "g" -> en_green
-            | "b" -> en_blue
-            | "w" -> en_white
-            | "y" -> en_yellow
+            | /[rgbwy]/ -> en_colored
 
-continuous_effect: _object "has" modifier ("and" modifier)* [until_end_of_turn]
+continuous_effect: _object "has" modifier_list [until_end_of_turn]
 
 number: /[0-9]+/
 
@@ -68,7 +66,7 @@ damage_effect: _chosen "gets" number "damage"
 
 add_energy_effect: "add" energy "to" _player_ref "energy pool"
 
-effects: _effect (";" _effect)*
+effects: _effect (";" _effect)* [";"]
 
 _effect: continuous_effect
        | damage_effect
