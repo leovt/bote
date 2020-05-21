@@ -154,3 +154,7 @@ def all():
 
 _types, _cards, _art_cards = load_yaml()
 del load_yaml
+
+if __name__ == '__main__':
+    for card in _cards:
+        print(card, RuleCard.get_by_id(card))
