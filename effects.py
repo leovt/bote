@@ -1,13 +1,16 @@
 import itertools
 import lark
 
+from event import AddEnergyEvent
+import energy
+
 with open('grammar.txt') as grammar_txt:
     _parser = lark.Lark(grammar_txt.read(), parser="lalr")
 
 test_effect = '''
     all .creature has +3/-3 and not flying and
     controlled by you until end of turn; chosen
-    .player[1] gets 5 damage; add 3rrr to [1] energy pool'''
+    .player[1] gets 5 damage; add {3}{R}{R}{R} to [1] energy pool'''
 
 class ChosenSpecVisitor(lark.Visitor):
     def __init__(self):
@@ -134,12 +137,6 @@ class Unparser(lark.Transformer):
     def start(self, args):
         return args[0]
 
-    def en_colorless(self, args):
-        return args[0]
-
-    def en_colored(self, args):
-        return args[0]
-
     def energy(self, args):
         return ''.join(args)
 
@@ -159,6 +156,42 @@ class EffectTemplate:
     def unparse(self):
         return Unparser(self.choices).transform(self.tree)
 
+
+class Executor(lark.Transformer):
+    def __init__(self, context):
+        lark.Transformer.__init__(self)
+        self._context = context
+
+    def __default__(self, data, children, meta):
+        print(f'{self.__class__.__name__}.{data} not implemented')
+        return lark.Transformer.__default__(self, data, children, meta)
+
+    def add_energy_effect(self, args):
+        energy, player = args
+        return [AddEnergyEvent(player, energy)]
+
+    def energy(self, args):
+        return args[0]
+
+    def effect_controller(self, args):
+        return self._context.controller
+
+    def effects(self, args):
+        return [event for effect in args for event in effect]
+
+    def start(self, args):
+        return args[0]
+
+class Effect:
+    def __init__(self, template, choices, controller, permanent):
+        self.template = template
+        self.controller = controller
+        self.permanent = permanent
+        self.choices = choices
+        assert set(self.choices) == set(self.template.choices)
+
+    def execute(self):
+        return Executor(self).transform(self.template.tree)
 
 
 if __name__ == '__main__':

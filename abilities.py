@@ -151,5 +151,5 @@ def describe_effect(script, lang):
                     'ko': f'이생물이 죽어요',
                 }[lang])
         else:
-            assert False, f'Text for {tokens[0]} not implemented.'
+            return script
     return ' '.join(lines)

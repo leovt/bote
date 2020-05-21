@@ -3,6 +3,7 @@ import functools
 import yaml
 import energy
 from abilities import ActivatableAbility, TriggeredAbility, parse_cost, parse_effect, parse_trigger
+from effects import EffectTemplate, Effect
 
 def instance_loader(loader):
     cache = {}
@@ -42,7 +43,7 @@ class RuleCard:
             if 'cost' in ab_spec:
                 abilities.append(
                     ActivatableAbility(parse_cost(ab_spec['cost']),
-                                       parse_effect(ab_spec['effect']),
+                                       EffectTemplate.parse(ab_spec['effect']),
                                        ab_spec.get('energy_ability', False)))
             if 'trigger' in ab_spec:
                 abilities.append(TriggeredAbility(

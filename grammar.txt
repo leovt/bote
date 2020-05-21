@@ -53,10 +53,7 @@ all: "all" selector
 
 _object: _chosen | all
 
-energy: energy_spec+
-
-energy_spec: number -> en_colorless
-            | /[rgbwy]/ -> en_colored
+energy: /(\{([0-9]+|[RGBWY])\})+/
 
 continuous_effect: _object "has" modifier_list [until_end_of_turn]
 

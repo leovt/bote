@@ -8,6 +8,7 @@ from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlock
 from tools import Namespace, unique_identifiers
 from step import STEP, NEXT_STEP
 from cards import Card, ArtCard
+from effects import Effect
 
 
 def is_simple(value):
@@ -81,6 +82,7 @@ class Spell:
         return {'stack_id': self.stack_id,
                 'controller': self.controller.name,
                 'card': self.card.serialize_for(player)}
+
 
 @dataclass(eq=False)
 class AbilityOnStack:
@@ -786,7 +788,7 @@ def player_action(game, player):
             if isinstance(ability, ActivatableAbility):
                 if all(cost.can_pay(permanent, permanent.card) for cost in ability.cost):
                     add_choice([(cost.pay, (permanent, permanent.card), {})
-                        for cost in ability.cost] + [(ability.effect, (), {'permanent': permanent})],
+                        for cost in ability.cost] + [(activate_ability, (game, ability, player, permanent), {})],
                         action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
                         text=f'activate {permanent.card.name}:{ability}')
     question = ChooseAction(game, player, choices, 'action')
@@ -797,3 +799,14 @@ def player_action(game, player):
     else:
         for func, arguments, kwarguments in actions[answer]:
             yield from func(*arguments, **kwarguments)
+
+def activate_ability(game, ability, controller, permanent):
+    if ability.effect.choices:
+        assert False, 'TODO: implement making choices'
+    else:
+        choices = {}
+    effect = Effect(ability.effect, choices, controller.name, permanent.perm_id)
+    if ability.is_energy_ability:
+        yield from effect.execute()
+    else:
+        assert False, 'TODO: implement ability to go on stack'
