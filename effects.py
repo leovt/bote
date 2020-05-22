@@ -189,13 +189,19 @@ class Executor(lark.Transformer):
     def start(self, args):
         return args[0]
 
+    def continuous_effect(self, args):
+        return []
+
+    def chosen_ref(self, args):
+        return self._context.choices[args[0]]
+
 class Effect:
     def __init__(self, template, choices, controller, permanent):
         self.template = template
         self.controller = controller
         self.permanent = permanent
         self.choices = choices
-        assert set(self.choices) == set(self.template.choices)
+        assert set(self.choices) == set(self.template.choices), (set(self.choices), set(self.template.choices))
 
     def execute(self):
         return Executor(self).transform(self.template.tree)

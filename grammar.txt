@@ -7,7 +7,7 @@ selector: selector_term+
 selector_term: "." _spec -> positive_selector
              | "!" _spec -> negative_selector
 
-_spec: type_spec | color_spec
+_spec: type_spec | color_spec | other_spec | subtype_spec
 
 color_spec: "color" "(" color ("," color)* ")"
           | color
@@ -18,6 +18,13 @@ type_spec: "type" "(" type ("," type)* ")"
           | type
 
 type: /player|permanent|creature|enchantment|source/
+
+subtype_spec: "subtype" "(" subtype ("," subtype)* ")"
+          | subtype
+
+subtype: /goblin|dragon|elemental|minotaur|human/
+
+other_spec: "other"
 
 keyword: /flying|trample|haste|cannot_block|cannot_attack/
 

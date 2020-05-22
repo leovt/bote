@@ -60,7 +60,7 @@ class RuleCard:
         return RuleCard(
             card_id = spec['card_id'],
             types = {spec['type']},
-            subtypes = spec.get('subtypes', {}),
+            subtypes = set(spec.get('subtypes', [])),
             cost = energy.Energy.parse(spec.get('cost', '')),
             toughness = spec.get('toughness', 0),
             strength = spec.get('strength', 0),

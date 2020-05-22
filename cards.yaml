@@ -156,3 +156,25 @@ cards:
       en: Treason
     type: sorcery
     effect: until_end_of_turn control $target{creature} $controller
+
+  108:
+    names:
+      en: Goblin Corporal
+      de: Goblin Korporal
+      ko: 고블린 하사
+    strength: 1
+    toughness: 1
+    cost: '{R}'
+    token: No
+    type: creature
+    subtypes:
+      - goblin
+    abilities:
+      - cost: "{T}"
+        effect: "destroy chosen .other.goblin"
+        effect_old: "chosen .other.goblin has +1/+1 until end of turn"
+    art:
+      10801:
+        image: ''
+        attribution: ''
+        frame: red

@@ -161,6 +161,10 @@ class Permanent:
         return self.card.types
 
     @property
+    def subtypes(self):
+        return self.card.subtypes
+
+    @property
     def abilities(self):
         return self.card.abilities
 
@@ -336,7 +340,12 @@ class Game:
         permanent = self.battlefield[event.perm_id]
         ability = permanent.card.abilities[event.ability_index]
         controller = permanent.controller #TODO: move controller into the event
-        choices = {} #todo save choices in the event
+        choices = {}
+        for key, value in event.choices.items():
+            if value['type'] == 'player':
+                choices[key] = self.get_player[value['player']]
+            else:
+                choices[key] = self.battlefield[value['perm_id']]
         self.stack.append(AbilityOnStack(event.stack_id, ability, choices, controller, permanent))
 
     def handle_ResolveEvent(self, event):
@@ -546,7 +555,7 @@ def game_events(game, skip_start):
                     if not triggered_abilities:
                         break
                     for (permanent, ab_idx, ability) in triggered_abilities:
-                        yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx)
+                        yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, {})
 
 
                 if game.priority_player.has_passed:
@@ -795,7 +804,7 @@ def player_action(game, player):
             if isinstance(ability, ActivatableAbility):
                 if all(cost.can_pay(permanent, permanent.card) for cost in ability.cost):
                     add_choice([(cost.pay, (permanent, permanent.card), {})
-                        for cost in ability.cost] + [(activate_ability, (game, ability, player, permanent), {})],
+                        for cost in ability.cost] + [(activate_ability, (game, ability, ab_key, player, permanent), {})],
                         action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
                         text=f'activate {permanent.card.name}:{ability}')
     question = ChooseAction(game, player, choices, 'action')
@@ -807,13 +816,97 @@ def player_action(game, player):
         for func, arguments, kwarguments in actions[answer]:
             yield from func(*arguments, **kwarguments)
 
-def activate_ability(game, ability, controller, permanent):
-    if ability.effect.choices:
-        assert False, 'TODO: implement making choices'
-    else:
-        choices = {}
+def activate_ability(game, ability, ab_idx, controller, permanent):
+    choices = {}
+    for id, selector in ability.effect.choices.items():
+        question_choices = {}
+        for candidate in select_objects(game, selector, controller, permanent):
+            candidate.update({'action': 'target', 'text': 'target'})
+            question_choices[next(game.unique_ids)] = candidate
+        if not question_choices:
+            print('No valid choice found')
+            return #no valid choice
+        question = ChooseAction(game, controller, question_choices, 'target')
+        yield QuestionEvent(question)
+        answer = game.answer
+        assert answer in question_choices
+        choices[id] = question_choices[answer]
+
     if ability.is_energy_ability:
         effect = Effect(ability.effect, choices, controller.name, permanent.perm_id)
         yield from effect.execute()
     else:
-        yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx)
+        yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, choices)
+
+def select_objects(game, selector, controller, permanent):
+    include_types = set()
+    exclude_types = set()
+    include_colors = set()
+    exclude_colors = set()
+    include_subtypes = set()
+    exclude_subtypes = set()
+
+    other_permanent = False
+
+    for sel in selector.children:
+        include = True
+        if sel.data == 'positive_selector':
+            include = True
+        elif sel.data == 'negative_selector':
+            include = False
+        else:
+            assert False
+
+        spec = sel.children[0]
+        if spec.data == 'type_spec':
+            selection = { x.children[0] for x in spec.children }
+            if 'permanent' in selection:
+                selection |= { 'creature', 'enchantment', 'source' }
+                selection.discard('permanent')
+            if include:
+                include_types |= selection
+            else:
+                exclude_types |= selection
+        elif spec.data == 'color_spec':
+            selection = { x.children[0] for x in spec.children }
+            if include:
+                include_colors |= selection
+            else:
+                exclude_colors |= selection
+        elif spec.data == 'subtype_spec':
+            selection = { x.children[0] for x in spec.children }
+            if include:
+                include_subtypes |= selection
+            else:
+                exclude_subtypes |= selection
+        elif spec.data == 'other_spec':
+            if include:
+                other_permanent = True
+            else:
+                assert False, 'bad spec !other'
+        else:
+            assert False
+
+    # done interpreting spec, now select
+
+    if 'player' in include_types:
+        for player in game.players:
+            yield {'player': player.name, 'type': 'player'}
+    include_types.discard('player')
+
+    for perm in game.battlefield:
+        if perm.types & exclude_types:
+            continue
+        if include_types and not perm.types & include_types:
+            continue
+        if perm.subtypes & exclude_subtypes:
+            continue
+        if include_subtypes and not perm.subtypes & include_subtypes:
+            continue
+        #todo: colors
+        if other_permanent and permanent == perm:
+            continue
+
+        yield {'card_id': perm.card.known_identity,
+               'perm_id': perm.perm_id,
+               'type': 'permanent'}

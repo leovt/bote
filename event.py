@@ -151,6 +151,7 @@ class ActivateAbilityEvent(Event):
     stack_id: str
     perm_id: str
     ability_index: int
+    choices: dict
 
 @event_id('resolve_tos')
 @dataclass(repr=False)
