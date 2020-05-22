@@ -93,7 +93,7 @@ cards:
       - keyword: haste
       - keyword: trample
       - trigger: BEGIN_OF_STEP END
-        effect: bury $self
+        effect: destroy self
 
     art:
       10301:

@@ -69,3 +69,4 @@ effects: _effect (";" _effect)* [";"]
 _effect: continuous_effect
        | damage_effect
        | add_energy_effect
+       | destruction_effect

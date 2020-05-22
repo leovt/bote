@@ -87,11 +87,14 @@ class Spell:
 @dataclass(eq=False)
 class AbilityOnStack:
     stack_id: str
-    permanent: object
     ability: object
+    choices: dict
+    controller: object
+    permanent: object
 
     def resolve(self, game):
-        yield from self.ability.effect(permanent=self.permanent)
+        effect = Effect(self.ability.effect, self.choices, self.controller, self.permanent)
+        yield from effect.execute()
 
     def __str__(self):
         return f'ability of {self.permanent.card.name}'
@@ -332,7 +335,9 @@ class Game:
     def handle_ActivateAbilityEvent(self, event):
         permanent = self.battlefield[event.perm_id]
         ability = permanent.card.abilities[event.ability_index]
-        self.stack.append(AbilityOnStack(event.stack_id, permanent, ability))
+        controller = permanent.controller #TODO: move controller into the event
+        choices = {} #todo save choices in the event
+        self.stack.append(AbilityOnStack(event.stack_id, ability, choices, controller, permanent))
 
     def handle_ResolveEvent(self, event):
         tos_popped = self.stack.pop()
@@ -807,8 +812,8 @@ def activate_ability(game, ability, controller, permanent):
         assert False, 'TODO: implement making choices'
     else:
         choices = {}
-    effect = Effect(ability.effect, choices, controller.name, permanent.perm_id)
     if ability.is_energy_ability:
+        effect = Effect(ability.effect, choices, controller.name, permanent.perm_id)
         yield from effect.execute()
     else:
-        assert False, 'TODO: implement ability to go on stack'
+        yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx)

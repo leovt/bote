@@ -1,8 +1,7 @@
 import itertools
 import lark
 
-from event import AddEnergyEvent
-import energy
+from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent
 
 with open('grammar.txt') as grammar_txt:
     _parser = lark.Lark(grammar_txt.read(), parser="lalr")
@@ -170,8 +169,16 @@ class Executor(lark.Transformer):
         energy, player = args
         return [AddEnergyEvent(player, energy)]
 
+    def destruction_effect(self, args):
+        permanent = args[0]
+        return [ExitTheBattlefieldEvent(permanent.perm_id),
+                PutInGraveyardEvent(permanent.card.secret_id)]
+
+    def self(self, args):
+        return self._context.permanent
+
     def energy(self, args):
-        return args[0]
+        return str(args[0])
 
     def effect_controller(self, args):
         return self._context.controller

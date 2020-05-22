@@ -48,7 +48,7 @@ class RuleCard:
             if 'trigger' in ab_spec:
                 abilities.append(TriggeredAbility(
                     parse_trigger(ab_spec['trigger']),
-                    parse_effect(ab_spec['effect'])))
+                    EffectTemplate.parse(ab_spec['effect'])))
 
             else:
                 abilities.append(ab_spec)
