@@ -379,6 +379,9 @@ class Game:
     def handle_PlayerLosesEvent(self, event):
         pass
 
+    def handle_ClearTriggerEvent(self, event):
+        self.triggers.clear()
+
     def __str__(self):
         return '<Game>'
 
@@ -534,6 +537,7 @@ def game_events(game, skip_start):
                 while True:
                     yield from state_based_actions(game)
                     triggered_abilities = check_triggers(game)
+                    yield ClearTriggerEvent()
                     if not triggered_abilities:
                         break
                     for (permanent, ab_idx, ability) in triggered_abilities:
@@ -703,9 +707,7 @@ def state_based_actions(game):
 
 def check_triggers(game):
     has_triggered = []
-    triggers = list(game.triggers)
-    for trigger in triggers:
-        game.triggers.remove(trigger)
+    for trigger in game.triggers:
         for permanent in game.battlefield:
             for ab_idx, ability in enumerate(permanent.card.abilities):
                 if isinstance(ability, TriggeredAbility):

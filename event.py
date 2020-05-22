@@ -211,3 +211,8 @@ class DiscardEvent(Event):
 @dataclass(repr=False)
 class PlayerLosesEvent(Event):
     player: object
+
+@event_id('clear_trigger')
+@dataclass(repr=False)
+class ClearTriggerEvent(Event):
+    pass
