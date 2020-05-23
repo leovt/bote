@@ -1,32 +1,25 @@
 %ignore /[ \n\t]/
 
+color: /red|green|blue|yellow|white/
+type: /player|permanent|creature|enchantment|source/
+subtype: /goblin|dragon|elemental|minotaur|human/
+keyword: /flying|trample|haste|cannot_block|cannot_attack/
+energy: /(\{([0-9]+|[RGBWY])\})+/
+number: /[0-9]+/
+
 start: effects
 
-selector: selector_term+
+effects: _effect (";" _effect)* [";"]
 
-selector_term: "." _spec -> positive_selector
-             | "!" _spec -> negative_selector
+_effect: damage_effect
+       | add_energy_effect
+       | destruction_effect
+       | continuous_effect
 
-_spec: type_spec | color_spec | other_spec | subtype_spec
-
-color_spec: "color" "(" color ("," color)* ")"
-          | color
-
-color: /red|green|blue|yellow|white/
-
-type_spec: "type" "(" type ("," type)* ")"
-          | type
-
-type: /player|permanent|creature|enchantment|source/
-
-subtype_spec: "subtype" "(" subtype ("," subtype)* ")"
-          | subtype
-
-subtype: /goblin|dragon|elemental|minotaur|human/
-
-other_spec: "other"
-
-keyword: /flying|trample|haste|cannot_block|cannot_attack/
+damage_effect: _object "gets" number "damage"
+destruction_effect: "destroy" _object
+add_energy_effect: "add" energy "to" _object "energy pool"
+continuous_effect: _object "has" modifier_list [until_end_of_turn]
 
 until_end_of_turn: "until end of turn"
 
@@ -43,37 +36,32 @@ num_mod: "+" number -> increase_stat
        | "-" number -> decrease_stat
        | number -> set_stat
 
-effect_controller: "you"
-self: "self"
+_object: all | self | effect_controller | _chosen
 
-_chosen: chosen_spec
-       | chosen_ref
+all: "all" selector
+self: "self"
+effect_controller: "you"
+_chosen: chosen_spec | chosen_ref
 
 chosen_spec: "chosen" selector [chosen_label]
-
 chosen_ref: _chosen_ref_label
 chosen_label: _chosen_ref_label
  _chosen_ref_label: "[" /[\w]+/ "]"
 
-all: "all" selector
+selector: selector_term+
 
-_object: _chosen | all | self | effect_controller
+selector_term: "." _spec -> positive_selector
+             | "!" _spec -> negative_selector
 
-energy: /(\{([0-9]+|[RGBWY])\})+/
+_spec: type_spec | color_spec | other_spec | subtype_spec
 
-continuous_effect: _object "has" modifier_list [until_end_of_turn]
+color_spec: "color" "(" color ("," color)* ")"
+          | color
 
-number: /[0-9]+/
+type_spec: "type" "(" type ("," type)* ")"
+          | type
 
-damage_effect: _object "gets" number "damage"
+subtype_spec: "subtype" "(" subtype ("," subtype)* ")"
+          | subtype
 
-destruction_effect: "destroy" _object
-
-add_energy_effect: "add" energy "to" _object "energy pool"
-
-effects: _effect (";" _effect)* [";"]
-
-_effect: continuous_effect
-       | damage_effect
-       | add_energy_effect
-       | destruction_effect
+other_spec: "other"
