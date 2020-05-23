@@ -419,7 +419,7 @@ class Game:
         choices = {}
         for key, value in choices_ids.items():
             if value['type'] == 'player':
-                choices[key] = self.get_player[value['player']]
+                choices[key] = self.get_player(value['player'])
             else:
                 choices[key] = self.battlefield[value['perm_id']]
         return choices
