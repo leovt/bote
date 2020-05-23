@@ -118,13 +118,27 @@ def art_svg(art_id, lang):
     cost = card.get('cost') or ''
     if cost:
         cost = energy.Energy.parse(cost).symbols()
+
+    typeline = get_lang(cards._types[card['type']], lang)
+    if 'subtypes' in card and card['subtypes']:
+        subtypes = cards._types[card['type']]['subtypes']
+        typeline += ' - ' + ' '.join(get_lang(subtypes[st], lang) for st in card['subtypes'])
+
+    rule_list = []
+    if 'effect' in card:
+        rule_list.append(card['effect'])
+    rule_list.extend(str_ability(a, lang) for a in card.get('abilities', []))
+
+    flavour = art_card.get('flavour', {}).get(lang)
+
     return render_template('card.svg',
         name = get_lang(card['names'], lang),
         cost = cost,
-        type = get_lang(cards._types[card['type']], lang),
+        type = typeline,
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
         attribution = art_card['attribution'],
         image_url = create_data_url('client/'+art_card['image']),
-        attributes = [str_ability(a, lang) for a in card.get('abilities', [])],
+        rule_lines = rule_list,
+        flavour = flavour,
         frame = art_card['frame'],
     ), 200, {'Content-Type': 'image/svg+xml'}

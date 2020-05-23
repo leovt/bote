@@ -12,6 +12,17 @@
               top: .125em;
               position: relative;
           }
+
+          p {
+              margin: 0.3em;
+          }
+
+          .flavour {
+              font-style: italic;
+              font-size: smaller;
+              position: absolute;
+              bottom: 0;
+          }
    </style>
    <defs>
      <filter id="shadow" x="0" y="0" width="200%" height="200%">
@@ -77,10 +88,12 @@
        x="21"
        y="225" />
        <foreignObject x="21" y="225" width="240" height="145">
-         {% for attr in attributes %}
-         <html:p class="attribute">{{attr}}</html:p>
+         {% for rule in rule_lines %}
+         <html:p class="attribute">{{rule}}</html:p>
          {% endfor %}
+         {% if flavour %}
          <html:p class="flavour">{{flavour}}</html:p>
+         {% endif %}
       </foreignObject>
     {% if stats %}
     <rect x="205" y="355" width="63" height="35" fill="beige" />
@@ -103,7 +116,7 @@
     {% if cost %}
     <g>
       {% for symbol in cost|reverse %}
-      <use xlink:href="#energy_{{ symbol }}" x="{{ 240 - 20 * (loop.index-1) }}"  y="10" width="24" height="24"/>
+      <use xlink:href="#energy_{{ symbol }}" x="{{ 240 - 15 * (loop.index-1) }}"  y="10" width="24" height="24"/>
       {% endfor %}
     </g>
     {% endif %}

@@ -33,6 +33,17 @@ types:
   sorcery:
     en: Sorcery
     de: Hexerei
+    ko: 집중마법
+
+  enchantment:
+    en: Enchantment
+    de: Verzauberung
+    ko: 부여마법
+
+  instant:
+    en: Instant
+    de: Spontanzauber
+    ko: 순간마법
 
 cards:
   101:
@@ -100,6 +111,8 @@ cards:
         image: flammenkrieger.jpg
         attribution: Leonhard Vogt, 2020
         frame: red
+        flavour:
+          de: Kein Strohfeuer
 
   104:
     names:
