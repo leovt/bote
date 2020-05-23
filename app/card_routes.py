@@ -1,7 +1,10 @@
+import os
 import base64
 import mimetypes
 import re
 from flask import abort, jsonify, request, render_template, redirect, url_for
+import pagan
+from PIL import Image
 
 from app import app
 import cards
@@ -131,13 +134,25 @@ def art_svg(art_id, lang):
 
     flavour = art_card.get('flavour', {}).get(lang)
 
+    if art_card.get('image'):
+        img_filename = 'client/'+art_card['image']
+    else:
+        img_filename = f'hash_images/hash_{art_id}.png'
+        if not os.path.exists(img_filename):
+            if not os.path.exists('hash_images'):
+                os.mkdir('hash_images')
+            avatar = pagan.Avatar(str(art_id))
+            image = Image.new("RGB", avatar.img.size, "WHITE")
+            image.paste(avatar.img, (0, 0), avatar.img)
+            image.save(img_filename)
+
     return render_template('card.svg',
         name = get_lang(card['names'], lang),
         cost = cost,
         type = typeline,
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
         attribution = art_card['attribution'],
-        image_url = create_data_url('client/'+art_card['image']),
+        image_url = create_data_url(img_filename),
         rule_lines = rule_list,
         flavour = flavour,
         frame = art_card['frame'],
