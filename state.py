@@ -66,13 +66,14 @@ class Spell:
     stack_id: str
     controller: object
     card: object
-    target: dict
+    choices: dict
 
     def resolve(self, game):
         if 'creature' in self.card.types:
             yield EnterTheBattlefieldEvent(self.card.secret_id, self.controller.name, next(game.unique_ids))
         elif 'sorcery' in self.card.types or 'instant' in self.card.types:
-            yield from self.card.effect(card=self.card, controller=self.controller, target=self.target)
+            effect = Effect(self.card.effect, game.objects_from_ids(self.choices), self.controller, None)
+            yield from effect.execute()
             yield PutInGraveyardEvent(self.card.secret_id)
 
     def __str__(self):
@@ -108,36 +109,11 @@ class AbilityOnStack:
 
 
 def cast_spell(game, player, card):
-    target = None
-    if card.effect and card.effect.target_type:
-        choices = {}
-        if 'creature' in card.effect.target_type:
-            choices.update({next(game.unique_ids): {
-                                'action': 'target',
-                                'card_id': perm.card.known_identity,
-                                'perm_id': perm.perm_id,
-                                'text': f'target {perm}',
-                                'type': 'creature',
-                            }
-                            for perm in game.battlefield.creatures})
-        if 'player' in card.effect.target_type:
-            choices.update({next(game.unique_ids): {
-                                'action': 'target',
-                                'player': player.name,
-                                'text': f'target {player.name}',
-                                'type': 'player',
-                            }
-                            for player in game.players})
-        if not choices:
-            return
-        question = ChooseAction(game, player, choices, 'target')
-        yield QuestionEvent(question)
-        answer = game.answer
-        if answer in choices:
-            target = choices[answer]
-
+    choices = {}
+    if card.effect:
+        yield from make_choices(game, choices, card.effect, player, None)
     yield PayEnergyEvent(player.name, str(card.cost))
-    yield CastSpellEvent(next(game.unique_ids), player.name, card.secret_id, target)
+    yield CastSpellEvent(next(game.unique_ids), player.name, card.secret_id, choices)
 
 
 @dataclass
@@ -340,12 +316,7 @@ class Game:
         permanent = self.battlefield[event.perm_id]
         ability = permanent.card.abilities[event.ability_index]
         controller = permanent.controller #TODO: move controller into the event
-        choices = {}
-        for key, value in event.choices.items():
-            if value['type'] == 'player':
-                choices[key] = self.get_player[value['player']]
-            else:
-                choices[key] = self.battlefield[value['perm_id']]
+        choices = self.objects_from_ids(event.choices)
         self.stack.append(AbilityOnStack(event.stack_id, ability, choices, controller, permanent))
 
     def handle_ResolveEvent(self, event):
@@ -443,6 +414,15 @@ class Game:
         else:
             print('did not expect answer now')
         return False
+
+    def objects_from_ids(self, choices_ids):
+        choices = {}
+        for key, value in choices_ids.items():
+            if value['type'] == 'player':
+                choices[key] = self.get_player[value['player']]
+            else:
+                choices[key] = self.battlefield[value['perm_id']]
+        return choices
 
     def run(self, skip_start=False):
         # todo: move to __init__
@@ -818,7 +798,16 @@ def player_action(game, player):
 
 def activate_ability(game, ability, ab_idx, controller, permanent):
     choices = {}
-    for id, selector in ability.effect.choices.items():
+    yield from make_choices(game, choices, ability.effect, controller, permanent)
+
+    if ability.is_energy_ability:
+        effect = Effect(ability.effect, game.objects_from_ids(choices), controller.name, permanent.perm_id)
+        yield from effect.execute()
+    else:
+        yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, choices)
+
+def make_choices(game, choices, effect, controller, permanent):
+    for id, selector in effect.choices.items():
         question_choices = {}
         for candidate in select_objects(game, selector, controller, permanent):
             candidate.update({'action': 'target', 'text': 'target'})
@@ -832,11 +821,7 @@ def activate_ability(game, ability, ab_idx, controller, permanent):
         assert answer in question_choices
         choices[id] = question_choices[answer]
 
-    if ability.is_energy_ability:
-        effect = Effect(ability.effect, choices, controller.name, permanent.perm_id)
-        yield from effect.execute()
-    else:
-        yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, choices)
+
 
 def select_objects(game, selector, controller, permanent):
     include_types = set()

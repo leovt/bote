@@ -143,7 +143,7 @@ cards:
     names:
       en: Magma Hammer
     type: sorcery
-    effect: damage $target{creature,player} 5
+    effect: chosen .creature.player gets 5 damage
     cost: '{1}{R}{R}{R}{R}'
     art:
       10601:

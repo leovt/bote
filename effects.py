@@ -1,7 +1,7 @@
 import itertools
 import lark
 
-from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent
+from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, PlayerDamageEvent, DamageEvent
 
 with open('grammar.txt') as grammar_txt:
     _parser = lark.Lark(grammar_txt.read(), parser="lalr")
@@ -173,6 +173,16 @@ class Executor(lark.Transformer):
         permanent = args[0]
         return [ExitTheBattlefieldEvent(permanent.perm_id),
                 PutInGraveyardEvent(permanent.card.secret_id)]
+
+    def damage_effect(self, args):
+        print(args)
+        if hasattr(args[0], 'name'):
+            return [PlayerDamageEvent(args[0].name, args[1])]
+        else:
+            return [DamageEvent(args[0].perm_id, args[1])]
+
+    def number(self, args):
+        return int(args[0], 10)
 
     def self(self, args):
         return self._context.permanent

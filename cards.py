@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 import functools
 import yaml
 import energy
-from abilities import ActivatableAbility, TriggeredAbility, parse_cost, parse_effect, parse_trigger
-from effects import EffectTemplate, Effect
+from abilities import ActivatableAbility, TriggeredAbility, parse_cost, parse_trigger
+from effects import EffectTemplate
 
 def instance_loader(loader):
     cache = {}
@@ -55,7 +55,7 @@ class RuleCard:
 
         effect = None
         if 'effect' in spec:
-            effect = parse_effect(spec['effect'])
+            effect = EffectTemplate.parse(spec['effect'])
 
         return RuleCard(
             card_id = spec['card_id'],
