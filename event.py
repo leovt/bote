@@ -153,6 +153,20 @@ class ActivateAbilityEvent(Event):
     ability_index: int
     choices: dict
 
+@event_id('create_continuous_effect')
+@dataclass(repr=False)
+class CreateContinuousEffectEvent(Event):
+    effect_id: str
+    perm_id: str or None
+    objects: list
+    modifiers: list
+    until_end_of_turn: bool
+
+@event_id('create_continuous_effect')
+@dataclass(repr=False)
+class EndContinuousEffectEvent(Event):
+    effect_id: str
+
 @event_id('resolve_tos')
 @dataclass(repr=False)
 class ResolveEvent(Event):

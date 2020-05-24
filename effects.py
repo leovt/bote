@@ -1,7 +1,7 @@
 import itertools
 import lark
 
-from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, PlayerDamageEvent, DamageEvent
+from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, PlayerDamageEvent, DamageEvent, CreateContinuousEffectEvent
 
 with open('grammar.txt') as grammar_txt:
     _parser = lark.Lark(grammar_txt.read(), parser="lalr")
@@ -200,14 +200,41 @@ class Executor(lark.Transformer):
         return args[0]
 
     def continuous_effect(self, args):
-        return []
+        effect_id = next(self._context.game.unique_ids)
+        perm_id = None
+        if self._context.permanent:
+            perm_id = self._context.permanent.perm_id
+        objects = [args[0].perm_id]
+        modifiers = args[1]
+        until_end_of_turn = False
+        if len(args)>2:
+            assert args[2].data == 'until_end_of_turn'
+            until_end_of_turn = True
+        return [CreateContinuousEffectEvent(effect_id, perm_id, objects, modifiers, until_end_of_turn)]
 
     def chosen_ref(self, args):
         return self._context.choices[args[0]]
 
+    def stat_mod(self, args):
+        return [(char, mod[0], mod[1])
+                for char, mod in zip(('strength', 'toughness'), args)]
+
+    def increase_stat(self, args):
+        return ('delta', args[0])
+
+    def decrease_stat(self, args):
+        return ('delta', -args[0])
+
+    def set_stat(self, args):
+        return ('set', args[0])
+
+    def modifier_list(self, args):
+        return args
+
 class Effect:
-    def __init__(self, template, choices, controller, permanent):
+    def __init__(self, template, game, choices, controller, permanent):
         self.template = template
+        self.game = game
         self.controller = controller
         self.permanent = permanent
         self.choices = choices
@@ -215,6 +242,38 @@ class Effect:
 
     def execute(self):
         return Executor(self).transform(self.template.tree)
+
+
+class ContinuousEffect:
+    def __init__(self, game, parse_tree, controller, permanent):
+        '''
+            game: the Game object
+            parse_tree: the parse tree of the continuous_effect rule in the grammar
+            controller: the controller of the effect
+            permanent: if the effect is a rule on a permanent (e.g. enchantment)
+        '''
+        self.game = game
+        self.controller = controller
+        self.permanent = permanent
+        assert parse_tree.data == 'continuous_effect'
+
+        try:
+            print(parse_tree.pretty())
+        except:
+            print(parse_tree)
+
+        if len(parse_tree.children) == 3:
+            assert parse_tree.children[2].data == 'until_end_of_turn'
+            self.until_end_of_turn = True
+        else:
+            self.until_end_of_turn = False
+
+
+    def is_active(self):
+        if self.permanent:
+            if self.permanent not in game.battlefield:
+                return False
+
 
 
 if __name__ == '__main__':

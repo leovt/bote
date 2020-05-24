@@ -184,8 +184,7 @@ cards:
       - goblin
     abilities:
       - cost: "{T}"
-        effect: "destroy chosen .other.goblin"
-        effect_old: "chosen .other.goblin has +1/+1 until end of turn"
+        effect: "chosen .other.goblin has +1/+1 until end of turn"
     art:
       10801:
         image: ''
