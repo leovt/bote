@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import energy
 from library import make_library, Library
 from abilities import ActivatableAbility, TriggeredAbility
@@ -72,7 +72,7 @@ class Spell:
         if 'creature' in self.card.types:
             yield EnterTheBattlefieldEvent(self.card.secret_id, self.controller.name, next(game.unique_ids))
         elif 'sorcery' in self.card.types or 'instant' in self.card.types:
-            effect = Effect(self.card.effect, game.objects_from_ids(self.choices), self.controller, None)
+            effect = Effect(self.card.effect, game, game.objects_from_ids(self.choices), self.controller, None)
             yield from effect.execute()
             yield PutInGraveyardEvent(self.card.secret_id)
 
@@ -94,7 +94,7 @@ class AbilityOnStack:
     permanent: object
 
     def resolve(self, game):
-        effect = Effect(self.ability.effect, self.choices, self.controller, self.permanent)
+        effect = Effect(self.ability.effect, game, self.choices, self.controller, self.permanent)
         yield from effect.execute()
 
     def __str__(self):
@@ -204,6 +204,8 @@ class Game:
     unique_ids: iter = field(default_factory=unique_identifiers)
     triggers: list = field(default_factory=list)
     cards: dict = field(default_factory=dict)
+    continuous_effects: dict = field(default_factory=OrderedDict)
+
 
     def log(self, event):
         self.event_log.append(event)
@@ -318,6 +320,12 @@ class Game:
         controller = permanent.controller #TODO: move controller into the event
         choices = self.objects_from_ids(event.choices)
         self.stack.append(AbilityOnStack(event.stack_id, ability, choices, controller, permanent))
+
+    def handle_CreateContinuousEffectEvent(self, event):
+        self.continuous_effects[event.effect_id] = event
+
+    def handle_EndContinuousEffectEvent(self, event):
+        del self.continuous_effects[event.effect_id]
 
     def handle_ResolveEvent(self, event):
         tos_popped = self.stack.pop()
@@ -569,6 +577,8 @@ def turn_based_actions(game):
         yield from open_priority(game)
     elif game.step == STEP.CLEANUP:
         yield from discard_excess_cards(game)
+        yield from clear_all_damage(game)
+        yield from end_continuous_effects(game)
         yield from end_of_step(game)
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = {next(game.unique_ids): permanent for permanent in
@@ -678,6 +688,17 @@ def destroy(permanent):
 def put_in_graveyard(permanent):
     yield ExitTheBattlefieldEvent(permanent.perm_id)
     yield PutInGraveyardEvent(permanent.card.secret_id)
+
+def end_continuous_effects(game):
+    ending_ids = [effect_id
+                  for (effect_id, effect) in game.continuous_effects.items()
+                  if effect.until_end_of_turn]
+    for effect_id in ending_ids:
+        yield EndContinuousEffectEvent(effect_id)
+
+def clear_all_damage(game):
+    yield from []
+    #TODO: implement
 
 def state_based_actions(game):
     for player in game.players:
@@ -801,7 +822,7 @@ def activate_ability(game, ability, ab_idx, controller, permanent):
     yield from make_choices(game, choices, ability.effect, controller, permanent)
 
     if ability.is_energy_ability:
-        effect = Effect(ability.effect, game.objects_from_ids(choices), controller.name, permanent.perm_id)
+        effect = Effect(ability.effect, game, game.objects_from_ids(choices), controller.name, permanent.perm_id)
         yield from effect.execute()
     else:
         yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, choices)
