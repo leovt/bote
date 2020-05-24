@@ -133,6 +133,8 @@ class Unparser(lark.Transformer):
     def number(self, args):
         return args[0]
 
+    signed_number = number
+
     def start(self, args):
         return args[0]
 
@@ -184,6 +186,8 @@ class Executor(lark.Transformer):
     def number(self, args):
         return int(args[0], 10)
 
+    signed_number = number
+
     def self(self, args):
         return self._context.permanent
 
@@ -215,21 +219,14 @@ class Executor(lark.Transformer):
     def chosen_ref(self, args):
         return self._context.choices[args[0]]
 
-    def stat_mod(self, args):
-        return [(char, mod[0], mod[1])
-                for char, mod in zip(('strength', 'toughness'), args)]
-
-    def increase_stat(self, args):
-        return ('delta', args[0])
-
-    def decrease_stat(self, args):
-        return ('delta', -args[0])
-
     def set_stat(self, args):
-        return ('set', args[0])
+        return ('set_stat', args[0], args[1])
+
+    def delta_stat(self, args):
+        return ('delta_stat', args[0], args[1])
 
     def modifier_list(self, args):
-        return args
+        return [modifier for modifiers in args for modifier in modifiers]
 
 class Effect:
     def __init__(self, template, game, choices, controller, permanent):

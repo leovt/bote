@@ -6,6 +6,7 @@ subtype: /goblin|dragon|elemental|minotaur|human/
 keyword: /flying|trample|haste|cannot_block|cannot_attack/
 energy: /(\{([0-9]+|[RGBWY])\})+/
 number: /[0-9]+/
+signed_number: /[\+\-][0-9]+/
 
 start: effects
 
@@ -25,16 +26,11 @@ until_end_of_turn: "until end of turn"
 
 modifier_list: modifier ("and" modifier)*
 
-modifier: _stat_mod -> stat_mod
+modifier: signed_number "/" signed_number -> delta_stat
+        | number "/" number -> set_stat
         | keyword -> add_keyword
         | "not" keyword -> remove_keyword
         | "controlled by" _object -> change_controller
-
-_stat_mod: num_mod "/" num_mod
-
-num_mod: "+" number -> increase_stat
-       | "-" number -> decrease_stat
-       | number -> set_stat
 
 _object: all | self | effect_controller | _chosen
 
