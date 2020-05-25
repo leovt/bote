@@ -3,8 +3,7 @@ import base64
 import mimetypes
 import re
 from flask import abort, jsonify, request, render_template, redirect, url_for
-import pagan
-from PIL import Image
+import randimage
 
 from app import app
 import cards
@@ -140,10 +139,8 @@ def art_svg(art_id, lang):
         if not os.path.exists(img_filename):
             if not os.path.exists('hash_images'):
                 os.mkdir('hash_images')
-            avatar = pagan.Avatar(str(art_id))
-            image = Image.new("RGB", avatar.img.size, "WHITE")
-            image.paste(avatar.img, (0, 0), avatar.img)
-            image.save(img_filename)
+            randimage.randimage(str(art_id)).save(img_filename)
+
 
     return render_template('card.svg',
         name = get_lang(card['names'], lang),
