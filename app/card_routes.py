@@ -8,7 +8,6 @@ from PIL import Image
 
 from app import app
 import cards
-from abilities import describe_effect
 import energy
 
 
@@ -84,7 +83,7 @@ KEYWORDS = {
 
 def str_ability(a, lang):
     if 'cost' in a:
-        return parse_symbols_html(f"{a['cost']}: {describe_effect(a['effect'], lang)}")
+        return parse_symbols_html(f"{a['cost']}: {a['effect']}")
     if 'keyword' in a:
         return get_lang(KEYWORDS[a['keyword']], lang)
     if 'trigger' in a:
@@ -93,7 +92,7 @@ def str_ability(a, lang):
                 'en': 'At the end of the turn {}',
                 'de': '{} am Ende des Zuges',
                 'ko': '턴종료에 {}',
-                }, lang).format(describe_effect(a['effect'], lang))
+                }, lang).format(a['effect'])
     return str(a)
 
 
