@@ -50,7 +50,6 @@ def background(rand):
 
 def add_colorized_layer(img, layer, color):
     colorized = ImageOps.colorize(layer.convert('L'), black=color, white='white')
-    print(img.size, layer.size, colorized.size)
     return Image.composite(img, colorized, layer)
 
 def body(rand, img):
@@ -67,6 +66,20 @@ def shirt(rand, img):
     fname = os.path.join('randimage', rand.choice(fnames))
     return add_colorized_layer(img, Image.open(fname), cloth(rand))
 
+def weapon(rand, img):
+    fnames = ['axe.png', 'flail.png']
+    do_right = rand.random() < 0.7
+    do_left = rand.random() < 0.7
+    for flip, doit in enumerate([do_right, do_left]):
+        if not doit:
+            continue
+        fname = os.path.join('randimage', rand.choice(fnames))
+        weapon = Image.open(fname).convert('RGBA')
+        if flip:
+            weapon = weapon.transpose(Image.FLIP_LEFT_RIGHT)
+        img.paste(weapon, (0,0), weapon)
+    return img
+
 def randimage(seed):
     rand = random.Random()
     rand.seed(seed)
@@ -74,6 +87,7 @@ def randimage(seed):
     img = body(rand, img)
     img = pants(rand, img)
     img = shirt(rand, img)
+    img = weapon(rand, img)
     return img
 
 if __name__ == '__main__':
