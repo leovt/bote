@@ -1,3 +1,5 @@
+import weakref
+
 from dataclasses import dataclass, field
 from collections import defaultdict, OrderedDict
 import energy
@@ -120,17 +122,23 @@ def cast_spell(game, player, card):
 class Damage:
     value: int
 
-@dataclass(eq=False)
 class Permanent:
-    card: object
-    controller: object
-    perm_id: str
-    tapped: bool = False
-    damage: list = field(default_factory=list)
-    attacking: bool = False
-    blocking: bool = False
-    blockers: list = field(default_factory=list)
-    on_battlefield_at_begin_of_turn : bool = False
+    def __init__(self, perm_id:str, game:'Game', card:Card, controller:'Player'):
+        self.perm_id = perm_id
+        self._game_ref = weakref.ref(game)
+        self.card = card
+        self.controller = controller
+
+        self.tapped: bool = False
+        self.damage: list = []
+        self.attacking: bool = False
+        self.blocking: bool = False
+        self.blockers: list = []
+        self.on_battlefield_at_begin_of_turn: bool = False
+
+    @property
+    def game(self) -> 'Game':
+        return self._game_ref()
 
     @property
     def types(self):
@@ -164,6 +172,7 @@ class Permanent:
                 'controller': self.controller.serialize_for(player),
                 'perm_id': self.perm_id,
                }
+
 
 @dataclass(eq=False)
 class Player:
@@ -291,7 +300,7 @@ class Game:
         player.has_passed = True
 
     def handle_EnterTheBattlefieldEvent(self, event):
-        permanent = Permanent(self.cards[event.card_secret_id], self.get_player(event.controller), event.perm_id)
+        permanent = Permanent(event.perm_id, self, self.cards[event.card_secret_id], self.get_player(event.controller))
         self.battlefield[permanent.perm_id] = permanent
 
     def handle_ExitTheBattlefieldEvent(self, event):
