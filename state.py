@@ -227,6 +227,8 @@ class Game:
                 event.attacker = self.battlefield[value].serialize_for(self.players[0])
             if key=='blocker_ids':
                 event.blockers = [self.battlefield[x].serialize_for(self.players[0]) for x in value]
+            if key=='object_ids':
+                event.objects = [self.battlefield[x].serialize_for(self.players[0]) for x in value]
             if key=='stack_id' and self.stack and self.stack[-1].stack_id == value:
                 event.tos = self.stack[-1].serialize_for(self.players[0])
         assert is_simple(event.__dict__), event.__dict__

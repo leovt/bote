@@ -226,7 +226,7 @@ class Executor(lark.Transformer):
         return ('delta_stat', args[0], args[1])
 
     def modifier_list(self, args):
-        return [modifier for modifiers in args for modifier in modifiers]
+        return args
 
 class Effect:
     def __init__(self, template, game, choices, controller, permanent):

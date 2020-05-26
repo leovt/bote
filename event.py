@@ -1,6 +1,4 @@
-from dataclasses import dataclass, field, asdict
-import re
-
+from dataclasses import dataclass, asdict
 
 class Event:
     @staticmethod
@@ -158,7 +156,7 @@ class ActivateAbilityEvent(Event):
 class CreateContinuousEffectEvent(Event):
     effect_id: str
     perm_id: str or None
-    objects: list
+    object_ids: list
     modifiers: list
     until_end_of_turn: bool
 
