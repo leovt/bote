@@ -154,11 +154,27 @@ class Permanent:
 
     @property
     def toughness(self):
-        return self.card.toughness
+        ret = self.card.toughness
+        for effect in self.game.continuous_effects.values():
+            if self.perm_id in effect.object_ids:
+                for modifier in effect.modifiers:
+                    if modifier[0] == 'delta_stat':
+                        ret += modifier[2]
+                    elif modifier[0] == 'set_stat':
+                        ret = modifier[2]
+        return ret
 
     @property
     def strength(self):
-        return self.card.strength
+        ret = self.card.strength
+        for effect in self.game.continuous_effects.values():
+            if self.perm_id in effect.object_ids:
+                for modifier in effect.modifiers:
+                    if modifier[0] == 'delta_stat':
+                        ret += modifier[1]
+                    elif modifier[0] == 'set_stat':
+                        ret = modifier[1]
+        return ret
 
     @property
     def total_damage_received(self):
