@@ -16,6 +16,10 @@ function _getCardElement(card_id, url){
     element.setAttribute('id', card_id);
     element.setAttribute('class', 'card');
     element.appendChild(img);
+
+    var modifiers = document.createElement('div');
+    modifiers.setAttribute('class', 'modifiers');
+    element.appendChild(modifiers);
   }
   element.firstChild.setAttribute('src', url);
   return element;
@@ -71,6 +75,32 @@ const gameEventHandler = {
     let tgt = document.getElementById(event.controller.is_me ? 'bf-mine' : 'bf-theirs');
     animatedMove(getCardElement(event.card), tgt);
     write_message(`${event.card.name} enters the battlefield.`);
+  },
+
+  CreateContinuousEffectEvent: function(event) {
+    console.log(event);
+    const mod_text = {
+      delta_stat: m => (m[1]<0?"":"+") + m[1] + "/" + (m[2]<0?"":"+") + m[2],
+    };
+    event.objects.forEach(obj => {
+      let card = getCardElement(obj.card);
+      let modifiers = card.children[1];
+      event.modifiers.forEach(mod => {
+        let element = document.createElement('div');
+        element.innerText = mod_text[mod[0]](mod);
+        element.setAttribute('class', 'modifier ' + mod[0] + ' ' + event.effect_id);
+        modifiers.appendChild(element);
+      });
+      console.log(obj.card.name);
+    });
+  },
+
+  EndContinuousEffectEvent: function(event) {
+    var x = document.getElementsByClassName(event.effect_id);
+    var i;
+    for (i = 0; i < x.length; i++) {
+      x[i].parentNode.removeChild(x[i]);
+    }
   },
 
   PutInGraveyardEvent: function(event) {
