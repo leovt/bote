@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from collections import defaultdict, OrderedDict
 import energy
 from library import make_library, Library
-from abilities import ActivatableAbility, TriggeredAbility
+from abilities import ActivatableAbility, TriggeredAbility, TapCost
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace, unique_identifiers
@@ -610,8 +610,7 @@ def turn_based_actions(game):
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = {next(game.unique_ids): permanent for permanent in
             game.battlefield.creatures.controlled_by(game.active_player)
-            if permanent.on_battlefield_at_begin_of_turn or
-            permanent.card.has_keyword_ability('haste')
+            if TapCost().can_pay(permanent, None)
             }
         choices = {key: c.card for key, c in candidates.items()}
         if choices:

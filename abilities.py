@@ -29,7 +29,15 @@ class EnergyCost:
 
 class TapCost:
     def can_pay(self, permanent, card):
-        return permanent and not permanent.tapped
+        if not permanent:
+            return False
+        if permanent.tapped:
+            return False
+        if 'creature' in permanent.types:
+            if not permanent.card.has_keyword_ability('haste'):
+                if not permanent.on_battlefield_at_begin_of_turn:
+                    return False
+        return True
 
     def pay(self, permanent, card):
         yield TapEvent(permanent.perm_id)
