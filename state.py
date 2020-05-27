@@ -5,6 +5,7 @@ from collections import defaultdict, OrderedDict
 import energy
 from library import make_library, Library
 from abilities import ActivatableAbility, TriggeredAbility, TapCost
+from bote_collections import IndexedOrderedCollection
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace, unique_identifiers
@@ -155,25 +156,25 @@ class Permanent:
     @property
     def toughness(self):
         ret = self.card.toughness
-        for effect in self.game.continuous_effects.values():
-            if self.perm_id in effect.object_ids:
-                for modifier in effect.modifiers:
-                    if modifier[0] == 'delta_stat':
-                        ret += modifier[2]
-                    elif modifier[0] == 'set_stat':
-                        ret = modifier[2]
+        for effect in self.game.continuous_effects.values_by_object_id(self.perm_id):
+            assert self.perm_id in effect.object_ids
+            for modifier in effect.modifiers:
+                if modifier[0] == 'delta_stat':
+                    ret += modifier[2]
+                elif modifier[0] == 'set_stat':
+                    ret = modifier[2]
         return ret
 
     @property
     def strength(self):
         ret = self.card.strength
-        for effect in self.game.continuous_effects.values():
-            if self.perm_id in effect.object_ids:
-                for modifier in effect.modifiers:
-                    if modifier[0] == 'delta_stat':
-                        ret += modifier[1]
-                    elif modifier[0] == 'set_stat':
-                        ret = modifier[1]
+        for effect in self.game.continuous_effects.values_by_object_id(self.perm_id):
+            assert self.perm_id in effect.object_ids
+            for modifier in effect.modifiers:
+                if modifier[0] == 'delta_stat':
+                    ret += modifier[1]
+                elif modifier[0] == 'set_stat':
+                    ret = modifier[1]
         return ret
 
     @property
@@ -229,7 +230,7 @@ class Game:
     unique_ids: iter = field(default_factory=unique_identifiers)
     triggers: list = field(default_factory=list)
     cards: dict = field(default_factory=dict)
-    continuous_effects: dict = field(default_factory=OrderedDict)
+    continuous_effects: IndexedOrderedCollection = field(default_factory=IndexedOrderedCollection)
 
 
     def log(self, event):
@@ -716,10 +717,7 @@ def put_in_graveyard(permanent):
     yield PutInGraveyardEvent(permanent.card.secret_id)
 
 def end_continuous_effects(game):
-    ending_ids = [effect_id
-                  for (effect_id, effect) in game.continuous_effects.items()
-                  if effect.until_end_of_turn]
-    for effect_id in ending_ids:
+    for effect_id in game.continuous_effects.keys_until_end_of_turn():
         yield EndContinuousEffectEvent(effect_id)
 
 def clear_all_damage(game):
