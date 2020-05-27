@@ -101,8 +101,8 @@ cards:
     strength: 6
     toughness: 1
     abilities:
-      - keyword: haste
-      - keyword: trample
+      - keyword: readiness
+      - keyword: crush
       - trigger: BEGIN_OF_STEP END
         effect: destroy self
 
@@ -168,7 +168,7 @@ cards:
     names:
       en: Treason
     type: sorcery
-    effect: until_end_of_turn control $target{creature} $controller
+    effect: chosen .creature has controlled by you and readiness until end of turn
 
   108:
     names:
@@ -184,7 +184,7 @@ cards:
       - goblin
     abilities:
       - cost: "{T}"
-        effect: "chosen .other.goblin has +1/+1 until end of turn"
+        effect: "chosen .other.goblin has +1/+1 and flying until end of turn"
     art:
       10801:
         image: ''

@@ -1,10 +1,16 @@
 import itertools
 import lark
 
+from keywords import KEYWORDS
+
 from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, PlayerDamageEvent, DamageEvent, CreateContinuousEffectEvent
 
-with open('grammar.txt') as grammar_txt:
-    _parser = lark.Lark(grammar_txt.read(), parser="lalr")
+def _parser():
+    with open('grammar.txt') as grammar_txt:
+        source = grammar_txt.read()
+    source += f'\nkeyword: /{"|".join(KEYWORDS)}/\n'
+    return lark.Lark(source, parser="lalr")
+_parser = _parser()
 
 test_effect = '''
     all .creature has +3/-3 and not flying and

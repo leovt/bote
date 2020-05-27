@@ -1,0 +1,35 @@
+flying:
+  name:
+    en: Flying
+    de: Fliegend
+    ko: 비행
+  rule_text:
+    en: Can only be blocked by creatures with flying or intercept.
+    de: Kann nur von Kreaturen mit fliegend oder abfangen geblockt werden.
+
+intercept:
+  name:
+    en: Intercept
+    de: Abfangen
+    ko: 요격
+  rule_text:
+    en: Can block flying creatures.
+    de: Kann fliegende Kreaturen blocken.
+
+readiness:
+  name:
+    en: Readiness
+    de: Bereitschaft
+    ko: 준비
+  rule_text:
+    en: Can attack and use {T} ability in the first turn.
+    de: Kann im ersten Zug attakieren und {T}-Fähigkeiten benutzen.
+
+crush:
+  name:
+    en: Crush
+    de: Erdrücken
+    ko: 압사시김
+  rule_text:
+    en: Damage exceeding blockers toughness is dealt to attacked player.
+    de: Schaden, der die Widerstandskraft eines Blockers übersteigt, wird dem angegriffenen Spieler zugeteilt.

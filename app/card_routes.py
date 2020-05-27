@@ -8,6 +8,7 @@ import randimage
 from app import app
 import cards
 import energy
+from keywords import KEYWORDS
 
 
 @app.route('/card/<card_id>')
@@ -73,18 +74,11 @@ def create_data_url(filename):
     return f'data:{mimetype};base64,{data}'
 
 
-KEYWORDS = {
-    'flying': {'en': 'Flying', 'de': 'Fliegend', 'ko': '비행'},
-    'trample': {'en': 'Trample', 'de': 'Trampelschaden', 'ko':'돌진'},
-    'haste': {'en': 'Haste', 'de': 'Eile', 'ko':'급행'},
-    }
-
-
 def str_ability(a, lang):
     if 'cost' in a:
         return parse_symbols_html(f"{a['cost']}: {a['effect']}")
     if 'keyword' in a:
-        return get_lang(KEYWORDS[a['keyword']], lang)
+        return get_lang(KEYWORDS[a['keyword']]['name'], lang)
     if 'trigger' in a:
         if a['trigger'] == 'BEGIN_OF_STEP END':
             return get_lang({
