@@ -95,11 +95,26 @@ const gameEventHandler = {
     });
   },
 
+  DamageEvent: function(event) {
+    let card = getCardElement(event.permanent.card);
+    let modifiers = card.children[1];
+    let element = document.createElement('div');
+    element.innerText = event.damage + ' damage';
+    element.setAttribute('class', 'modifier damage');
+    modifiers.appendChild(element);
+  },
+
   EndContinuousEffectEvent: function(event) {
     var x = document.getElementsByClassName(event.effect_id);
-    var i;
-    for (i = 0; i < x.length; i++) {
-      x[i].parentNode.removeChild(x[i]);
+    while (x[0]) {
+      x[0].parentNode.removeChild(x[0]);
+    }
+  },
+
+  ClearDamageEvent: function(event) {
+    var x = document.getElementsByClassName('damage');
+    while (x[0]) {
+      x[0].parentNode.removeChild(x[0]);
     }
   },
 
