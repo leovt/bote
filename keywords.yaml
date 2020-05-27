@@ -33,3 +33,12 @@ crush:
   rule_text:
     en: Damage exceeding blockers toughness is dealt to attacked player.
     de: Schaden, der die Widerstandskraft eines Blockers übersteigt, wird dem angegriffenen Spieler zugeteilt.
+
+stamina:
+  name:
+    en: Stamina
+    de: Ausdauer
+    ko: 지구력
+  rule_text:
+    en: Is not tapped when attacking.
+    de: Wird beim Angreifen nicht getappt.

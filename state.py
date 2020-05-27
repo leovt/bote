@@ -3,6 +3,7 @@ import weakref
 from dataclasses import dataclass, field
 from collections import defaultdict, OrderedDict
 import energy
+from keywords import KEYWORDS
 from library import make_library, Library
 from abilities import ActivatableAbility, TriggeredAbility, TapCost
 from bote_collections import IndexedOrderedCollection
@@ -178,6 +179,7 @@ class Permanent:
         return ret
 
     def has(self, keyword):
+        assert keyword in KEYWORDS, f'undefined keyword {keyword!r}.'
         ret = any(ability.get('keyword') == keyword for ability in self.card.abilities if isinstance(ability, dict))
         for effect in self.game.continuous_effects.values_by_object_id(self.perm_id):
             assert self.perm_id in effect.object_ids
@@ -637,7 +639,7 @@ def turn_based_actions(game):
             attackers_chosen = []
         if attackers_chosen:
             for i in attackers_chosen:
-                if not candidates[i].has('vigilance'):
+                if not candidates[i].has('stamina'):
                     yield TapEvent(candidates[i].perm_id)
                 yield AttackEvent(candidates[i].perm_id, game.active_player.next_in_turn.name)
             yield from open_priority(game)
@@ -794,7 +796,9 @@ def draw_card(game, player):
 def can_block(blocker, attacker):
     if blocker.tapped:
         return False
-    # TODO: logic for flying, reach etc
+    if (attacker.has('flying') and
+            not blocker.has('intercept') and not blocker.has('flying')):
+        return False
     return True
 
 def can_play_source(player):
