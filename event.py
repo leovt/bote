@@ -229,3 +229,8 @@ class PlayerLosesEvent(Event):
 @dataclass(repr=False)
 class ClearTriggerEvent(Event):
     pass
+
+@event_id('clear_damage')
+@dataclass(repr=False)
+class ClearDamageEvent(Event):
+    pass

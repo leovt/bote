@@ -403,6 +403,10 @@ class Game:
     def handle_ClearTriggerEvent(self, event):
         self.triggers.clear()
 
+    def handle_ClearDamageEvent(self, event):
+        for permanent in self.battlefield:
+            permanent.damage.clear()
+
     def __str__(self):
         return '<Game>'
 
@@ -605,7 +609,7 @@ def turn_based_actions(game):
         yield from open_priority(game)
     elif game.step == STEP.CLEANUP:
         yield from discard_excess_cards(game)
-        yield from clear_all_damage(game)
+        yield ClearDamageEvent()
         yield from end_continuous_effects(game)
         yield from end_of_step(game)
     elif game.step == STEP.DECLARE_ATTACKERS:
@@ -719,10 +723,6 @@ def put_in_graveyard(permanent):
 def end_continuous_effects(game):
     for effect_id in game.continuous_effects.keys_until_end_of_turn():
         yield EndContinuousEffectEvent(effect_id)
-
-def clear_all_damage(game):
-    yield from []
-    #TODO: implement
 
 def state_based_actions(game):
     for player in game.players:
