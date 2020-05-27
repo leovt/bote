@@ -177,6 +177,17 @@ class Permanent:
                     ret = modifier[1]
         return ret
 
+    def has(self, keyword):
+        ret = any(ability.get('keyword') == keyword for ability in self.card.abilities if isinstance(ability, dict))
+        for effect in self.game.continuous_effects.values_by_object_id(self.perm_id):
+            assert self.perm_id in effect.object_ids
+            for modifier in effect.modifiers:
+                if modifier[0] == 'add_keyword' and modifier[1] == keyword:
+                    ret = True
+                elif modifier[0] == 'remove_keyword' and modifier[1] == keyword:
+                    ret = False
+        return ret
+
     @property
     def total_damage_received(self):
         return sum(d.value for d in self.damage)
@@ -626,7 +637,7 @@ def turn_based_actions(game):
             attackers_chosen = []
         if attackers_chosen:
             for i in attackers_chosen:
-                if not candidates[i].card.has_keyword_ability('vigilance'):
+                if not candidates[i].has('vigilance'):
                     yield TapEvent(candidates[i].perm_id)
                 yield AttackEvent(candidates[i].perm_id, game.active_player.next_in_turn.name)
             yield from open_priority(game)

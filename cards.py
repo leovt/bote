@@ -69,9 +69,6 @@ class RuleCard:
             effect = effect,
         )
 
-    def has_keyword_ability(self, keyword):
-        return any(ability.get('keyword') == keyword for ability in self.abilities if isinstance(ability, dict))
-
 
 @dataclass(eq=False, frozen=True)
 class ArtCard:

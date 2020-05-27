@@ -34,7 +34,7 @@ class TapCost:
         if permanent.tapped:
             return False
         if 'creature' in permanent.types:
-            if not permanent.card.has_keyword_ability('haste'):
+            if not permanent.has('haste'):
                 if not permanent.on_battlefield_at_begin_of_turn:
                     return False
         return True

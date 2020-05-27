@@ -81,6 +81,8 @@ const gameEventHandler = {
     console.log(event);
     const mod_text = {
       delta_stat: m => (m[1]<0?"":"+") + m[1] + "/" + (m[2]<0?"":"+") + m[2],
+      add_keyword: m => m[1],
+      remove_keyword: m => 'not ' + m[1],
     };
     event.objects.forEach(obj => {
       let card = getCardElement(obj.card);

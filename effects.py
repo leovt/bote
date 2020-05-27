@@ -228,6 +228,16 @@ class Executor(lark.Transformer):
     def modifier_list(self, args):
         return args
 
+    def keyword(self, args):
+        return str(args[0])
+
+    def add_keyword(self, args):
+        return ('add_keyword', args[0])
+
+    def remove_keyword(self, args):
+        return ('remove_keyword', args[0])
+
+
 class Effect:
     def __init__(self, template, game, choices, controller, permanent):
         self.template = template
