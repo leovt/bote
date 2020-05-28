@@ -264,7 +264,6 @@ class Game:
     def handle(self, event):
         handler = getattr(self, f'handle_{event.__class__.__name__}')
         assert is_simple(event.__dict__), event.__dict__
-        print(event)
         for key, value in dict(event.__dict__).items():
             if key=='perm_id' and value in self.battlefield:
                 event.permanent = self.battlefield[value].serialize_for(self.players[0])
@@ -725,15 +724,6 @@ def turn_based_actions(game):
 def lose_the_game(player):
     print(f'player {player.name} loses the game')
     assert False, 'not implemented'
-
-def destroy(permanent):
-    if False: #permanent.has_regenerated or permanent.regenerates():
-        yield Event('tap', permanent)
-        yield Event('clear_damage', permanent)
-        yield Event('has_regenerated', permanent)
-        yield Event('remove_from_combat', permanent)
-    else:
-        yield from put_in_graveyard(permanent)
 
 def put_in_graveyard(game, permanent):
     yield ExitTheBattlefieldEvent(permanent.perm_id)
