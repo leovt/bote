@@ -118,6 +118,7 @@ class EnterTheBattlefieldEvent(Event):
     card_secret_id: str
     controller: object
     perm_id: str
+    choices: dict
 
 @event_id('exit_the_battlefield')
 @dataclass(repr=False)

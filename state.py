@@ -33,8 +33,8 @@ class ObjectView:
         return self.filter(lambda x: 'creature' in x.types)
 
     @property
-    def auras(self):
-        return self.filter(lambda x: 'aura' in x.types)
+    def enchantments(self):
+        return self.filter(lambda x: 'enchantment' in x.types)
 
     @property
     def sources(self):
@@ -73,8 +73,13 @@ class Spell:
     choices: dict
 
     def resolve(self, game):
-        if 'creature' in self.card.types:
-            yield EnterTheBattlefieldEvent(self.card.secret_id, self.controller.name, next(game.unique_ids))
+        if 'creature' or 'enchantment' in self.card.types:
+            perm_id = next(game.unique_ids)
+            yield EnterTheBattlefieldEvent(self.card.secret_id, self.controller.name, perm_id, self.choices)
+            permanent = game.battlefield[perm_id]
+            if hasattr(self.card, 'effect') and self.card.effect:
+                effect = Effect(self.card.effect, game, game.objects_from_ids(self.choices), self.controller, permanent)
+                yield from effect.execute()
         elif 'sorcery' in self.card.types or 'instant' in self.card.types:
             effect = Effect(self.card.effect, game, game.objects_from_ids(self.choices), self.controller, None)
             yield from effect.execute()
@@ -125,11 +130,12 @@ class Damage:
     value: int
 
 class Permanent:
-    def __init__(self, perm_id:str, game:'Game', card:Card, controller:'Player'):
+    def __init__(self, perm_id:str, game:'Game', card:Card, controller:'Player', choices:dict):
         self.perm_id = perm_id
         self._game_ref = weakref.ref(game)
         self.card = card
         self.controller = controller
+        self.choices = choices
 
         self.tapped: bool = False
         self.damage: list = []
@@ -330,7 +336,7 @@ class Game:
         player.has_passed = True
 
     def handle_EnterTheBattlefieldEvent(self, event):
-        permanent = Permanent(event.perm_id, self, self.cards[event.card_secret_id], self.get_player(event.controller))
+        permanent = Permanent(event.perm_id, self, self.cards[event.card_secret_id], self.get_player(event.controller), self.objects_from_ids(event.choices))
         self.battlefield[permanent.perm_id] = permanent
 
     def handle_ExitTheBattlefieldEvent(self, event):
@@ -729,12 +735,14 @@ def destroy(permanent):
     else:
         yield from put_in_graveyard(permanent)
 
-def put_in_graveyard(permanent):
+def put_in_graveyard(game, permanent):
     yield ExitTheBattlefieldEvent(permanent.perm_id)
+    for effect_id in list(game.continuous_effects.keys_by_perm_id(permanent.perm_id)):
+        yield EndContinuousEffectEvent(effect_id)
     yield PutInGraveyardEvent(permanent.card.secret_id)
 
 def end_continuous_effects(game):
-    for effect_id in game.continuous_effects.keys_until_end_of_turn():
+    for effect_id in list(game.continuous_effects.keys_until_end_of_turn()):
         yield EndContinuousEffectEvent(effect_id)
 
 def state_based_actions(game):
@@ -749,13 +757,14 @@ def state_based_actions(game):
             # TODO: losing should not end the game if it is a multiplayer game
             raise EndOfGameException
     for creature in {c for c in game.battlefield.creatures if c.toughness <= 0}:
-        yield from put_in_graveyard(creature)
+        yield from put_in_graveyard(game, creature)
     for creature in {c for c in game.battlefield.creatures
                      if c.total_damage_received >= c.toughness}:
-        yield from destroy(creature)
-    for aura in game.battlefield.auras:
-        if aura.attachment not in game.battlefield:
-            yield from destroy(aura)
+        yield from put_in_graveyard(game, creature)
+    for enchantment in {e for e in game.battlefield.enchantments
+                        if 'enchanted' in e.choices
+                        and e.choices['enchanted'].perm_id not in game.battlefield}:
+        yield from put_in_graveyard(game, enchantment)
 
 def check_triggers(game):
     has_triggered = []
@@ -806,7 +815,7 @@ def can_play_source(player):
 
 def play_source(game, player, card):
     yield PlaySourceEvent(player.name, card.secret_id)
-    yield EnterTheBattlefieldEvent(card.secret_id, player.name, next(game.unique_ids))
+    yield EnterTheBattlefieldEvent(card.secret_id, player.name, next(game.unique_ids), {})
 
 def player_action(game, player):
     ACTION_PERFORMED = False
@@ -834,7 +843,7 @@ def player_action(game, player):
                 add_choice([(play_source, (game, player, source), {})],
                     action='play', card_id=source.known_identity, text=f'play {source.name}')
 
-        for card in player.hand.of_types('creature', 'sorcery'):
+        for card in player.hand.of_types('creature', 'sorcery', 'enchantment'):
             if player.energy_pool.can_pay(card.cost):
                 add_choice([(cast_spell, (game, player, card), {})],
                     action='play', card_id=card.known_identity, text=f'cast {card.name}')

@@ -39,6 +39,11 @@ types:
     en: Enchantment
     de: Verzauberung
     ko: 부여마법
+    subtypes:
+      enchant_creature:
+        en: Enchant Creature
+        de: Verzaubere Kreatur
+        ko: 생물에 마법 걸다
 
   instant:
     en: Instant
@@ -200,6 +205,21 @@ cards:
 
     art:
       10901:
+        image: ''
+        attribution: ''
+        frame: red
+
+  110:
+    names:
+      en: Fire Boots
+    cost: '{R}{2}'
+    type: enchantment
+    subtypes:
+      - enchant_creature
+    effect: enchanted .creature has +3/+0 and firststrike
+
+    art:
+      11001:
         image: ''
         attribution: ''
         frame: red
