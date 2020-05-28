@@ -35,7 +35,7 @@ modifier: signed_number "/" signed_number -> delta_stat
         | "not" keyword -> remove_keyword
         | "controlled by" _object -> change_controller
 
-_object: all | self | effect_controller | _chosen
+_object: all | self | effect_controller | _chosen | controller_of
 
 all: "all" selector
 self: "self"
@@ -64,3 +64,5 @@ subtype_spec: "subtype" "(" subtype ("," subtype)* ")"
           | subtype
 
 other_spec: "other"
+
+controller_of: "controller of" _object

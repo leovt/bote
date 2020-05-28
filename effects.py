@@ -225,6 +225,9 @@ class Executor(lark.Transformer):
     def chosen_ref(self, args):
         return self._context.choices[args[0]]
 
+    def controller_of(self, args):
+        return args[0].controller
+
     def set_stat(self, args):
         return ('set_stat', args[0], args[1])
 

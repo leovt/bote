@@ -190,3 +190,16 @@ cards:
         image: ''
         attribution: ''
         frame: red
+
+  109:
+    names:
+      en: Outrage
+    type: instant
+    cost: '{R}{R}{2}'
+    effect: chosen .creature[1] gets 4 damage; controller of [1] gets 2 damage;
+
+    art:
+      10901:
+        image: ''
+        attribution: ''
+        frame: red
