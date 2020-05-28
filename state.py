@@ -839,6 +839,11 @@ def player_action(game, player):
                 add_choice([(cast_spell, (game, player, card), {})],
                     action='play', card_id=card.known_identity, text=f'cast {card.name}')
 
+    for card in player.hand.of_types('instant'):
+        if player.energy_pool.can_pay(card.cost):
+            add_choice([(cast_spell, (game, player, card), {})],
+                action='play', card_id=card.known_identity, text=f'cast {card.name}')
+
     for permanent in game.battlefield.controlled_by(player):
         for ab_key, ability in enumerate(permanent.abilities):
             if isinstance(ability, ActivatableAbility):
