@@ -131,7 +131,7 @@ def load_yaml():
     art_cards = {}
 
     for card_id, card in data['cards'].items():
-        assert id not in cards
+        assert card_id not in cards
         card['card_id'] = card_id
         cards[card_id] = card
         typespec = types[card['type']]
