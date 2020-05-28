@@ -42,3 +42,8 @@ stamina:
   rule_text:
     en: Is not tapped when attacking.
     de: Wird beim Angreifen nicht getappt.
+
+firststrike:
+  name:
+    en: First Strike
+    de: Erstschlag
