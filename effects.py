@@ -29,12 +29,21 @@ class ChosenSpecVisitor(lark.Visitor):
             label = str(tree.children[1].children[0])
             if label in self._def:
                 raise ValueError(f'duplicate label [{label}] for chosen object')
+            if label == 'enchanted':
+                raise ValueError(f'label [enchanted] is reserved')
         else:
             label = next(self._ids)
             tree.children.append(lark.Tree('chosen_label', [label]))
         self._def[label] = tree.children[0]
         tree.data = 'chosen_ref'
         tree.children = [label]
+
+    def enchanted(self, tree):
+        if 'enchanted' in self._def:
+            raise ValueError(f'duplicate specification of enchanted object')
+        self._def['enchanted'] = tree.children[0]
+        tree.data = 'chosen_ref'
+        tree.children = ['enchanted']
 
     def chosen_ref(self, tree):
         label = str(tree.children[0])
