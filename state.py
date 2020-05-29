@@ -73,17 +73,26 @@ class Spell:
     choices: dict
 
     def resolve(self, game):
-        if 'creature' or 'enchantment' in self.card.types:
+        if {'creature', 'enchantment'} & self.card.types:
             perm_id = next(game.unique_ids)
-            yield EnterTheBattlefieldEvent(self.card.secret_id, self.controller.name, perm_id, self.choices)
+            yield EnterTheBattlefieldEvent(self.card.secret_id,
+                                           self.controller.name,
+                                           perm_id,
+                                           self.choices)
             permanent = game.battlefield[perm_id]
-            if hasattr(self.card, 'effect') and self.card.effect:
-                effect = Effect(self.card.effect, game, game.objects_from_ids(self.choices), self.controller, permanent)
-                yield from effect.execute()
-        elif 'sorcery' in self.card.types or 'instant' in self.card.types:
-            effect = Effect(self.card.effect, game, game.objects_from_ids(self.choices), self.controller, None)
-            yield from effect.execute()
+        elif {'sorcery', 'instant'} & self.card.types:
             yield PutInGraveyardEvent(self.card.secret_id)
+            permanent = None
+        else:
+            assert False, f'unknown card types {self.card.types}.'
+
+        if hasattr(self.card, 'effect') and self.card.effect:
+            effect = Effect(self.card.effect,
+                            game,
+                            game.objects_from_ids(self.choices),
+                            self.controller,
+                            permanent)
+            yield from effect.execute()
 
     def __str__(self):
         return f'cast {self.card.name} @{self.controller.name}'
