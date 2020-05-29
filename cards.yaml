@@ -151,6 +151,8 @@ cards:
     toughness: 1
     abilities:
       - keyword: flying
+      - cost: '{R}'
+        effect: this has +1/+0 until end of turn
     art:
       10501:
         image: ''
@@ -174,6 +176,11 @@ cards:
       en: Treason
     type: sorcery
     effect: chosen .creature has controlled by you and readiness until end of turn
+    art:
+      10701:
+        image: ''
+        attribution: ''
+        frame: red
 
   108:
     names:
@@ -220,6 +227,143 @@ cards:
 
     art:
       11001:
+        image: ''
+        attribution: ''
+        frame: red
+
+  111:
+    names:
+      en: Minor Dragon
+    cost: '{R}{R}{2}'
+    strength: 2
+    toughness: 2
+    type: creature
+    subtypes:
+      - dragon
+    abilities:
+      - keyword: flying
+      - cost: '{R}'
+        effect: this has +1/+0 until end of turn
+    art:
+      11101:
+        image: ''
+        attribution: ''
+        frame: red
+
+  112:
+    names:
+      en: Fireelemental
+    cost: '{R}{3}'
+    type: creature
+    subtypes:
+      - elemental
+    strength: 4
+    toughness: 1
+    abilities:
+      - keyword: readiness
+    art:
+      11201:
+        image: ''
+        attribution: ''
+        frame: red
+
+  113:
+    names:
+      en: Girag, the Firestarter
+    cost: '{R}{R}{4}'
+    strength: 4
+    toughness: 4
+    type: creature
+    subtypes:
+      - dragon
+    abilities:
+      - keyword: flying
+      - keyword: readiness
+    art:
+      11301:
+        image: ''
+        attribution: ''
+        frame: red
+
+  114:
+    names:
+      en: Incinerate
+    type: instant
+    cost: '{R}{1}'
+    effect: chosen .creature.player gets 3 damage
+
+    art:
+      11401:
+        image: ''
+        attribution: ''
+        frame: red
+
+  115:
+    names:
+      en: War Cry
+    type: instant
+    cost: '{R}'
+    effect: chosen .creature has +3/+0 and firststrike until end of turn
+
+    art:
+      11501:
+        image: ''
+        attribution: ''
+        frame: red
+
+  116:
+    names:
+      en: Fireball
+    type: sorcery
+    cost: '{R}{X}'
+    effect: chosen .creature.player gets X damage
+
+    art:
+      11601:
+        image: ''
+        attribution: ''
+        frame: red
+
+  117:
+    names:
+      en: Sparks
+    type: sorcery
+    cost: '{R}{2}'
+    effect: >-
+      chosen .creature.player gets 1 damage;
+      chosen .creature.player gets 1 damage;
+      chosen .creature.player gets 1 damage
+
+    art:
+      11701:
+        image: ''
+        attribution: ''
+        frame: red
+
+  118:
+    names:
+      en: Goblin Patrol
+    type: sorcery
+    cost: '{R}{2}'
+    effect: 'you gets 1 damage'
+
+    art:
+      11801:
+        image: ''
+        attribution: ''
+        frame: red
+
+  119:
+    names:
+      en: Pyroscientist
+    strength: 1
+    toughness: 1
+    cost: '{R}{1}'
+    token: No
+    type: creature
+    abilities: []
+    art:
+      11901:
         image: ''
         attribution: ''
         frame: red
