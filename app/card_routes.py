@@ -42,8 +42,7 @@ def art_svg_redirect(art_id):
     art_card = cards.art_card_spec(int(art_id))
     if not art_card:
         abort(404)
-    card = cards.card_spec(art_card['card_id'])
-    languages = {k:k for k in card['names']}
+    languages = {k:k for k in ['en', 'ko', 'de']}
     lang = get_lang(languages, request.headers.get('accept-language', '')[:2])
     return redirect(url_for('art_svg', art_id=art_id, lang=lang))
 
@@ -110,7 +109,13 @@ def art_svg(art_id, lang):
     if not art_card:
         abort(404)
     card = cards.card_spec(art_card['card_id'])
-    cost = card.get('cost') or ''
+
+    if 'names' in card:
+        name = get_lang(card['names'], lang)
+    else:
+        name = ''
+
+    cost = card.get('cost', '')
     if cost:
         cost = energy.Energy.parse(cost).symbols()
 
@@ -135,9 +140,8 @@ def art_svg(art_id, lang):
                 os.mkdir('hash_images')
             randimage.randimage(str(art_id)).save(img_filename)
 
-
     return render_template('card.svg',
-        name = get_lang(card['names'], lang),
+        name = name,
         cost = cost,
         type = typeline,
         stats = f"{card['strength']} / {card['toughness']}" if 'strength' in card else '',
@@ -145,5 +149,5 @@ def art_svg(art_id, lang):
         image_url = create_data_url(img_filename),
         rule_lines = rule_list,
         flavour = flavour,
-        frame = art_card['frame'],
+        frame = art_card.get('frame'),
     ), 200, {'Content-Type': 'image/svg+xml'}

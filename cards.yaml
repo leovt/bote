@@ -59,7 +59,6 @@ cards:
     strength: 1
     toughness: 1
     cost: '{R}'
-    token: No
     type: creature
     subtypes:
       - goblin
@@ -79,7 +78,6 @@ cards:
       de: Feuerquelle
       ko: 불원
     type: source
-    token: No
     abilities:
       - cost: "{T}"
         effect: "add {R} to you energy pool"
@@ -101,7 +99,6 @@ cards:
       de: Flammenkrieger
       ko: 화염 전사
     type: creature
-    token: No
     cost: '{1}{R}{R}'
     strength: 6
     toughness: 1
@@ -127,7 +124,6 @@ cards:
     type: creature
     subtypes:
       - minotaur
-    token: No
     cost: '{3}{R}'
     strength: 3
     toughness: 3
@@ -145,7 +141,6 @@ cards:
     type: creature
     subtypes:
       - dragon
-    token: No
     cost: '{1}{R}'
     strength: 0
     toughness: 1
@@ -190,7 +185,6 @@ cards:
     strength: 1
     toughness: 1
     cost: '{R}'
-    token: No
     type: creature
     subtypes:
       - goblin
@@ -359,7 +353,6 @@ cards:
     strength: 1
     toughness: 1
     cost: '{R}{1}'
-    token: No
     type: creature
     abilities: []
     art:
@@ -367,3 +360,17 @@ cards:
         image: ''
         attribution: ''
         frame: red
+
+  901:
+    strength: 1
+    toughness: 1
+    token: True
+    color: red
+    type: creature
+    subtypes:
+      - goblin
+
+    art:
+      90101:
+        image: ''
+        attribution: ''

@@ -120,7 +120,8 @@ def deck(deck_id):
     deck = Deck.query.get_or_404(deck_id)
     if (deck.owner_id != current_user.id):
         abort(403);
-    return render_template('deck.html', deck=deck, cards=cards.all())
+    all_cards = [c for c in cards.all() if not cards.card_spec(c['card_id']).get('token')]
+    return render_template('deck.html', deck=deck, cards=all_cards)
 
 @app.route('/deck/<deck_id>', methods=['POST'])
 @login_required
