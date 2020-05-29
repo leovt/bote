@@ -2,7 +2,7 @@ import os
 import base64
 import mimetypes
 import re
-from flask import abort, jsonify, request, render_template, redirect, url_for
+from flask import abort, jsonify, request, render_template, redirect, url_for, Markup, escape
 import randimage
 
 from app import app
@@ -85,10 +85,11 @@ def str_ability(a, lang):
                 'de': '{} am Ende des Zuges',
                 'ko': '턴종료에 {}',
                 }, lang).format(a['effect'])
-    return str(a)
+    return escape(str(a))
 
 
 def parse_symbols_html(text):
+    text = escape(text)
     def repl(match):
         symb = match.group(1).lower()
         print(match.groups(), symb)
@@ -100,7 +101,7 @@ def parse_symbols_html(text):
             return match.group(0)
         return f'<svg class="icon"><use xlink:href="{href}" width="100%" height="100%"/></svg>'
 
-    return re.sub(r'\{(\w+)\}', repl, text)
+    return Markup(re.sub(r'\{(\w+)\}', repl, text))
 
 
 @app.route('/card/svg/<art_id>/<lang>')
@@ -126,7 +127,7 @@ def art_svg(art_id, lang):
 
     rule_list = []
     if 'effect' in card:
-        rule_list.append(card['effect'])
+        rule_list.append(escape(card['effect']))
     rule_list.extend(str_ability(a, lang) for a in card.get('abilities', []))
 
     flavour = art_card.get('flavour', {}).get(lang)

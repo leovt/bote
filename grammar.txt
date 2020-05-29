@@ -1,5 +1,9 @@
 %ignore /[ \n\t]/
 
+COMMENT: /\<[\w\s]+\>/
+%ignore COMMENT
+
+
 // the following rules will be defined by the program reading this grammar.
 // these are just sample rules
 // keyword: /flying|crush|readiness|cannot_block|cannot_attack/
