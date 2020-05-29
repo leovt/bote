@@ -2,10 +2,10 @@ from operator import add, sub
 import re
 
 class Energy(tuple):
-    def __new__(cls, total=None, red=0, yellow=0, blue=0, green=0, white=0):
+    def __new__(cls, total=None, red=0, yellow=0, blue=0, green=0, white=0, variable=0):
         if total is None:
             total = red + yellow + blue + green + white
-        return tuple.__new__(cls, (total, red, yellow, blue, green, white))
+        return tuple.__new__(cls, (total, red, yellow, blue, green, white, variable))
 
     @property
     def total(self):
@@ -31,6 +31,10 @@ class Energy(tuple):
     def white(self):
         return self[5]
 
+    @property
+    def variable(self):
+        return self[6]
+
     def __add__(self, other):
         return Energy(*map(add, self, other))
 
@@ -50,7 +54,7 @@ class Energy(tuple):
         ret = []
         if colorless:
             ret.append(str(colorless))
-        for letter, amount in zip('RYBGW', self[1:]):
+        for letter, amount in zip('RYBGWX', self[1:]):
             ret.extend([letter]*amount)
         if not ret:
             ret.append(0)
@@ -65,8 +69,15 @@ class Energy(tuple):
             (self.white, 'w'),
         ]
         symbols.sort(reverse=True)
-        symbols.append((self.total - self.red - self.green - self.yellow - self.blue - self.white, 'x'))
+        symbols.append((self.total - self.red - self.green - self.yellow - self.blue - self.white, '1'))
+        symbols.append((self.variable, 'x'))
         return ''.join(a*b for (a,b) in symbols)
+
+    def replace_variable(self, x):
+        values = list(self)
+        values[0] += values[-1] * x
+        values[-1] = 0
+        return Energy(*values)
 
     def __str__(self):
         return ''.join('{%s}' % x for x in self.decompose())
@@ -79,10 +90,11 @@ class Energy(tuple):
         blue = 0
         green = 0
         white = 0
-        match = re.match(r'^(?:\{(\d+|R|Y|B|G|W)\})+$', string)
+        variable = 0
+        match = re.match(r'^(?:\{(\d+|[RYBGWX])\})+$', string)
         if not match:
             return None
-        for group in re.findall(r'\{(\d+|R|Y|B|G|W)\}', string):
+        for group in re.findall(r'\{(\d+|[RYBGWX])\}', string):
             if group == 'R':
                 red += 1
                 total += 1
@@ -98,9 +110,11 @@ class Energy(tuple):
             elif group == 'W':
                 white += 1
                 total += 1
+            elif group == 'X':
+                variable += 1
             else:
                 total += int(group)
-        return Energy(total, red, yellow, blue, green, white)
+        return Energy(total, red, yellow, blue, green, white, variable)
 
 
 
@@ -111,6 +125,7 @@ class EnergyPool:
         self.energy = ZERO
 
     def can_pay(self, cost):
+        print(self.energy, cost)
         return (self.energy - cost).is_valid()
 
     def pay(self, cost):

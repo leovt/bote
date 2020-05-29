@@ -2,6 +2,7 @@ import itertools
 import lark
 
 from keywords import KEYWORDS
+RESERVED_LABELS = ['enchanted', 'x']
 
 from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, PlayerDamageEvent, DamageEvent, CreateContinuousEffectEvent
 
@@ -29,8 +30,8 @@ class ChosenSpecVisitor(lark.Visitor):
             label = str(tree.children[1].children[0])
             if label in self._def:
                 raise ValueError(f'duplicate label [{label}] for chosen object')
-            if label == 'enchanted':
-                raise ValueError(f'label [enchanted] is reserved')
+            if label in RESERVED_LABELS:
+                raise ValueError(f'label [{label}] is reserved')
         else:
             label = next(self._ids)
             tree.children.append(lark.Tree('chosen_label', [label]))
@@ -203,6 +204,13 @@ class Executor(lark.Transformer):
 
     signed_number = number
 
+    def variable(self, args):
+        return self._context.choices['x']
+
+    def signed_variable(self, args):
+        sign = {'+': 1, '-': -1}[args[0][0]]
+        return sign * self._context['x']
+
     def this(self, args):
         return self._context.permanent
 
@@ -263,7 +271,7 @@ class Effect:
         self.controller = controller
         self.permanent = permanent
         self.choices = choices
-        assert set(self.choices) == set(self.template.choices), (set(self.choices), set(self.template.choices))
+        assert set(self.choices) >= set(self.template.choices), (set(self.choices), set(self.template.choices))
 
     def execute(self):
         return Executor(self).transform(self.template.tree)
@@ -292,13 +300,6 @@ class ContinuousEffect:
             self.until_end_of_turn = True
         else:
             self.until_end_of_turn = False
-
-
-    def is_active(self):
-        if self.permanent:
-            if self.permanent not in game.battlefield:
-                return False
-
 
 
 if __name__ == '__main__':

@@ -10,6 +10,10 @@ subtype: /goblin|dragon|elemental|minotaur|human/
 energy: /(\{([0-9]+|[RGBWY])\})+/
 number: /[0-9]+/
 signed_number: /[\+\-][0-9]+/
+variable: "X"
+signed_variable: /[\+\-]X/
+_numeric: number | variable
+_signed_numeric: signed_number | signed_variable
 
 start: effects
 
@@ -20,7 +24,7 @@ _effect: damage_effect
        | destruction_effect
        | continuous_effect
 
-damage_effect: _object "gets" number "damage"
+damage_effect: _object "gets" _numeric "damage"
 destruction_effect: "destroy" _object
 add_energy_effect: "add" energy "to" _object "energy pool"
 continuous_effect: _object "has" modifier_list [until_end_of_turn]
@@ -29,8 +33,8 @@ until_end_of_turn: "until end of turn"
 
 modifier_list: modifier ("and" modifier)*
 
-modifier: signed_number "/" signed_number -> delta_stat
-        | number "/" number -> set_stat
+modifier: _signed_numeric "/" _signed_numeric -> delta_stat
+        | _numeric "/" _numeric -> set_stat
         | keyword -> add_keyword
         | "not" keyword -> remove_keyword
         | "controlled by" _object -> change_controller

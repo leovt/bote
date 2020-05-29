@@ -119,9 +119,13 @@ class AbilityOnStack:
 
 def cast_spell(game, player, card):
     choices = {}
+    cost = card.cost
+    if cost.variable:
+        yield from choose_x(game, choices, player.energy_pool.energy.total - cost.total, player)
+        cost = cost.replace_variable(choices['x'])
     if card.effect:
         yield from make_choices(game, choices, card.effect, player, None)
-    yield PayEnergyEvent(player.name, str(card.cost))
+    yield PayEnergyEvent(player.name, str(cost))
     yield CastSpellEvent(next(game.unique_ids), player.name, card.secret_id, choices)
 
 
@@ -476,7 +480,9 @@ class Game:
     def objects_from_ids(self, choices_ids):
         choices = {}
         for key, value in choices_ids.items():
-            if value['type'] == 'player':
+            if key == 'x':
+                choices[key] = value
+            elif value['type'] == 'player':
                 choices[key] = self.get_player(value['player'])
             else:
                 choices[key] = self.battlefield[value['perm_id']]
@@ -808,8 +814,6 @@ def play_source(game, player, card):
     yield EnterTheBattlefieldEvent(card.secret_id, player.name, next(game.unique_ids), {})
 
 def player_action(game, player):
-    ACTION_PERFORMED = False
-    PASSED = True
     choices = {}
     actions = {}
 
@@ -834,12 +838,12 @@ def player_action(game, player):
                     action='play', card_id=source.known_identity, text=f'play {source.name}')
 
         for card in player.hand.of_types('creature', 'sorcery', 'enchantment'):
-            if player.energy_pool.can_pay(card.cost):
+            if player.energy_pool.can_pay(card.cost.replace_variable(0)):
                 add_choice([(cast_spell, (game, player, card), {})],
                     action='play', card_id=card.known_identity, text=f'cast {card.name}')
 
     for card in player.hand.of_types('instant'):
-        if player.energy_pool.can_pay(card.cost):
+        if player.energy_pool.can_pay(card.cost.replace_variable(0)):
             add_choice([(cast_spell, (game, player, card), {})],
                 action='play', card_id=card.known_identity, text=f'cast {card.name}')
 
@@ -885,6 +889,16 @@ def make_choices(game, choices, effect, controller, permanent):
         assert answer in question_choices
         choices[id] = question_choices[answer]
 
+def choose_x(game, choices, max, controller):
+    question_choices = {}
+    for x in range(max+1):
+        question_choices[next(game.unique_ids)] = {'action': 'choose_x', 'value':x}
+    question = ChooseAction(game, controller, question_choices, 'choose_x')
+    yield QuestionEvent(question)
+    answer = game.answer
+    assert answer in question_choices
+    assert 'x' not in choices
+    choices['x'] = question_choices[answer]['value']
 
 
 def select_objects(game, selector, controller, permanent):

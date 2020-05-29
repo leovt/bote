@@ -572,6 +572,25 @@ function build_question_ui(question){
         card.classList.add('selectable');
         card.onclick = makeOnclick(action_id);
       }
+      if (action.action == 'choose_x') {
+        let menu = document.getElementById('choose_x');
+        if (!menu) {
+          menu = document.createElement('div');
+          menu.setAttribute('id', 'choose_x');
+          menu.setAttribute('class', 'menu');
+          document.body.appendChild(menu);
+        }
+        let button = document.createElement('button');
+        button.appendChild(document.createTextNode('Choose X = ' + action.value));
+        var makeOnclick2 = function(action_id) {
+          return function () {
+            send_answer(action_id);
+            menu.parentNode.removeChild(menu);
+          };
+        };
+        button.onclick = makeOnclick2(action_id);
+        menu.appendChild(button);
+      }
       if (action.action == 'activate') {
         let card = document.getElementById(action.card_id);
         card.classList.add('activateable');

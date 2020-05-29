@@ -39,7 +39,7 @@
           in="noise1" result="noise2" />
           <feComposite in="SourceGraphic" in2="noise2" operator="arithmetic" k1="0.7" k2="0.3" k3="0"/>
        </filter>
-     <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_x">
+     <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_1">
        <circle cx="14" cy="14" r="13" fill="lightgrey" stroke="grey" />
      </symbol>
      <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_r">
@@ -56,6 +56,10 @@
      </symbol>
      <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_w">
        <circle cx="14" cy="14" r="13" fill="white" stroke="lightgrey" />
+     </symbol>
+     <symbol viewBox="0 0 28 28" width="28" height="28" id="energy_x">
+       <circle cx="14" cy="14" r="13" fill="lightgrey" stroke="grey" />
+       <text x="14" y="22" style="font-size:24px;text-anchor:middle;fill:#333">X</text>
      </symbol>
      <symbol viewBox="0 0 28 28" width="28" height="28" id="tap">
        <circle cx="14" cy="14" r="13" fill="grey" stroke="grey" />
