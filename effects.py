@@ -203,7 +203,7 @@ class Executor(lark.Transformer):
 
     signed_number = number
 
-    def self(self, args):
+    def this(self, args):
         return self._context.permanent
 
     def energy(self, args):

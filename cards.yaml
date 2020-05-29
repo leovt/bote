@@ -109,7 +109,7 @@ cards:
       - keyword: readiness
       - keyword: crush
       - trigger: BEGIN_OF_STEP END
-        effect: destroy self
+        effect: destroy this
 
     art:
       10301:

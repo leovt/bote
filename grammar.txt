@@ -35,10 +35,10 @@ modifier: signed_number "/" signed_number -> delta_stat
         | "not" keyword -> remove_keyword
         | "controlled by" _object -> change_controller
 
-_object: all | self | effect_controller | _chosen | controller_of | enchanted
+_object: all | this | effect_controller | _chosen | controller_of | enchanted
 
 all: "all" selector
-self: "self"
+this: "this"
 effect_controller: "you"
 _chosen: chosen_spec | chosen_ref
 
