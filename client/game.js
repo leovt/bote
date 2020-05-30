@@ -286,6 +286,10 @@ function log_refresh () {
   window.clearTimeout(window.log_refresh_timeout_id);
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
+    if (httpRequest.status >= 400) {
+      var newWindow = window.open('', '_blank');
+      newWindow.document.write(httpRequest.responseText);
+    }
     result = JSON.parse(httpRequest.responseText);
     result.event_log.forEach(handleGameEvent);
     if (result.question) {
@@ -788,6 +792,10 @@ function send_answer (answer) {
   httpRequest.open("POST", `${game_uri}/answer`);
   httpRequest.setRequestHeader('Content-Type', 'application/json');
   httpRequest.addEventListener("load", function(){
+    if (httpRequest.status >= 400) {
+      var newWindow = window.open('', '_blank');
+      newWindow.document.write(httpRequest.responseText);
+    }
     document.getElementById('answer').setAttribute('style', 'display: none;');
     log_refresh();
   });
