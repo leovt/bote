@@ -185,7 +185,7 @@ class Executor(lark.Transformer):
 
     def add_energy_effect(self, args):
         energy, player = args
-        return [AddEnergyEvent(player, energy)]
+        return [AddEnergyEvent(player.player_id, energy)]
 
     def destruction_effect(self, args):
         permanent = args[0]
@@ -195,14 +195,14 @@ class Executor(lark.Transformer):
     def damage_effect(self, args):
         print(args)
         if hasattr(args[0], 'name'):
-            return [PlayerDamageEvent(args[0].name, args[1])]
+            return [PlayerDamageEvent(args[0].player_id, args[1])]
         else:
             return [DamageEvent(args[0].perm_id, args[1])]
 
     def create_token_effect(self, args):
         count, art_id = args
         return [EnterTheBattlefieldEvent(None, art_id,
-                    self._context.controller.name,
+                    self._context.controller.player_id,
                     next(self._context.game.unique_ids), {})
                 for _ in range(count)]
 

@@ -77,7 +77,7 @@ class Spell:
             perm_id = next(game.unique_ids)
             yield EnterTheBattlefieldEvent(self.card.secret_id,
                                            None,
-                                           self.controller.name,
+                                           self.controller.player_id,
                                            perm_id,
                                            self.choices)
             permanent = game.battlefield[perm_id]
@@ -135,8 +135,8 @@ def cast_spell(game, player, card):
         cost = cost.replace_variable(choices['x'])
     if card.effect:
         yield from make_choices(game, choices, card.effect, player, None)
-    yield PayEnergyEvent(player.name, str(cost))
-    yield CastSpellEvent(next(game.unique_ids), player.name, card.secret_id, choices)
+    yield PayEnergyEvent(player.player_id, str(cost))
+    yield CastSpellEvent(next(game.unique_ids), player.player_id, card.secret_id, choices)
 
 
 @dataclass
@@ -306,7 +306,7 @@ class Game:
         game.handle(CreatePlayerEvent(id1, name1, deck1, id2))
         game.handle(CreatePlayerEvent(id2, name2, deck2, id1))
         for player in game.players.values():
-            game.handle(ShuffleLibraryEvent(player.name))
+            game.handle(ShuffleLibraryEvent(player.player_id))
             for _ in range(7):
                 for event in draw_card(game, player):
                     game.handle(event)
@@ -354,17 +354,17 @@ class Game:
         self.answer = None
 
     def handle_PayEnergyEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         player.energy_pool.pay(energy.Energy.parse(event.energy))
         event.new_total = str(player.energy_pool.energy)
 
     def handle_AddEnergyEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         player.energy_pool.add(energy.Energy.parse(event.energy))
         event.new_total = str(player.energy_pool.energy)
 
     def handle_DrawCardEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         card_popped_sid = player.library.pop_given(event.card_secret_id)
         assert card_popped_sid == event.card_secret_id
         card_popped = self.cards[card_popped_sid]
@@ -372,11 +372,11 @@ class Game:
         player.hand.add(card_popped)
 
     def handle_DrawEmptyEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         player.has_drawn_from_empty_library = True
 
     def handle_ShuffleLibraryEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         for card_sid in player.library:
             self.cards[card_sid].known_identity = None
         player.library.shuffle()
@@ -393,7 +393,7 @@ class Game:
                 permanent.on_battlefield_at_begin_of_turn = True
 
     def handle_ClearPoolEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         player.energy_pool.clear()
 
     def handle_PriorityEvent(self, event):
@@ -403,7 +403,7 @@ class Game:
             self.priority_player = self.players[event.player_id]
 
     def handle_PassedEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         player.has_passed = True
 
     def handle_EnterTheBattlefieldEvent(self, event):
@@ -413,7 +413,7 @@ class Game:
         else:
             card = Token(ArtCard.get_by_id(event.art_id), event.perm_id)
             assert card.token
-        permanent = Permanent(event.perm_id, self, card, self.get_player(event.controller), self.objects_from_ids(event.choices))
+        permanent = Permanent(event.perm_id, self, card, self.players[event.controller_id], self.objects_from_ids(event.choices))
         self.battlefield[permanent.perm_id] = permanent
         event.permanent = permanent.serialize_for(self.players[0])
 
@@ -429,12 +429,12 @@ class Game:
         self.cards[event.card_secret_id].owner.graveyard.add(self.cards[event.card_secret_id])
 
     def handle_PlaySourceEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         player.hand.discard(self.cards[event.card_secret_id])
         player.sources_played_this_turn += 1
 
     def handle_CastSpellEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         card = self.cards[event.card_secret_id]
         player.hand.discard(card)
         self.stack.append(Spell(event.stack_id, player, card, event.target))
@@ -469,7 +469,7 @@ class Game:
             player.has_passed = False
 
     def handle_AttackEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         attacker = self.battlefield[event.attacker_id]
         attacker.attacking = player
 
@@ -484,7 +484,7 @@ class Game:
         permanent.damage.append(Damage(event.damage))
 
     def handle_PlayerDamageEvent(self, event):
-        player = self.get_player(event.player)
+        player = self.players[event.player_id]
         player.life -= event.damage;
         event.new_total = player.life;
 
@@ -558,7 +558,7 @@ class Game:
             if key == 'x':
                 choices[key] = value
             elif value['type'] == 'player':
-                choices[key] = self.get_player(value['player'])
+                choices[key] = self.players[value['player_id']]
             else:
                 choices[key] = self.battlefield[value['perm_id']]
         return choices
@@ -603,7 +603,7 @@ def start_game(game):
 
 def end_of_step(game):
     for player in game.players.values():
-        yield ClearPoolEvent(player.name)
+        yield ClearPoolEvent(player.player_id)
     yield PriorityEvent(None)
 
     if game.step == STEP.END_OF_COMBAT:
@@ -749,7 +749,7 @@ def turn_based_actions(game):
                 yield DamageEvent(blocker.perm_id, damage)
                 yield DamageEvent(attacker.perm_id, blocker.strength)
             if remaining_strength:
-                yield PlayerDamageEvent(attacker.attacking.name, remaining_strength)
+                yield PlayerDamageEvent(attacker.attacking.player_id, remaining_strength)
         yield from open_priority(game)
     else:
         yield from open_priority(game)
@@ -774,12 +774,12 @@ def end_continuous_effects(game):
 def state_based_actions(game):
     for player in game.players.values():
         if player.life <= 0:
-            yield PlayerLosesEvent(player.name)
+            yield PlayerLosesEvent(player.player_id)
             # TODO: losing should not end the game if it is a multiplayer game
             raise EndOfGameException
     for player in game.players.values():
         if player.has_drawn_from_empty_library:
-            yield PlayerLosesEvent(player.name)
+            yield PlayerLosesEvent(player.player_id)
             # TODO: losing should not end the game if it is a multiplayer game
             raise EndOfGameException
     for creature in {c for c in game.battlefield.creatures if c.toughness <= 0}:
@@ -824,9 +824,9 @@ def draw_card(game, player):
     if player.library:
         card = player.library.top()
         card_id = next(game.unique_ids)
-        yield DrawCardEvent(player.name, card, card_id)
+        yield DrawCardEvent(player.player_id, card, card_id)
     else:
-        yield DrawEmptyEvent(player.name)
+        yield DrawEmptyEvent(player.player_id)
 
 def can_block(blocker, attacker):
     if blocker.tapped:
@@ -840,8 +840,8 @@ def can_play_source(player):
     return player.sources_played_this_turn == 0
 
 def play_source(game, player, card):
-    yield PlaySourceEvent(player.name, card.secret_id)
-    yield EnterTheBattlefieldEvent(card.secret_id, None, player.name, next(game.unique_ids), {})
+    yield PlaySourceEvent(player.player_id, card.secret_id)
+    yield EnterTheBattlefieldEvent(card.secret_id, None, player.player_id, next(game.unique_ids), {})
 
 def player_action(game, player):
     choices = {}
@@ -889,7 +889,7 @@ def player_action(game, player):
     yield QuestionEvent(question)
     answer = game.answer
     if actions[answer] is None:
-        yield PassedEvent(player.name)
+        yield PassedEvent(player.player_id)
     else:
         for func, arguments, kwarguments in actions[answer]:
             yield from func(*arguments, **kwarguments)
@@ -899,7 +899,7 @@ def activate_ability(game, ability, ab_idx, controller, permanent):
     yield from make_choices(game, choices, ability.effect, controller, permanent)
 
     if ability.is_energy_ability:
-        effect = Effect(ability.effect, game, game.objects_from_ids(choices), controller.name, permanent.perm_id)
+        effect = Effect(ability.effect, game, game.objects_from_ids(choices), controller, permanent)
         yield from effect.execute()
     else:
         yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, choices)
@@ -984,7 +984,7 @@ def select_objects(game, selector, controller, permanent):
 
     if 'player' in include_types:
         for player in game.players.values():
-            yield {'player': player.name, 'type': 'player'}
+            yield {'player_id': player.player_id, 'type': 'player'}
     include_types.discard('player')
 
     for perm in game.battlefield:

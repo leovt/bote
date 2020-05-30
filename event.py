@@ -11,8 +11,6 @@ class Event:
                 if value is None:
                     return key[:-3], None
                 return key[:-3], game.players[value].serialize_for(player)
-            elif 'player' in key or 'controller' in key or 'owner' in key:
-                return key, {'name': value, 'is_me': value==player.name}
             elif 'card_secret_id' == key:
                 if value is not None:
                     return 'card', game.cards[value].serialize_for(player)
@@ -61,14 +59,14 @@ class  QuestionEvent(Event):
 @event_id('pay_energy')
 @dataclass(repr=False)
 class PayEnergyEvent(Event):
-    player: object
+    player_id: str
     energy: object
     new_total: object = None
 
 @event_id('add_energy')
 @dataclass(repr=False)
 class AddEnergyEvent(Event):
-    player: object
+    player_id: str
     energy: object
     new_total: object = None
 
@@ -83,14 +81,14 @@ class CreatePlayerEvent(Event):
 @event_id('draw_card')
 @dataclass(repr=False)
 class DrawCardEvent(Event):
-    player: object
+    player_id: str
     card_secret_id: str
     card_id: str
 
     def serialize_for(self, player, game):
         d = {'event_id': self.__class__.__name__,
-             'player': {'name': self.player, 'is_me': self.player==player.name}}
-        if self.player==player.name:
+             'player': game.players[self.player_id].serialize_for(player)}
+        if self.player_id == player.player_id:
             d['card'] = game.cards[self.card_secret_id].serialize_for(player)
         else:
             d['card_id'] = self.card_id
@@ -99,12 +97,12 @@ class DrawCardEvent(Event):
 @event_id('draw_empty')
 @dataclass(repr=False)
 class DrawEmptyEvent(Event):
-    player: object
+    player_id: str
 
 @event_id('shuffle_library')
 @dataclass(repr=False)
 class ShuffleLibraryEvent(Event):
-    player: object
+    player_id: str
 
 @event_id('step')
 @dataclass(repr=False)
@@ -115,7 +113,7 @@ class StepEvent(Event):
 @event_id('clear_pool')
 @dataclass(repr=False)
 class ClearPoolEvent(Event):
-    player: object
+    player_id: str
 
 @event_id('priority')
 @dataclass(repr=False)
@@ -125,14 +123,14 @@ class PriorityEvent(Event):
 @event_id('passed')
 @dataclass(repr=False)
 class PassedEvent(Event):
-    player: object
+    player_id: str
 
 @event_id('enter_the_battlefield')
 @dataclass(repr=False)
 class EnterTheBattlefieldEvent(Event):
     card_secret_id: str
     art_id: str
-    controller: object
+    controller_id: str
     perm_id: str
     choices: dict
 
@@ -149,14 +147,14 @@ class PutInGraveyardEvent(Event):
 @event_id('play_source')
 @dataclass(repr=False)
 class PlaySourceEvent(Event):
-    player: object
+    player_id: str
     card_secret_id: str
 
 @event_id('cast_spell')
 @dataclass(repr=False)
 class CastSpellEvent(Event):
     stack_id: str
-    player: object
+    player_id: str
     card_secret_id: str
     target: str = None
 
@@ -206,7 +204,7 @@ class ResetPassEvent(Event):
 @dataclass(repr=False)
 class AttackEvent(Event):
     attacker_id: str
-    player: str
+    player_id: str
 
 @event_id('block')
 @dataclass(repr=False)
@@ -223,7 +221,7 @@ class DamageEvent(Event):
 @event_id('player_damage')
 @dataclass(repr=False)
 class PlayerDamageEvent(Event):
-    player: object
+    player_id: str
     damage: object
     new_total: int = None
 
@@ -240,7 +238,7 @@ class DiscardEvent(Event):
 @event_id('lose')
 @dataclass(repr=False)
 class PlayerLosesEvent(Event):
-    player: object
+    player_id: str
 
 @event_id('clear_trigger')
 @dataclass(repr=False)
