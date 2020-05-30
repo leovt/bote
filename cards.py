@@ -175,4 +175,8 @@ del load_yaml
 
 if __name__ == '__main__':
     for card in _cards:
-        print(card, RuleCard.get_by_id(card))
+        rule_card = RuleCard.get_by_id(card)
+        if not rule_card.token:
+            if rule_card.types & {'creature', 'sorcery', 'enchantment', 'instant'}:
+                assert rule_card.cost, card
+        print(card, rule_card)

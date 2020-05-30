@@ -170,6 +170,7 @@ cards:
     names:
       en: Treason
     type: sorcery
+    cost: '{R}{2}'
     effect: chosen .creature has controlled by you and readiness until end of turn
     art:
       10701:
