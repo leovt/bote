@@ -75,7 +75,7 @@ class AddEnergyEvent(Event):
 class CreatePlayerEvent(Event):
     player_id: str
     name: str
-    deck: dict
+    cards: list
     next_in_turn_id: str
 
 @event_id('draw_card')

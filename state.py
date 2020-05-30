@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from collections import defaultdict, OrderedDict
 import energy
 from keywords import KEYWORDS
-from library import make_library, Library
+from library import Library
 from abilities import ActivatableAbility, TriggeredAbility, TapCost
 from bote_collections import IndexedOrderedCollection
 from event import *
@@ -269,32 +269,13 @@ class Game:
 
     @staticmethod
     def deserialize(data):
-        players = []
-        cards_per_player = {}
-        player = None
-        for p in data['players']:
-            player = Player(p['name'], player)
-            cards_per_player[p['name']] = []
-            players.append(player)
-        players[0].next_in_turn = player
-
-        game = Game(players)
-
-        for c in data['cards']:
-            cards_per_player[c['owner']].append(c['secret_id'])
-            card = Card(c['secret_id'], ArtCard.get_by_id(c['art_id']), game.get_player(c['owner']))
-            game.cards[card.secret_id] = card
-
-        for p in players:
-            p.library = Library(cards_per_player[p.name])
-
-        for e in data['events']:
-            kwargs = dict(e)
+        game = Game()
+        for event_spec in data['events']:
+            kwargs = dict(event_spec)
             del kwargs['event_id']
-            event = event_classes[e['event_id']](**kwargs)
+            event = event_classes[event_spec['event_id']](**kwargs)
             game.handle(event)
-
-        game.run(skip_start=True)
+        game.run()
         return game
 
 
@@ -303,8 +284,14 @@ class Game:
         game = Game()
         id1 = 0 #next(game.unique_ids)
         id2 = 1 #next(game.unique_ids)
-        game.handle(CreatePlayerEvent(id1, name1, deck1, id2))
-        game.handle(CreatePlayerEvent(id2, name2, deck2, id1))
+
+        def create_card_list(deck):
+            return [[next(game.unique_ids), art_id]
+                    for art_id, count in deck.items()
+                    for _ in range(count)]
+
+        game.handle(CreatePlayerEvent(id1, name1, create_card_list(deck1), id2))
+        game.handle(CreatePlayerEvent(id2, name2, create_card_list(deck2), id1))
         for player in game.players.values():
             game.handle(ShuffleLibraryEvent(player.player_id))
             for _ in range(7):
@@ -346,7 +333,9 @@ class Game:
 
     def handle_CreatePlayerEvent(self, event):
         player = Player(event.player_id, event.name, event.next_in_turn_id)
-        player.library = make_library(event.deck, player, self)
+        for secret_id, art_id in event.cards:
+            self.cards[secret_id] = Card(secret_id, ArtCard.get_by_id(art_id), player)
+        player.library = Library([secret_id for secret_id, _ in event.cards])
         self.players[event.player_id] = player
 
     def handle_QuestionEvent(self, event):
@@ -588,11 +577,6 @@ class Game:
     def serialize(self):
         return {
             'players': [{'name': p.name} for p in self.players.values()],
-            'cards': [{
-                'secret_id': c.secret_id,
-                'art_id': c.art_card.art_id,
-                'owner': c.owner.name,
-                } for c in self.cards.values()],
             'events': [event.serialize() for event in self.event_log]
         }
 
