@@ -21,7 +21,7 @@ def is_simple(value):
     if isinstance(value, (list, tuple)):
         return all(is_simple(x) for x in value)
     if isinstance(value, dict):
-        return all(isinstance(k, str) and is_simple(v) for k,v in value.items())
+        return all(isinstance(k, (str, int)) and is_simple(v) for k,v in value.items())
 
 
 class ObjectView:
@@ -226,8 +226,9 @@ class Permanent:
 
 @dataclass(eq=False)
 class Player:
+    player_id: str
     name: str
-    next_in_turn: object
+    next_in_turn_id: str
     library: list = None
     hand: ObjectSet = field(default_factory=ObjectSet)
     graveyard: ObjectSet = field(default_factory=ObjectSet)
@@ -242,6 +243,7 @@ class Player:
 
     def serialize_for(self, player):
         return {
+            'player_id': self.player_id,
             'name': self.name,
             'is_me': self is player,
         }
@@ -249,21 +251,69 @@ class Player:
 class EndOfGameException(Exception):
     pass
 
-@dataclass
 class Game:
-    players: list
-    battlefield: ObjectDict = field(default_factory=ObjectDict)
-    active_player: Player = None
-    priority_player: Player = None
-    stack: list = field(default_factory=list)
-    step = STEP.PRECOMBAT_MAIN
-    event_log: list = field(default_factory=list)
-    question = None
-    answer = None
-    unique_ids: iter = field(default_factory=unique_identifiers)
-    triggers: list = field(default_factory=list)
-    cards: dict = field(default_factory=dict)
-    continuous_effects: IndexedOrderedCollection = field(default_factory=IndexedOrderedCollection)
+    def __init__(self):
+        self.players = {}
+        self.battlefield = ObjectDict()
+        self.active_player = None
+        self.priority_player = None
+        self.stack = []
+        self.step = STEP.PRECOMBAT_MAIN
+        self.event_log = []
+        self.question = None
+        self.answer = None
+        self.unique_ids = unique_identifiers()
+        self.triggers = []
+        self.cards = {}
+        self.continuous_effects = IndexedOrderedCollection()
+
+    @staticmethod
+    def deserialize(data):
+        players = []
+        cards_per_player = {}
+        player = None
+        for p in data['players']:
+            player = Player(p['name'], player)
+            cards_per_player[p['name']] = []
+            players.append(player)
+        players[0].next_in_turn = player
+
+        game = Game(players)
+
+        for c in data['cards']:
+            cards_per_player[c['owner']].append(c['secret_id'])
+            card = Card(c['secret_id'], ArtCard.get_by_id(c['art_id']), game.get_player(c['owner']))
+            game.cards[card.secret_id] = card
+
+        for p in players:
+            p.library = Library(cards_per_player[p.name])
+
+        for e in data['events']:
+            kwargs = dict(e)
+            del kwargs['event_id']
+            event = event_classes[e['event_id']](**kwargs)
+            game.handle(event)
+
+        game.run(skip_start=True)
+        return game
+
+
+    @staticmethod
+    def create_duel(name1, deck1, name2, deck2):
+        game = Game()
+        id1 = 0 #next(game.unique_ids)
+        id2 = 1 #next(game.unique_ids)
+        game.handle(CreatePlayerEvent(id1, name1, deck1, id2))
+        game.handle(CreatePlayerEvent(id2, name2, deck2, id1))
+        for player in game.players.values():
+            game.handle(ShuffleLibraryEvent(player.name))
+            for _ in range(7):
+                for event in draw_card(game, player):
+                    game.handle(event)
+        game.handle(StepEvent(STEP.PRECOMBAT_MAIN.name, id1))
+        game.handle(PriorityEvent(id1))
+        game.run()
+        return game
 
 
     def log(self, event):
@@ -271,7 +321,7 @@ class Game:
 
     def get_player(self, name):
         # todo: replace players by a map
-        for player in self.players:
+        for player in self.players.values():
             if player.name == name:
                 return player
 
@@ -293,6 +343,11 @@ class Game:
         handler(event)
         assert is_simple(event.__dict__), event.__dict__
         self.log(event)
+
+    def handle_CreatePlayerEvent(self, event):
+        player = Player(event.player_id, event.name, event.next_in_turn_id)
+        player.library = make_library(event.deck, player, self)
+        self.players[event.player_id] = player
 
     def handle_QuestionEvent(self, event):
         self.question = event.question
@@ -327,12 +382,12 @@ class Game:
         player.library.shuffle()
 
     def handle_StepEvent(self, event):
-        self.active_player = self.get_player(event.active_player)
+        self.active_player = self.players[event.active_player_id]
         assert self.active_player
         self.step = STEP[event.step]
         self.triggers.append(('BEGIN_OF_STEP', self.step))
         if self.step == STEP.UNTAP:
-            for player in self.players:
+            for player in self.players.values():
                 player.sources_played_this_turn = 0
             for permanent in self.battlefield:
                 permanent.on_battlefield_at_begin_of_turn = True
@@ -342,7 +397,10 @@ class Game:
         player.energy_pool.clear()
 
     def handle_PriorityEvent(self, event):
-        self.priority_player = self.get_player(event.player)
+        if event.player_id is None:
+            self.priority_player = None
+        else:
+            self.priority_player = self.players[event.player_id]
 
     def handle_PassedEvent(self, event):
         player = self.get_player(event.player)
@@ -407,7 +465,7 @@ class Game:
         permanent.tapped = True
 
     def handle_ResetPassEvent(self, event):
-        for player in self.players:
+        for player in self.players.values():
             player.has_passed = False
 
     def handle_AttackEvent(self, event):
@@ -529,7 +587,7 @@ class Game:
 
     def serialize(self):
         return {
-            'players': [{'name': p.name} for p in self.players],
+            'players': [{'name': p.name} for p in self.players.values()],
             'cards': [{
                 'secret_id': c.secret_id,
                 'art_id': c.art_card.art_id,
@@ -538,59 +596,13 @@ class Game:
             'events': [event.serialize() for event in self.event_log]
         }
 
-    @staticmethod
-    def deserialize(data):
-        players = []
-        cards_per_player = {}
-        player = None
-        for p in data['players']:
-            player = Player(p['name'], player)
-            cards_per_player[p['name']] = []
-            players.append(player)
-        players[0].next_in_turn = player
 
-        game = Game(players)
-
-        for c in data['cards']:
-            cards_per_player[c['owner']].append(c['secret_id'])
-            card = Card(c['secret_id'], ArtCard.get_by_id(c['art_id']), game.get_player(c['owner']))
-            game.cards[card.secret_id] = card
-
-        for p in players:
-            p.library = Library(cards_per_player[p.name])
-
-        for e in data['events']:
-            kwargs = dict(e)
-            del kwargs['event_id']
-            event = event_classes[e['event_id']](**kwargs)
-            game.handle(event)
-
-        game.run(skip_start=True)
-        return game
-
-
-
-
-def setup_duel(name1, deck1, name2, deck2):
-    p1 = Player(name1, None)
-    p2 = Player(name2, p1)
-    game = Game([p1, p2])
-    p1.library = make_library(deck1, p1, game)
-    p2.library = make_library(deck2, p2, game)
-    p1.next_in_turn = p2
-    return game
 
 def start_game(game):
-    for player in game.players:
-        yield ShuffleLibraryEvent(player.name)
-        for _ in range(7):
-            yield from draw_card(game, player)
-    p1 = game.players[0]
-    yield StepEvent(STEP.PRECOMBAT_MAIN.name, p1.name)
-    yield PriorityEvent(p1.name)
+    assert False
 
 def end_of_step(game):
-    for player in game.players:
+    for player in game.players.values():
         yield ClearPoolEvent(player.name)
     yield PriorityEvent(None)
 
@@ -599,13 +611,11 @@ def end_of_step(game):
             yield RemoveFromCombatEvent(permanent.perm_id)
 
     if game.step == STEP.CLEANUP:
-        yield StepEvent(STEP.UNTAP.name, game.active_player.next_in_turn.name)
+        yield StepEvent(STEP.UNTAP.name, game.active_player.next_in_turn_id)
     else:
-        yield StepEvent(NEXT_STEP[game.step].name, game.active_player.name)
+        yield StepEvent(NEXT_STEP[game.step].name, game.active_player.player_id)
 
 def game_events(game, skip_start):
-    if not skip_start:
-        yield from start_game(game)
     try:
         while True:
             if game.priority_player:
@@ -630,7 +640,7 @@ def game_events(game, skip_start):
                 else:
                     yield from player_action(game, game.priority_player)
                     if game.priority_player.has_passed:
-                        yield PriorityEvent(game.priority_player.next_in_turn.name)
+                        yield PriorityEvent(game.priority_player.next_in_turn_id)
                     else:
                         yield from open_priority(game)
             else:
@@ -669,12 +679,12 @@ def turn_based_actions(game):
             for i in attackers_chosen:
                 if not candidates[i].has('stamina'):
                     yield TapEvent(candidates[i].perm_id)
-                yield AttackEvent(candidates[i].perm_id, game.active_player.next_in_turn.name)
+                yield AttackEvent(candidates[i].perm_id, game.active_player.next_in_turn_id)
             yield from open_priority(game)
         else:
-            yield StepEvent(STEP.END_OF_COMBAT.name, game.active_player.name)
+            yield StepEvent(STEP.END_OF_COMBAT.name, game.active_player.player_id)
     elif game.step == STEP.DECLARE_BLOCKERS:
-        for player in game.players:
+        for player in game.players.values():
             attackers = {next(game.unique_ids): permanent for permanent in
                 game.battlefield.attacking(player)}
             if not attackers:
@@ -725,7 +735,7 @@ def turn_based_actions(game):
         yield from open_priority(game)
     elif game.step == STEP.FIRST_STRIKE_DAMAGE:
         # TODO: do not skip this step if any attacker or blocker has first strike.
-        yield StepEvent(STEP.SECOND_STRIKE_DAMAGE.name, game.active_player.name)
+        yield StepEvent(STEP.SECOND_STRIKE_DAMAGE.name, game.active_player.player_id)
     elif game.step == STEP.SECOND_STRIKE_DAMAGE:
         for attacker in game.battlefield.filter(lambda x:x.attacking):
             remaining_strength = attacker.strength
@@ -762,12 +772,12 @@ def end_continuous_effects(game):
         yield EndContinuousEffectEvent(effect_id)
 
 def state_based_actions(game):
-    for player in game.players:
+    for player in game.players.values():
         if player.life <= 0:
             yield PlayerLosesEvent(player.name)
             # TODO: losing should not end the game if it is a multiplayer game
             raise EndOfGameException
-    for player in game.players:
+    for player in game.players.values():
         if player.has_drawn_from_empty_library:
             yield PlayerLosesEvent(player.name)
             # TODO: losing should not end the game if it is a multiplayer game
@@ -795,7 +805,7 @@ def check_triggers(game):
 
 def open_priority(game):
     yield ResetPassEvent()
-    yield PriorityEvent(game.active_player.name)
+    yield PriorityEvent(game.active_player.player_id)
 
 
 def discard_excess_cards(game):
@@ -973,7 +983,7 @@ def select_objects(game, selector, controller, permanent):
     # done interpreting spec, now select
 
     if 'player' in include_types:
-        for player in game.players:
+        for player in game.players.values():
             yield {'player': player.name, 'type': 'player'}
     include_types.discard('player')
 

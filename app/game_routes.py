@@ -161,7 +161,7 @@ def game_log(game_id):
     if current_user.is_anonymous:
         player = None
     else:
-        for p in game.game.players:
+        for p in game.game.players.values():
             if p.name == current_user.username:
                 player = p
                 break

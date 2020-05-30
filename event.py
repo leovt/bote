@@ -7,7 +7,11 @@ class Event:
 
     def serialize_for(self, player, game):
         def serialize_field(key, value):
-            if 'player' in key or 'controller' in key or 'owner' in key:
+            if 'player_id' in key or 'controller_id' in key or 'owner_id' in key:
+                if value is None:
+                    return key[:-3], None
+                return key[:-3], game.players[value].serialize_for(player)
+            elif 'player' in key or 'controller' in key or 'owner' in key:
                 return key, {'name': value, 'is_me': value==player.name}
             elif 'card_secret_id' == key:
                 if value is not None:
@@ -68,6 +72,14 @@ class AddEnergyEvent(Event):
     energy: object
     new_total: object = None
 
+@event_id('create_player')
+@dataclass(repr=False)
+class CreatePlayerEvent(Event):
+    player_id: str
+    name: str
+    deck: dict
+    next_in_turn_id: str
+
 @event_id('draw_card')
 @dataclass(repr=False)
 class DrawCardEvent(Event):
@@ -97,8 +109,8 @@ class ShuffleLibraryEvent(Event):
 @event_id('step')
 @dataclass(repr=False)
 class StepEvent(Event):
-    step: object
-    active_player: object
+    step: str
+    active_player_id: str
 
 @event_id('clear_pool')
 @dataclass(repr=False)
@@ -108,7 +120,7 @@ class ClearPoolEvent(Event):
 @event_id('priority')
 @dataclass(repr=False)
 class PriorityEvent(Event):
-    player: object
+    player_id: str
 
 @event_id('passed')
 @dataclass(repr=False)

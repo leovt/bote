@@ -5,7 +5,7 @@ from flask import url_for
 from app import db, login_mgr
 
 from dummy_deck import TEST_DECK
-from state import setup_duel
+from state import Game
 import tools
 from aiplayers import random_answer
 
@@ -67,8 +67,7 @@ class GameFrontend:
             self.start()
 
     def start(self):
-        self.game = setup_duel(self.user1, self.deck1, self.user2, self.deck2)
-        self.game.run()
+        self.game = Game.create_duel(self.user1, self.deck1, self.user2, self.deck2)
         self.status = 'started'
 
 
