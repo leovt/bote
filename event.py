@@ -10,7 +10,10 @@ class Event:
             if 'player' in key or 'controller' in key or 'owner' in key:
                 return key, {'name': value, 'is_me': value==player.name}
             elif 'card_secret_id' == key:
-                return 'card', game.cards[value].serialize_for(player)
+                if value is not None:
+                    return 'card', game.cards[value].serialize_for(player)
+                else:
+                    return None, None
             elif 'energy' == key:
                 return key, str(value)
             elif isinstance(value, (int, str, type(None))):
@@ -116,6 +119,7 @@ class PassedEvent(Event):
 @dataclass(repr=False)
 class EnterTheBattlefieldEvent(Event):
     card_secret_id: str
+    art_id: str
     controller: object
     perm_id: str
     choices: dict

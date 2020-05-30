@@ -339,7 +339,7 @@ cards:
       en: Goblin Patrol
     type: sorcery
     cost: '{R}{2}'
-    effect: 'you gets 1 damage'
+    effect: create 2 <red goblin>(90101) token
 
     art:
       11801:

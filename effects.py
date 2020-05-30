@@ -4,7 +4,7 @@ import lark
 from keywords import KEYWORDS
 RESERVED_LABELS = ['enchanted', 'x']
 
-from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, PlayerDamageEvent, DamageEvent, CreateContinuousEffectEvent
+from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, PlayerDamageEvent, DamageEvent, CreateContinuousEffectEvent, EnterTheBattlefieldEvent
 
 def _parser():
     with open('grammar.txt') as grammar_txt:
@@ -198,6 +198,13 @@ class Executor(lark.Transformer):
             return [PlayerDamageEvent(args[0].name, args[1])]
         else:
             return [DamageEvent(args[0].perm_id, args[1])]
+
+    def create_token_effect(self, args):
+        count, art_id = args
+        return [EnterTheBattlefieldEvent(None, art_id,
+                    self._context.controller.name,
+                    next(self._context.game.unique_ids), {})
+                for _ in range(count)]
 
     def number(self, args):
         return int(args[0], 10)

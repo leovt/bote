@@ -11,7 +11,7 @@ from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace, unique_identifiers
 from step import STEP, NEXT_STEP
-from cards import Card, ArtCard
+from cards import Card, ArtCard, Token
 from effects import Effect
 
 
@@ -76,6 +76,7 @@ class Spell:
         if {'creature', 'enchantment'} & self.card.types:
             perm_id = next(game.unique_ids)
             yield EnterTheBattlefieldEvent(self.card.secret_id,
+                                           None,
                                            self.controller.name,
                                            perm_id,
                                            self.choices)
@@ -348,8 +349,15 @@ class Game:
         player.has_passed = True
 
     def handle_EnterTheBattlefieldEvent(self, event):
-        permanent = Permanent(event.perm_id, self, self.cards[event.card_secret_id], self.get_player(event.controller), self.objects_from_ids(event.choices))
+        if event.card_secret_id is not None:
+            assert event.art_id is None
+            card = self.cards[event.card_secret_id]
+        else:
+            card = Token(ArtCard.get_by_id(event.art_id), event.perm_id)
+            assert card.token
+        permanent = Permanent(event.perm_id, self, card, self.get_player(event.controller), self.objects_from_ids(event.choices))
         self.battlefield[permanent.perm_id] = permanent
+        event.permanent = permanent.serialize_for(self.players[0])
 
     def handle_ExitTheBattlefieldEvent(self, event):
         del self.battlefield[event.perm_id]
@@ -744,7 +752,10 @@ def put_in_graveyard(game, permanent):
     yield ExitTheBattlefieldEvent(permanent.perm_id)
     for effect_id in list(game.continuous_effects.keys_by_perm_id(permanent.perm_id)):
         yield EndContinuousEffectEvent(effect_id)
-    yield PutInGraveyardEvent(permanent.card.secret_id)
+    if hasattr(permanent.card, 'secret_id'):
+        yield PutInGraveyardEvent(permanent.card.secret_id)
+    else:
+        assert permanent.card.token
 
 def end_continuous_effects(game):
     for effect_id in list(game.continuous_effects.keys_until_end_of_turn()):
@@ -820,7 +831,7 @@ def can_play_source(player):
 
 def play_source(game, player, card):
     yield PlaySourceEvent(player.name, card.secret_id)
-    yield EnterTheBattlefieldEvent(card.secret_id, player.name, next(game.unique_ids), {})
+    yield EnterTheBattlefieldEvent(card.secret_id, None, player.name, next(game.unique_ids), {})
 
 def player_action(game, player):
     choices = {}

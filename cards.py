@@ -107,6 +107,27 @@ class Card:
                 'url': f'/card/svg/{self.art_card.art_id}',
                 }
 
+@dataclass(eq=False)
+class Token:
+    art_card: object
+    known_identity: str
+
+    def __getattr__(self, attribute):
+        return getattr(self.art_card.rule_card, attribute)
+
+    def __str__(self):
+        return '<Token>'
+
+    def __repr__(self):
+        return '<Token>'
+
+    def serialize_for(self, player):
+        return {'art_id': self.art_card.art_id,
+                'card_id': self.known_identity,
+                'url': f'/card/svg/{self.art_card.art_id}',
+                'token': True,
+                }
+
 
 def art_card_spec(art_id):
     card = _art_cards.get(art_id)

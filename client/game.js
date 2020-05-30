@@ -73,8 +73,15 @@ const gameEventHandler = {
 
   EnterTheBattlefieldEvent: function(event) {
     let tgt = document.getElementById(event.controller.is_me ? 'bf-mine' : 'bf-theirs');
-    animatedMove(getCardElement(event.card), tgt);
-    write_message(`${event.card.name} enters the battlefield.`);
+    animatedMove(getCardElement(event.permanent.card), tgt);
+    write_message(`${event.permanent.card.name} enters the battlefield.`);
+  },
+
+  ExitTheBattlefieldEvent: function(event) {
+    if (event.permanent.card.token) {
+      let card = getCardElement(event.permanent.card);
+      card.parentNode.removeChild(card);
+    }
   },
 
   CreateContinuousEffectEvent: function(event) {

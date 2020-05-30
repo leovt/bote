@@ -26,11 +26,13 @@ effects: _effect (";" _effect)* [";"]
 _effect: damage_effect
        | add_energy_effect
        | destruction_effect
+       | create_token_effect
        | continuous_effect
 
 damage_effect: _object "gets" _numeric "damage"
 destruction_effect: "destroy" _object
 add_energy_effect: "add" energy "to" _object "energy pool"
+create_token_effect: "create" _numeric "(" number ")" "token"
 continuous_effect: _object "has" modifier_list [until_end_of_turn]
 
 until_end_of_turn: "until end of turn"
