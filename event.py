@@ -46,6 +46,7 @@ event_classes = {}
 
 def event_id(event_id):
     def klass(klass):
+        assert event_id not in event_classes, f'duplicate @event_id({event_id!r})'
         klass.event_id = event_id
         event_classes[event_id] = klass
         return klass
@@ -175,7 +176,7 @@ class CreateContinuousEffectEvent(Event):
     modifiers: list
     until_end_of_turn: bool
 
-@event_id('create_continuous_effect')
+@event_id('end_continuous_effect')
 @dataclass(repr=False)
 class EndContinuousEffectEvent(Event):
     effect_id: str

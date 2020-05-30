@@ -253,10 +253,10 @@ class Executor(lark.Transformer):
         return args[0].controller
 
     def set_stat(self, args):
-        return ('set_stat', args[0], args[1])
+        return ['set_stat', args[0], args[1]]
 
     def delta_stat(self, args):
-        return ('delta_stat', args[0], args[1])
+        return ['delta_stat', args[0], args[1]]
 
     def modifier_list(self, args):
         return args
@@ -265,10 +265,10 @@ class Executor(lark.Transformer):
         return str(args[0])
 
     def add_keyword(self, args):
-        return ('add_keyword', args[0])
+        return ['add_keyword', args[0]]
 
     def remove_keyword(self, args):
-        return ('remove_keyword', args[0])
+        return ['remove_keyword', args[0]]
 
 
 class Effect:
