@@ -150,8 +150,8 @@ cards:
         effect: this has +1/+0 until end of turn
     art:
       10501:
-        image: ''
-        attribution: ''
+        image: 'dragonbaby.jpg'
+        attribution: 'Leonhard Vogt'
         frame: red
 
   106:
