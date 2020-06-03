@@ -375,3 +375,39 @@ cards:
       90101:
         image: ''
         attribution: ''
+
+  201:
+    names:
+      en: Gaia
+      de: Gaia
+      ko: 가이아
+    type: source
+    abilities:
+      - cost: "{T}"
+        effect: "add {G} to you energy pool"
+        energy_ability: Yes
+
+    art:
+      20101:
+        image: pexels-photo-460621.jpg
+        attribution: Pixabay, 2017 (pexels.com)
+        frame: source
+
+  202:
+    names:
+      en: Abundance
+      de: Überfluss
+      ko: 과잉
+    type: enchantment
+    effect: "when enchanted .source is tapped add {G} to you energy pool"
+    cost: '{G}'
+
+    art:
+      20201:
+        image: pexels-photo-953969.jpg
+        attribution: Vinicius Pontes, 2018 (pexels.com)
+        flavour:
+          de: |-
+            “Es stinkt nach Fruchtbarkeit, nach blühender Verwesung. Wo man hinspuckt, keimt es!”
+            ― Max Frisch, Homo Faber
+        frame: green

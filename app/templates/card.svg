@@ -67,10 +67,13 @@
        <path d="M11 14 8 8.8 5 14 7 14 A 7 7 0 0 0 14 21 L 14 19 A 5 5 0 0 1 9 14 Z" fill="white"/>
      </symbol>
      <g id="frame_source" filter="url(#noise)">
-       <rect fill="sienna" width="268" height="386" x="7" y="7" />
+       <rect fill="peru" width="268" height="386" x="7" y="7" />
      </g>
      <g id="frame_red" filter="url(#noise)">
        <rect fill="firebrick" width="268" height="386" x="7" y="7" />
+     </g>
+     <g id="frame_green" filter="url(#noise)">
+       <rect fill="darkgreen" width="268" height="386" x="7" y="7" />
      </g>
    </defs>
    <rect id="outer_border"
