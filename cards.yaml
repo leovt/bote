@@ -24,6 +24,10 @@ types:
         en: Human
         de: Mensch
         ko: 인간
+      elf:
+        en: Elf
+        de: Elfe
+        ko: 요정
 
   source:
     de: Quelle
@@ -410,4 +414,73 @@ cards:
           de: |-
             “Es stinkt nach Fruchtbarkeit, nach blühender Verwesung. Wo man hinspuckt, keimt es!”
             ― Max Frisch, Homo Faber
+        frame: green
+
+  203:
+    names:
+      en: Rapid Growth
+      de: Schneller Wuchs
+      ko: 빠른 생장
+    type: instant
+    effect: chosen .creature has +3/+3 until end of turn
+    cost: "{G}"
+    art:
+      20301:
+        image: growth.png
+        attribution: Leonhard Vogt, 2020
+        frame: green
+
+  204:
+    names:
+      en: Kelrora Elves
+      de: Kelroraelfen
+      ko: 켈르로라 요정들
+    type: creature
+    subtypes:
+      - elf
+    cost: '{G}'
+    strength: 1
+    toughness: 1
+    abilities:
+      - cost: '{T}'
+        effect: 'add {G} to you energy pool'
+    art:
+      20401:
+        image: ''
+        attribution: ''
+        frame: green
+
+  205:
+    names:
+      en: Degan Tusker
+      de: Degankeiler
+      ko: 데간 수멧돼지
+    type: creature
+    cost: '{G}{4}'
+    strength: 5
+    toughness: 4
+    art:
+      20501:
+        image: ''
+        attribution: ''
+        frame: green
+
+  206:
+    names:
+      en: House Spider
+      de: Hausspinne
+      ko: 집거미
+    type: creature
+    cost: '{G}{3}'
+    strength: 2
+    toughness: 4
+    abilities:
+      - keyword: intercept
+    art:
+      20601:
+        image: ''
+        attribution: ''
+        flavour:
+          en: It got its name due to its size rather than its dwelling
+          de: Sie heisst nicht ihres Lebensraumes wegen so...
         frame: green
