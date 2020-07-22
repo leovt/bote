@@ -286,7 +286,11 @@ function log_refresh () {
   window.clearTimeout(window.log_refresh_timeout_id);
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
-    if (httpRequest.status >= 400) {
+    if (httpRequest.status == 409) {
+      // Todo remove when issue #10 is fixed
+      console.log(httpRequest);
+    }
+    else if (httpRequest.status >= 400) {
       var newWindow = window.open('', '_blank');
       newWindow.document.write(httpRequest.responseText);
     }
@@ -792,7 +796,11 @@ function send_answer (answer) {
   httpRequest.open("POST", `${game_uri}/answer`);
   httpRequest.setRequestHeader('Content-Type', 'application/json');
   httpRequest.addEventListener("load", function(){
-    if (httpRequest.status >= 400) {
+    if (httpRequest.status == 409) {
+      // Todo remove when issue #10 is fixed
+      console.log(httpRequest);
+    }
+    else if (httpRequest.status >= 400) {
       var newWindow = window.open('', '_blank');
       newWindow.document.write(httpRequest.responseText);
     }
