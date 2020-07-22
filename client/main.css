@@ -26,6 +26,14 @@ ul#chat {
   height: 70vh;
 }
 
+body {
+  background-image: url("logo-min.png");
+  background-color: burlywood;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
 .chat_message {
   background: lightblue;
   border: 1px solid black;
