@@ -4,7 +4,15 @@ import lark
 from keywords import KEYWORDS
 RESERVED_LABELS = ['enchanted', 'x']
 
-from event import AddEnergyEvent, ExitTheBattlefieldEvent, PutInGraveyardEvent, PlayerDamageEvent, DamageEvent, CreateContinuousEffectEvent, EnterTheBattlefieldEvent
+from event import (AddEnergyEvent,
+                   ExitTheBattlefieldEvent,
+                   PutInGraveyardEvent,
+                   PlayerDamageEvent,
+                   DamageEvent,
+                   CreateContinuousEffectEvent,
+                   EnterTheBattlefieldEvent,
+                   CreateTriggerEvent,
+                  )
 
 def _parser():
     with open('grammar.txt') as grammar_txt:
@@ -246,6 +254,13 @@ class Executor(lark.Transformer):
             until_end_of_turn = True
         return [CreateContinuousEffectEvent(effect_id, perm_id, objects, modifiers, until_end_of_turn)]
 
+    def triggered_effect(self, args):
+        trigger_id = next(self._context.game.unique_ids)
+        perm_id = None
+        if self._context.permanent:
+            perm_id = self._context.permanent.perm_id
+        return [CreateTriggerEvent(trigger_id, perm_id, args[0], [evt.serialize() for evt in args[1]])]
+
     def chosen_ref(self, args):
         return self._context.choices[args[0]]
 
@@ -269,6 +284,9 @@ class Executor(lark.Transformer):
 
     def remove_keyword(self, args):
         return ['remove_keyword', args[0]]
+
+    def tap_trigger(self, args):
+        return ['TAP', args[0].perm_id]
 
 
 class Effect:

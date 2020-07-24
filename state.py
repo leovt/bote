@@ -6,7 +6,7 @@ import energy
 from keywords import KEYWORDS
 from library import Library
 from abilities import ActivatableAbility, TriggeredAbility, TapCost
-from bote_collections import IndexedOrderedCollection
+from bote_collections import IndexedOrderedCollection, TriggerCollection
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
 from tools import Namespace, unique_identifiers
@@ -124,6 +124,29 @@ class AbilityOnStack:
                 'controller': self.permanent.controller.name,
                 'card': self.permanent.card.serialize_for(player),
                 'ability': self.ability.serialize_for(player),
+        }
+
+
+@dataclass(eq=False)
+class TriggerOnStack:
+    stack_id: str
+    effect: list
+    permanent: object
+
+    def resolve(self, game):
+        for event_spec in self.effect:
+            kwargs = dict(event_spec)
+            del kwargs['event_id']
+            event = event_classes[event_spec['event_id']](**kwargs)
+            yield event
+
+    def __str__(self):
+        return f'triggered effect of {self.permanent.card.name}'
+
+    def serialize_for(self, player):
+        return {'stack_id': self.stack_id,
+                'effect': self.effect,
+                'card': self.permanent.card.serialize_for(player),
         }
 
 
@@ -266,6 +289,7 @@ class Game:
         self.triggers = []
         self.cards = {}
         self.continuous_effects = IndexedOrderedCollection()
+        self.triggered_effects = TriggerCollection()
 
     @staticmethod
     def deserialize(data):
@@ -435,11 +459,21 @@ class Game:
         choices = self.objects_from_ids(event.choices)
         self.stack.append(AbilityOnStack(event.stack_id, ability, choices, controller, permanent))
 
+    def handle_StackEffectEvent(self, event):
+        permanent = self.battlefield[event.perm_id]
+        self.stack.append(TriggerOnStack(event.stack_id, event.effect, permanent))
+
     def handle_CreateContinuousEffectEvent(self, event):
         self.continuous_effects[event.effect_id] = event
 
+    def handle_CreateTriggerEvent(self, event):
+        self.triggered_effects[event.trigger_id] = event
+
     def handle_EndContinuousEffectEvent(self, event):
         del self.continuous_effects[event.effect_id]
+
+    def handle_EndTriggerEvent(self, event):
+        del self.triggered_effects[event.trigger_id]
 
     def handle_ResolveEvent(self, event):
         tos_popped = self.stack.pop()
@@ -452,6 +486,7 @@ class Game:
     def handle_TapEvent(self, event):
         permanent = self.battlefield[event.perm_id]
         permanent.tapped = True
+        self.triggers.append(('TAP', event.perm_id))
 
     def handle_ResetPassEvent(self, event):
         for player in self.players.values():
@@ -609,8 +644,12 @@ def game_events(game, skip_start):
                     yield ClearTriggerEvent()
                     if not triggered_abilities:
                         break
-                    for (permanent, ab_idx, ability) in triggered_abilities:
-                        yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, {})
+                    for tr_effect in triggered_abilities:
+                        if isinstance(tr_effect, tuple):
+                            (permanent, ab_idx, ability) = tr_effect
+                            yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, {})
+                        else:
+                            yield StackEffectEvent(next(game.unique_ids), tr_effect.perm_id, tr_effect.effect, None)
 
 
                 if game.priority_player.has_passed:
@@ -746,6 +785,8 @@ def put_in_graveyard(game, permanent):
     yield ExitTheBattlefieldEvent(permanent.perm_id)
     for effect_id in list(game.continuous_effects.keys_by_perm_id(permanent.perm_id)):
         yield EndContinuousEffectEvent(effect_id)
+    for trigger_id in list(game.triggered_effects.keys_by_perm_id(permanent.perm_id)):
+        yield EndTriggerEvent(trigger_id)
     if hasattr(permanent.card, 'secret_id'):
         yield PutInGraveyardEvent(permanent.card.secret_id)
     else:
@@ -784,6 +825,10 @@ def check_triggers(game):
                 if isinstance(ability, TriggeredAbility):
                     if ability.trigger == trigger:
                         has_triggered.append((permanent, ab_idx, ability))
+        for tr_effect in game.triggered_effects.values():
+            if tuple(tr_effect.trigger) == tuple(trigger):
+                has_triggered.append(tr_effect)
+
     return has_triggered
 
 

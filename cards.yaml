@@ -403,7 +403,7 @@ cards:
       de: Überfluss
       ko: 과잉
     type: enchantment
-    effect: "when enchanted .source is tapped add {G} to you energy pool"
+    effect: "when enchanted .source gets tapped add {G} to you energy pool"
     cost: '{G}'
 
     art:

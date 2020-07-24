@@ -167,6 +167,27 @@ class ActivateAbilityEvent(Event):
     ability_index: int
     choices: dict
 
+@event_id('stack_effect')
+@dataclass(repr=False)
+class StackEffectEvent(Event):
+    stack_id: str
+    perm_id: str
+    effect: object
+    choices: dict
+
+@event_id('create_trigger')
+@dataclass(repr=False)
+class CreateTriggerEvent(Event):
+    trigger_id: str
+    perm_id: str or None
+    trigger: list
+    effect: object
+
+@event_id('end_trigger')
+@dataclass(repr=False)
+class EndTriggerEvent(Event):
+    trigger_id: str
+
 @event_id('create_continuous_effect')
 @dataclass(repr=False)
 class CreateContinuousEffectEvent(Event):

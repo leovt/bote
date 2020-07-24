@@ -157,11 +157,23 @@ const gameEventHandler = {
     stack.appendChild(item);
   },
 
+  StackEffectEvent: function(event) {
+    let stack = document.getElementById('stack');
+    let card = getCardElement(event.permanent.card);
+    let rect = card.getBoundingClientRect();
+    let item = document.createElement('div');
+    item.innerText = "Effect of " + event.permanent.card.name;
+    item.className = "card ability";
+    item.id = event.stack_id;
+    stack.appendChild(item);
+  },
+
   ResolveEvent: function(event) {
     let stack = document.getElementById('stack');
     let stack_id = event.tos.stack_id;
-    if (event.tos.ability) {
-      stack.removeChild(document.getElementById(stack_id));
+    let item = document.getElementById(stack_id);
+    if (item) {
+      stack.removeChild(item);
     }
   },
 

@@ -23,7 +23,14 @@ start: effects
 
 effects: _effect (";" _effect)* [";"]
 
-_effect: damage_effect
+_effect: _immediate_effect
+       | triggered_effect
+
+triggered_effect: "when" trigger _immediate_effect
+
+trigger: _object "gets" "tapped" -> tap_trigger
+
+_immediate_effect: damage_effect
        | add_energy_effect
        | destruction_effect
        | create_token_effect
