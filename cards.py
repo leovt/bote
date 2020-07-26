@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import functools
 import yaml
 import energy
-from abilities import ActivatableAbility, TriggeredAbility, parse_cost, parse_trigger
+from abilities import ActivatableAbility, parse_cost, parse_trigger
 from effects import EffectTemplate
 
 def instance_loader(loader):
@@ -45,11 +45,6 @@ class RuleCard:
                     ActivatableAbility(parse_cost(ab_spec['cost']),
                                        EffectTemplate.parse(ab_spec['effect']),
                                        ab_spec.get('energy_ability', False)))
-            if 'trigger' in ab_spec:
-                abilities.append(TriggeredAbility(
-                    parse_trigger(ab_spec['trigger']),
-                    EffectTemplate.parse(ab_spec['effect'])))
-
             else:
                 abilities.append(ab_spec)
 

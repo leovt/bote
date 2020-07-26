@@ -5,7 +5,7 @@ from collections import defaultdict, OrderedDict
 import energy
 from keywords import KEYWORDS
 from library import Library
-from abilities import ActivatableAbility, TriggeredAbility, TapCost
+from abilities import ActivatableAbility, TapCost
 from bote_collections import IndexedOrderedCollection, TriggerCollection
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
@@ -398,7 +398,7 @@ class Game:
         self.active_player = self.players[event.active_player_id]
         assert self.active_player
         self.step = STEP[event.step]
-        self.triggers.append(('BEGIN_OF_STEP', self.step))
+        self.trigger(('BEGIN_OF_STEP', self.step.name))
         if self.step == STEP.UNTAP:
             for player in self.players.values():
                 player.sources_played_this_turn = 0
@@ -486,7 +486,7 @@ class Game:
     def handle_TapEvent(self, event):
         permanent = self.battlefield[event.perm_id]
         permanent.tapped = True
-        self.triggers.append(('TAP', event.perm_id))
+        self.trigger(('TAP', event.perm_id))
 
     def handle_ResetPassEvent(self, event):
         for player in self.players.values():
@@ -614,6 +614,11 @@ class Game:
             'players': [{'name': p.name} for p in self.players.values()],
             'events': [event.serialize() for event in self.event_log]
         }
+
+    def trigger(self, trigger):
+        self.triggers.append(trigger)
+        print(self.triggers)
+
 
 
 
@@ -820,11 +825,6 @@ def state_based_actions(game):
 def check_triggers(game):
     has_triggered = []
     for trigger in game.triggers:
-        for permanent in game.battlefield:
-            for ab_idx, ability in enumerate(permanent.card.abilities):
-                if isinstance(ability, TriggeredAbility):
-                    if ability.trigger == trigger:
-                        has_triggered.append((permanent, ab_idx, ability))
         for tr_effect in game.triggered_effects.values():
             if tuple(tr_effect.trigger) == tuple(trigger):
                 has_triggered.append(tr_effect)

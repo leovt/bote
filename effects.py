@@ -196,6 +196,7 @@ class Executor(lark.Transformer):
         return [AddEnergyEvent(player.player_id, energy)]
 
     def destruction_effect(self, args):
+        # TODO: Problem: does not perform all the checks as Game.put_in_graveyard
         permanent = args[0]
         return [ExitTheBattlefieldEvent(permanent.perm_id),
                 PutInGraveyardEvent(permanent.card.secret_id)]
@@ -259,6 +260,7 @@ class Executor(lark.Transformer):
         perm_id = None
         if self._context.permanent:
             perm_id = self._context.permanent.perm_id
+        #TODO: Problem: triggered events should be kept in unexecuted form.
         return [CreateTriggerEvent(trigger_id, perm_id, args[0], [evt.serialize() for evt in args[1]])]
 
     def chosen_ref(self, args):
@@ -287,6 +289,12 @@ class Executor(lark.Transformer):
 
     def tap_trigger(self, args):
         return ['TAP', args[0].perm_id]
+
+    def step(self, args):
+        return args[0].upper()
+
+    def step_begin_trigger(self, args):
+        return ('BEGIN_OF_STEP', args[0])
 
 
 class Effect:

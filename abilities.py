@@ -57,17 +57,6 @@ class ActivatableAbility:
     def serialize_for(self, player):
         return {}
 
-@dataclass
-class TriggeredAbility:
-    trigger: object
-    effect: object
-
-    def __str__(self):
-        return 'triggered ability'
-
-    def serialize_for(self, player):
-        return {}
-
 
 def parse_cost(string):
     components = string.split(',')
