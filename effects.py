@@ -174,12 +174,47 @@ class EffectTemplate:
     @classmethod
     def parse(cls, src):
         tree = _parser.parse(src)
-        t = ChosenSpecVisitor()
-        t.visit(tree)
-        return cls(t._def, tree)
+        visitor = ChosenSpecVisitor()
+        visitor.visit(tree)
+        choices = visitor._def
+        transformer = Sequencer()
+        tree = transformer.transform(tree)
+        return cls(choices, tree)
 
     def unparse(self):
         return Unparser(self.choices).transform(self.tree)
+
+
+class Sequencer(lark.Transformer):
+    '''transform the parse tree into a sequence of execution-templates'''
+    def number(self, args):
+        return int(args[0], 10)
+
+    signed_number = number
+
+    def energy(self, args):
+        return str(args[0])
+
+    def set_stat(self, args):
+        return ['set_stat', args[0], args[1]]
+
+    def delta_stat(self, args):
+        return ['delta_stat', args[0], args[1]]
+
+    def modifier_list(self, args):
+        return args
+
+    def keyword(self, args):
+        return str(args[0])
+
+    def add_keyword(self, args):
+        return ['add_keyword', args[0]]
+
+    def remove_keyword(self, args):
+        return ['remove_keyword', args[0]]
+
+    def step(self, args):
+        return args[0].upper()
 
 
 class Executor(lark.Transformer):
@@ -215,11 +250,6 @@ class Executor(lark.Transformer):
                     next(self._context.game.unique_ids), {})
                 for _ in range(count)]
 
-    def number(self, args):
-        return int(args[0], 10)
-
-    signed_number = number
-
     def variable(self, args):
         return self._context.choices['x']
 
@@ -229,10 +259,7 @@ class Executor(lark.Transformer):
 
     def this(self, args):
         return self._context.permanent
-
-    def energy(self, args):
-        return str(args[0])
-
+        
     def effect_controller(self, args):
         return self._context.controller
 
@@ -269,33 +296,11 @@ class Executor(lark.Transformer):
     def controller_of(self, args):
         return args[0].controller
 
-    def set_stat(self, args):
-        return ['set_stat', args[0], args[1]]
-
-    def delta_stat(self, args):
-        return ['delta_stat', args[0], args[1]]
-
-    def modifier_list(self, args):
-        return args
-
-    def keyword(self, args):
-        return str(args[0])
-
-    def add_keyword(self, args):
-        return ['add_keyword', args[0]]
-
-    def remove_keyword(self, args):
-        return ['remove_keyword', args[0]]
-
     def tap_trigger(self, args):
         return ['TAP', args[0].perm_id]
 
-    def step(self, args):
-        return args[0].upper()
-
     def step_begin_trigger(self, args):
         return ('BEGIN_OF_STEP', args[0])
-
 
 class Effect:
     def __init__(self, template, game, choices, controller, permanent):
