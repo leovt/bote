@@ -1,0 +1,53 @@
+Art Concept for Seven Key Cards
+
+General
+-------
+* card illustrations for a collectible card game
+* each card features an illustration taking about half of the
+space of the card.
+* the illustration on the card has a 3:2 format (landscape orientation)
+* each of the seven cards features a dominant color, which could either be
+  - the color of a focal element
+  - the most used color in the image
+* the illustrations will be shown typically in a size of 6x4cm during the game
+  and up to 15x10cm when the player looks at the card in detail mode
+* each illustration should be delivered in 1200x800 pixel for about 200dpi.
+* The background need not feature any detail
+* the illustrations / characters can also be used e.g. in the opening screen
+  of the game or in other material related to it.
+
+Red Dragon
+- Dragon spitting fire
+- Main color red
+- Mountain range (no detail) in the background
+- Keywords: Angry, Impulsive, Attacking
+
+Ghost
+- Black shadow / ghost
+- main color black
+- dark background (night, no detail)
+- Keywords: Death, Sickness
+
+Mechatron
+- Steampunky Robot Monster
+- main color yellow (bronze / gold)
+- Keywords: Artificial, Mechanical, Indifferent
+
+Paladin
+- White clothed knight on a white horse
+- main color white
+- Keywords: Lawful, Ruler, Light, Sun
+
+Unicorn
+- white unicorn
+- focus color purple
+- Keyword: Selfless, Protector of the weak
+
+Giant Spider
+- A giant spider with some element showing its size (human to house sized)
+- focus color green
+- if background contains details(not required) they should be plants / natural things
+- Keywords: Nature, Growth
+
+Bird of Prey
+-
