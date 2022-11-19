@@ -205,6 +205,7 @@ html, body, #main-grid {
 
 .battlefield {
   background: darkolivegreen;
+  overflow: clip;
 }
 
 /* styling of the message box */
