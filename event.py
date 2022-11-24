@@ -1,87 +1,42 @@
+from typing import Union, Literal
+from pydantic import BaseModel, Field
 from dataclasses import dataclass, asdict
 
-class Event:
-    @staticmethod
-    def from_id(event_id, *args):
-        return event_classes[event_id](*args)
-
-    def serialize_for(self, player, game):
-        def serialize_field(key, value):
-            if 'player_id' in key or 'controller_id' in key or 'owner_id' in key:
-                if value is None:
-                    return key[:-3], None
-                return key[:-3], game.players[value].serialize_for(player)
-            elif 'card_secret_id' == key:
-                if value is not None:
-                    return 'card', game.cards[value].serialize_for(player)
-                else:
-                    return None, None
-            elif 'energy' == key:
-                return key, str(value)
-            elif isinstance(value, (int, str, type(None))):
-                return key, value
-            elif hasattr(value, 'serialize_for'):
-                return key, value.serialize_for(player)
-            elif hasattr(value, 'serialize'):
-                return key, value.serialize()
-            else:
-                return key, value
-        d = {'event_id': self.__class__.__name__}
-        for key, value in self.__dict__.items():
-            nkey, nvalue = serialize_field(key, value)
-            if nkey:
-                d[nkey] = nvalue
-        assert 'card_secret_id' not in d
-        return d
-
-    def serialize(self):
-        d = {'event_id': self.event_id}
-        d.update(asdict(self))
-        return d
-
-    def __str__(self):
-        return f'{self.__class__.__name__}({", ".join(map(str, self.__dict__.values()))})'
-
-event_classes = {}
-
-def event_id(event_id):
-    def klass(klass):
-        assert event_id not in event_classes, f'duplicate @event_id({event_id!r})'
-        klass.event_id = event_id
-        event_classes[event_id] = klass
-        return klass
+_event_classes = []
+def _register(klass):
+    _event_classes.append(klass)
     return klass
 
-@event_id('question')
-@dataclass(repr=False)
-class  QuestionEvent(Event):
+@_register
+class QuestionEvent(BaseModel):
+    event_type: Literal['question']
     question: object
 
-@event_id('pay_energy')
-@dataclass(repr=False)
-class PayEnergyEvent(Event):
+@_register
+class PayEnergyEvent(BaseModel):
+    event_type: Literal['pay_energy']
     player_id: str
     energy: object
     new_total: object = None
 
-@event_id('add_energy')
-@dataclass(repr=False)
-class AddEnergyEvent(Event):
+@_register
+class AddEnergyEvent(BaseModel):
+    event_type: Literal['add_energy']
     player_id: str
     energy: object
     new_total: object = None
 
-@event_id('create_player')
-@dataclass(repr=False)
-class CreatePlayerEvent(Event):
+@_register
+class CreatePlayerEvent(BaseModel):
+    event_type: Literal['create_player']
     player_id: str
     name: str
     cards: list
     next_in_turn_id: str
 
-@event_id('draw_card')
-@dataclass(repr=False)
-class DrawCardEvent(Event):
+@_register
+class DrawCardEvent(BaseModel):
+    event_type: Literal['draw_card']
     player_id: str
     card_secret_id: str
     card_id: str
@@ -95,179 +50,184 @@ class DrawCardEvent(Event):
             d['card_id'] = self.card_id
         return d
 
-@event_id('draw_empty')
-@dataclass(repr=False)
-class DrawEmptyEvent(Event):
+@_register
+class DrawEmptyEvent(BaseModel):
+    event_type: Literal['draw_empty']
     player_id: str
 
-@event_id('shuffle_library')
-@dataclass(repr=False)
-class ShuffleLibraryEvent(Event):
+@_register
+class ShuffleLibraryEvent(BaseModel):
+    event_type: Literal['shuffle_library']
     player_id: str
 
-@event_id('step')
-@dataclass(repr=False)
-class StepEvent(Event):
+@_register
+class StepEvent(BaseModel):
+    event_type: Literal['step']
     step: str
     active_player_id: str
 
-@event_id('clear_pool')
-@dataclass(repr=False)
-class ClearPoolEvent(Event):
+@_register
+class ClearPoolEvent(BaseModel):
+    event_type: Literal['clear_pool']
     player_id: str
 
-@event_id('priority')
-@dataclass(repr=False)
-class PriorityEvent(Event):
+@_register
+class PriorityEvent(BaseModel):
+    event_type: Literal['priority']
     player_id: str
 
-@event_id('passed')
-@dataclass(repr=False)
-class PassedEvent(Event):
+@_register
+class PassedEvent(BaseModel):
+    event_type: Literal['passed']
     player_id: str
 
-@event_id('enter_the_battlefield')
-@dataclass(repr=False)
-class EnterTheBattlefieldEvent(Event):
+@_register
+class EnterTheBattlefieldEvent(BaseModel):
+    event_type: Literal['enter_the_battlefield']
     card_secret_id: str
     art_id: str
     controller_id: str
     perm_id: str
     choices: dict
 
-@event_id('exit_the_battlefield')
-@dataclass(repr=False)
-class ExitTheBattlefieldEvent(Event):
+@_register
+class ExitTheBattlefieldEvent(BaseModel):
+    event_type: Literal['exit_the_battlefield']
     perm_id: str
 
-@event_id('put_in_graveyard')
-@dataclass(repr=False)
-class PutInGraveyardEvent(Event):
+@_register
+class PutInGraveyardEvent(BaseModel):
+    event_type: Literal['put_in_graveyard']
     card_secret_id: str
 
-@event_id('play_source')
-@dataclass(repr=False)
-class PlaySourceEvent(Event):
+@_register
+class PlaySourceEvent(BaseModel):
+    event_type: Literal['play_source']
     player_id: str
     card_secret_id: str
 
-@event_id('cast_spell')
-@dataclass(repr=False)
-class CastSpellEvent(Event):
+@_register
+class CastSpellEvent(BaseModel):
+    event_type: Literal['cast_spell']
     stack_id: str
     player_id: str
     card_secret_id: str
     target: str = None
 
-@event_id('activate_ability')
-@dataclass(repr=False)
-class ActivateAbilityEvent(Event):
+@_register
+class ActivateAbilityEvent(BaseModel):
+    event_type: Literal['activate_ability']
     stack_id: str
     perm_id: str
     ability_index: int
     choices: dict
 
-@event_id('stack_effect')
-@dataclass(repr=False)
-class StackEffectEvent(Event):
+@_register
+class StackEffectEvent(BaseModel):
+    event_type: Literal['stack_effect']
     stack_id: str
     perm_id: str
     effect: object
     choices: dict
 
-@event_id('create_trigger')
-@dataclass(repr=False)
-class CreateTriggerEvent(Event):
+@_register
+class CreateTriggerEvent(BaseModel):
+    event_type: Literal['create_trigger']
     trigger_id: str
     perm_id: str or None
     trigger: list
     effect: object
 
-@event_id('end_trigger')
-@dataclass(repr=False)
-class EndTriggerEvent(Event):
+@_register
+class EndTriggerEvent(BaseModel):
+    event_type: Literal['end_trigger']
     trigger_id: str
 
-@event_id('create_continuous_effect')
-@dataclass(repr=False)
-class CreateContinuousEffectEvent(Event):
+@_register
+class CreateContinuousEffectEvent(BaseModel):
+    event_type: Literal['create_continuous_effect']
     effect_id: str
     perm_id: str or None
     object_ids: list
     modifiers: list
     until_end_of_turn: bool
 
-@event_id('end_continuous_effect')
-@dataclass(repr=False)
-class EndContinuousEffectEvent(Event):
+@_register
+class EndContinuousEffectEvent(BaseModel):
+    event_type: Literal['end_continuous_effect']
     effect_id: str
 
-@event_id('resolve_tos')
-@dataclass(repr=False)
-class ResolveEvent(Event):
+@_register
+class ResolveEvent(BaseModel):
+    event_type: Literal['resolve_tos']
     stack_id: str
 
-@event_id('untap')
-@dataclass(repr=False)
-class UntapEvent(Event):
+@_register
+class UntapEvent(BaseModel):
+    event_type: Literal['untap']
     perm_id: str
 
-@event_id('tap')
-@dataclass(repr=False)
-class TapEvent(Event):
+@_register
+class TapEvent(BaseModel):
+    event_type: Literal['tap']
     perm_id: str
 
-@event_id('reset_pass')
-@dataclass(repr=False)
-class ResetPassEvent(Event):
-    pass
+@_register
+class ResetPassEvent(BaseModel):
+    event_type: Literal['reset_pass']
 
-@event_id('attack')
-@dataclass(repr=False)
-class AttackEvent(Event):
+@_register
+class AttackEvent(BaseModel):
+    event_type: Literal['attack']
     attacker_id: str
     player_id: str
 
-@event_id('block')
-@dataclass(repr=False)
-class BlockEvent(Event):
+@_register
+class BlockEvent(BaseModel):
+    event_type: Literal['block']
     attacker_id: object
     blocker_ids: list
 
-@event_id('damage')
-@dataclass(repr=False)
-class DamageEvent(Event):
+@_register
+class DamageEvent(BaseModel):
+    event_type: Literal['damage']
     perm_id: str
     damage: object
 
-@event_id('player_damage')
-@dataclass(repr=False)
-class PlayerDamageEvent(Event):
+@_register
+class PlayerDamageEvent(BaseModel):
+    event_type: Literal['player_damage']
     player_id: str
     damage: object
     new_total: int = None
 
-@event_id('remove_from_combat')
-@dataclass(repr=False)
-class RemoveFromCombatEvent(Event):
+@_register
+class RemoveFromCombatEvent(BaseModel):
+    event_type: Literal['remove_from_combat']
     perm_id: str
 
-@event_id('discard')
-@dataclass(repr=False)
-class DiscardEvent(Event):
+@_register
+class DiscardEvent(BaseModel):
+    event_type: Literal['discard']
     card_secret_id: str
 
-@event_id('lose')
-@dataclass(repr=False)
-class PlayerLosesEvent(Event):
+@_register
+class PlayerLosesEvent(BaseModel):
+    event_type: Literal['lose']
     player_id: str
 
-@event_id('clear_trigger')
-@dataclass(repr=False)
-class ClearTriggerEvent(Event):
-    pass
+@_register
+class ClearTriggerEvent(BaseModel):
+    event_type: Literal['clear_trigger']
 
-@event_id('clear_damage')
-@dataclass(repr=False)
-class ClearDamageEvent(Event):
-    pass
+@_register
+class ClearDamageEvent(BaseModel):
+    event_type: Literal['clear_damage']
+
+
+@_register
+class Event(BaseModel):
+    event: Union[tuple(_event_classes)] = Field(discriminator='event_type')
+
+if __name__ == '__main__':
+    print(Event.schema_json(indent=4))
