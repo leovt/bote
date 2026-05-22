@@ -626,8 +626,6 @@ def start_game(game):
     assert False
 
 def end_of_step(game):
-    for player in game.players.values():
-        yield ClearPoolEvent(player.player_id)
     yield PriorityEvent(None)
 
     if game.step == STEP.END_OF_COMBAT:
@@ -679,6 +677,7 @@ def game_events(game, skip_start):
 
 def turn_based_actions(game):
     if game.step == STEP.UNTAP:
+        yield ClearPoolEvent(game.active_player.player_id)
         for permanent in game.battlefield:
             if permanent.controller is game.active_player:
                 yield UntapEvent(permanent.perm_id)
