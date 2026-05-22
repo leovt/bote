@@ -51,6 +51,11 @@ class RuleCard:
         effect = None
         if 'effect' in spec:
             effect = EffectTemplate.parse(spec['effect'])
+        elif 'effects' in spec:
+            effect = [
+                EffectTemplate.parse(effect_spec)
+                for effect_spec in spec['effects']
+            ]
 
         return RuleCard(
             card_id = spec['card_id'],

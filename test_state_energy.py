@@ -1,8 +1,10 @@
 import unittest
 
+from cards import ArtCard, Card
 from energy import BLUE, GREEN, RED
-from event import ClearPoolEvent, StepEvent
-from state import Game, Player, end_of_step, turn_based_actions
+from event import ClearPoolEvent, StepEvent, event_classes
+from state import Game, Player, check_triggers, play_source, turn_based_actions
+from state import end_of_step
 from step import STEP
 
 
@@ -15,6 +17,11 @@ def minimal_game(step=STEP.PRECOMBAT_MAIN):
     game.active_player = player_one
     game.step = step
     return game, player_one, player_two
+
+
+def handle_all(game, events):
+    for event in events:
+        game.handle(event)
 
 
 class TestEnergyDrainTiming(unittest.TestCase):
@@ -61,6 +68,42 @@ class TestEnergyDrainTiming(unittest.TestCase):
         self.assertEqual(active_player.energy_pool.energy.total, 0)
         self.assertIsInstance(events[-1], StepEvent)
         self.assertEqual(events[-1].step, STEP.UPKEEP.name)
+
+    def test_source_adds_energy_when_it_enters(self):
+        game, active_player, _ = minimal_game()
+        source = Card('source-secret-id', ArtCard.get_by_id(10201), active_player)
+        game.cards[source.secret_id] = source
+        active_player.hand.add(source)
+
+        handle_all(game, play_source(game, active_player, source))
+
+        self.assertEqual(active_player.energy_pool.energy, RED)
+
+    def test_source_adds_energy_after_turn_start_drain(self):
+        game, active_player, _ = minimal_game(STEP.UNTAP)
+        source = Card('source-secret-id', ArtCard.get_by_id(10201), active_player)
+        game.cards[source.secret_id] = source
+        active_player.hand.add(source)
+
+        handle_all(game, play_source(game, active_player, source))
+        active_player.energy_pool.add(GREEN)
+
+        game.handle(StepEvent(STEP.UNTAP.name, active_player.player_id))
+        for event in turn_based_actions(game):
+            game.handle(event)
+
+        triggered_effect = check_triggers(game)[0]
+        self.assertEqual(triggered_effect.perm_id, next(iter(game.battlefield)).perm_id)
+        for event_spec in triggered_effect.effect:
+            kwargs = {
+                key: value
+                for key, value in event_spec.items()
+                if key != 'event_id'
+            }
+            event = event_classes[event_spec['event_id']](**kwargs)
+            game.handle(event)
+
+        self.assertEqual(active_player.energy_pool.energy, RED)
 
 
 if __name__ == '__main__':

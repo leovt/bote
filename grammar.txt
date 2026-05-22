@@ -27,10 +27,12 @@ effects: _effect (";" _effect)* [";"]
 _effect: _immediate_effect
        | triggered_effect
 
-triggered_effect: "when" trigger _immediate_effect
+triggered_effect: "when" trigger ":" _immediate_effect
 
 trigger: _object "gets" "tapped" -> tap_trigger
        | step "step" "begins" -> step_begin_trigger
+       | "your" "turn" "begins" -> turn_begin_trigger
+       | this "enters" "the" "battlefield" -> enters_battlefield_trigger
 
 _immediate_effect: damage_effect
        | add_energy_effect
@@ -58,7 +60,7 @@ _object: all | this | effect_controller | _chosen | controller_of | enchanted
 
 all: "all" selector
 this: "this"
-effect_controller: "you"
+effect_controller: "you" | "your"
 _chosen: chosen_spec | chosen_ref
 
 chosen_spec: "chosen" selector [chosen_label]

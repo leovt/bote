@@ -88,12 +88,13 @@ class Spell:
             assert False, f'unknown card types {self.card.types}.'
 
         if hasattr(self.card, 'effect') and self.card.effect:
-            effect = Effect(self.card.effect,
-                            game,
-                            game.objects_from_ids(self.choices),
-                            self.controller,
-                            permanent)
-            yield from effect.execute()
+            for template in effect_templates(self.card.effect):
+                effect = Effect(template,
+                                game,
+                                game.objects_from_ids(self.choices),
+                                self.controller,
+                                permanent)
+                yield from effect.execute()
 
     def __str__(self):
         return f'cast {self.card.name} @{self.controller.name}'
@@ -150,14 +151,22 @@ class TriggerOnStack:
         }
 
 
+def effect_templates(effect):
+    if not effect:
+        return []
+    if isinstance(effect, list):
+        return effect
+    return [effect]
+
+
 def cast_spell(game, player, card):
     choices = {}
     cost = card.cost
     if cost.variable:
         yield from choose_x(game, choices, player.energy_pool.energy.total - cost.total, player)
         cost = cost.replace_variable(choices['x'])
-    if card.effect:
-        yield from make_choices(game, choices, card.effect, player, None)
+    for effect in effect_templates(card.effect):
+        yield from make_choices(game, choices, effect, player, None)
     yield PayEnergyEvent(player.player_id, str(cost))
     yield CastSpellEvent(next(game.unique_ids), player.player_id, card.secret_id, choices)
 
@@ -400,6 +409,7 @@ class Game:
         self.step = STEP[event.step]
         self.trigger(('BEGIN_OF_STEP', self.step.name))
         if self.step == STEP.UNTAP:
+            self.trigger(('BEGIN_OF_TURN', self.active_player.player_id))
             for player in self.players.values():
                 player.sources_played_this_turn = 0
             for permanent in self.battlefield:
@@ -869,7 +879,12 @@ def can_play_source(player):
 
 def play_source(game, player, card):
     yield PlaySourceEvent(player.player_id, card.secret_id)
-    yield EnterTheBattlefieldEvent(card.secret_id, None, player.player_id, next(game.unique_ids), {})
+    perm_id = next(game.unique_ids)
+    yield EnterTheBattlefieldEvent(card.secret_id, None, player.player_id, perm_id, {})
+    permanent = game.battlefield[perm_id]
+    for template in effect_templates(card.effect):
+        effect = Effect(template, game, {}, player, permanent)
+        yield from effect.execute()
 
 def player_action(game, player):
     choices = {}

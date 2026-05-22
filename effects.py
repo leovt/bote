@@ -33,7 +33,7 @@ class ChosenSpecVisitor(lark.Visitor):
         self._ids = (f'@{i}' for i in itertools.count(1))
 
     def chosen_spec(self, tree):
-        if len(tree.children) == 2:
+        if len(tree.children) == 2 and tree.children[1] is not None:
             assert tree.children[1].data == 'chosen_label'
             label = str(tree.children[1].children[0])
             if label in self._def:
@@ -122,8 +122,26 @@ class Unparser(lark.Transformer):
     def add_energy_effect(self, args):
         return f'add {args[0]} to {args[1]} energy pool'
 
+    def this(self, args):
+        return 'this'
+
+    def triggered_effect(self, args):
+        return f'when {args[0]}: {args[1]}'
+
+    def tap_trigger(self, args):
+        return f'{args[0]} gets tapped'
+
+    def step_begin_trigger(self, args):
+        return f'{args[0].lower()} step begins'
+
+    def enters_battlefield_trigger(self, args):
+        return 'this enters the battlefield'
+
+    def turn_begin_trigger(self, args):
+        return 'your turn begins'
+
     def effect_controller(self, args):
-        return 'you'
+        return 'your'
 
     def chosen_ref(self, args):
         label = str(args[0])
@@ -175,7 +193,7 @@ class EffectTemplate:
     def parse(cls, src):
         tree = _parser.parse(src)
         visitor = ChosenSpecVisitor()
-        visitor.visit(tree)
+        visitor.visit_topdown(tree)
         choices = visitor._def
         transformer = Sequencer()
         tree = transformer.transform(tree)
@@ -283,10 +301,12 @@ class Executor(lark.Transformer):
         return [CreateContinuousEffectEvent(effect_id, perm_id, objects, modifiers, until_end_of_turn)]
 
     def triggered_effect(self, args):
-        trigger_id = next(self._context.game.unique_ids)
         perm_id = None
         if self._context.permanent:
             perm_id = self._context.permanent.perm_id
+        if args[0] == ('ENTERS_THE_BATTLEFIELD', perm_id):
+            return args[1]
+        trigger_id = next(self._context.game.unique_ids)
         #TODO: Problem: triggered events should be kept in unexecuted form.
         return [CreateTriggerEvent(trigger_id, perm_id, args[0], [evt.serialize() for evt in args[1]])]
 
@@ -301,6 +321,12 @@ class Executor(lark.Transformer):
 
     def step_begin_trigger(self, args):
         return ('BEGIN_OF_STEP', args[0])
+
+    def turn_begin_trigger(self, args):
+        return ('BEGIN_OF_TURN', self._context.controller.player_id)
+
+    def enters_battlefield_trigger(self, args):
+        return ('ENTERS_THE_BATTLEFIELD', args[0].perm_id)
 
 class Effect:
     def __init__(self, template, game, choices, controller, permanent):

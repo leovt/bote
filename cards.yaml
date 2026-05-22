@@ -82,10 +82,9 @@ cards:
       de: Feuerquelle
       ko: 불원
     type: source
-    abilities:
-      - cost: "{T}"
-        effect: "add {R} to you energy pool"
-        energy_ability: Yes
+    effects:
+      - "when this enters the battlefield: add {R} to your energy pool"
+      - "when your turn begins: add {R} to your energy pool"
 
     art:
       10201:
@@ -109,7 +108,7 @@ cards:
     abilities:
       - keyword: readiness
       - keyword: crush
-    effect: when end step begins destroy this
+    effect: "when end step begins: destroy this"
 
     art:
       10301:
@@ -206,7 +205,7 @@ cards:
       en: Outrage
     type: instant
     cost: '{R}{R}{2}'
-    effect: chosen .creature[1] gets 4 damage; controller of [1] gets 2 damage;
+    effect: chosen .creature [1] gets 4 damage; controller of [1] gets 2 damage;
 
     art:
       10901:
@@ -385,10 +384,9 @@ cards:
       de: Gaia
       ko: 가이아
     type: source
-    abilities:
-      - cost: "{T}"
-        effect: "add {G} to you energy pool"
-        energy_ability: Yes
+    effects:
+      - "when this enters the battlefield: add {G} to your energy pool"
+      - "when your turn begins: add {G} to your energy pool"
 
     art:
       20101:
@@ -402,7 +400,7 @@ cards:
       de: Überfluss
       ko: 과잉
     type: enchantment
-    effect: "when enchanted .source gets tapped add {G} to you energy pool"
+    effect: "when enchanted .source gets tapped: add {G} to your energy pool"
     cost: '{G}'
 
     art:

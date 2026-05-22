@@ -129,6 +129,7 @@ def art_svg(art_id, lang):
     rule_list = []
     if 'effect' in card:
         rule_list.append(escape(card['effect']))
+    rule_list.extend(escape(effect) for effect in card.get('effects', []))
     rule_list.extend(str_ability(a, lang) for a in card.get('abilities', []))
 
     flavour = art_card.get('flavour', {}).get(lang)
