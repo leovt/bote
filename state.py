@@ -1,4 +1,5 @@
 import weakref
+import logging
 
 from dataclasses import dataclass, field
 from collections import defaultdict, OrderedDict
@@ -13,6 +14,10 @@ from tools import Namespace, unique_identifiers
 from step import STEP, NEXT_STEP
 from cards import Card, ArtCard, Token
 from effects import Effect
+from rules_actions import put_in_graveyard_events as put_in_graveyard
+
+
+logger = logging.getLogger(__name__)
 
 
 def is_simple(value):
@@ -653,7 +658,9 @@ def game_events(game, skip_start):
             if game.priority_player:
                 while True:
                     yield from state_based_actions(game)
-                    triggered_abilities = check_triggers(game)
+                    triggered_abilities, stale_trigger_ids = check_triggers(game)
+                    for trigger_id in stale_trigger_ids:
+                        yield EndTriggerEvent(trigger_id)
                     yield ClearTriggerEvent()
                     if not triggered_abilities:
                         break
@@ -795,17 +802,6 @@ def lose_the_game(player):
     print(f'player {player.name} loses the game')
     assert False, 'not implemented'
 
-def put_in_graveyard(game, permanent):
-    yield ExitTheBattlefieldEvent(permanent.perm_id)
-    for effect_id in list(game.continuous_effects.keys_by_perm_id(permanent.perm_id)):
-        yield EndContinuousEffectEvent(effect_id)
-    for trigger_id in list(game.triggered_effects.keys_by_perm_id(permanent.perm_id)):
-        yield EndTriggerEvent(trigger_id)
-    if hasattr(permanent.card, 'secret_id'):
-        yield PutInGraveyardEvent(permanent.card.secret_id)
-    else:
-        assert permanent.card.token
-
 def end_continuous_effects(game):
     for effect_id in list(game.continuous_effects.keys_until_end_of_turn()):
         yield EndContinuousEffectEvent(effect_id)
@@ -833,12 +829,23 @@ def state_based_actions(game):
 
 def check_triggers(game):
     has_triggered = []
+    stale_trigger_ids = []
     for trigger in game.triggers:
-        for tr_effect in game.triggered_effects.values():
+        for trigger_id in list(game.triggered_effects.keys()):
+            tr_effect = game.triggered_effects[trigger_id]
+            if tr_effect.perm_id is not None and tr_effect.perm_id not in game.battlefield:
+                if trigger_id not in stale_trigger_ids:
+                    logger.warning(
+                        "Removing stale trigger %s for missing permanent %s",
+                        trigger_id,
+                        tr_effect.perm_id,
+                    )
+                    stale_trigger_ids.append(trigger_id)
+                continue
             if tuple(tr_effect.trigger) == tuple(trigger):
                 has_triggered.append(tr_effect)
 
-    return has_triggered
+    return has_triggered, stale_trigger_ids
 
 
 def open_priority(game):

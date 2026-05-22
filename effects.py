@@ -5,14 +5,13 @@ from keywords import KEYWORDS
 RESERVED_LABELS = ['enchanted', 'x']
 
 from event import (AddEnergyEvent,
-                   ExitTheBattlefieldEvent,
-                   PutInGraveyardEvent,
                    PlayerDamageEvent,
                    DamageEvent,
                    CreateContinuousEffectEvent,
                    EnterTheBattlefieldEvent,
                    CreateTriggerEvent,
                   )
+from rules_actions import put_in_graveyard_events
 
 def _parser():
     with open('grammar.txt') as grammar_txt:
@@ -249,10 +248,8 @@ class Executor(lark.Transformer):
         return [AddEnergyEvent(player.player_id, energy)]
 
     def destruction_effect(self, args):
-        # TODO: Problem: does not perform all the checks as Game.put_in_graveyard
         permanent = args[0]
-        return [ExitTheBattlefieldEvent(permanent.perm_id),
-                PutInGraveyardEvent(permanent.card.secret_id)]
+        return list(put_in_graveyard_events(self._context.game, permanent))
 
     def damage_effect(self, args):
         print(args)

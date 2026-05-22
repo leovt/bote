@@ -3,6 +3,7 @@ import unittest
 from cards import ArtCard, Card
 from energy import BLUE, GREEN, RED
 from event import ClearPoolEvent, StepEvent, event_classes
+from effects import Effect, EffectTemplate
 from state import Game, Player, check_triggers, play_source, turn_based_actions
 from state import end_of_step
 from step import STEP
@@ -92,7 +93,9 @@ class TestEnergyDrainTiming(unittest.TestCase):
         for event in turn_based_actions(game):
             game.handle(event)
 
-        triggered_effect = check_triggers(game)[0]
+        triggered_effects, stale_trigger_ids = check_triggers(game)
+        self.assertEqual(stale_trigger_ids, [])
+        triggered_effect = triggered_effects[0]
         self.assertEqual(triggered_effect.perm_id, next(iter(game.battlefield)).perm_id)
         for event_spec in triggered_effect.effect:
             kwargs = {
@@ -104,6 +107,39 @@ class TestEnergyDrainTiming(unittest.TestCase):
             game.handle(event)
 
         self.assertEqual(active_player.energy_pool.energy, RED)
+
+    def test_destroy_effect_cleans_up_source_trigger(self):
+        game, active_player, _ = minimal_game()
+        source = Card('source-secret-id', ArtCard.get_by_id(10201), active_player)
+        game.cards[source.secret_id] = source
+        active_player.hand.add(source)
+        handle_all(game, play_source(game, active_player, source))
+        permanent = next(iter(game.battlefield))
+        self.assertTrue(list(game.triggered_effects.keys_by_perm_id(permanent.perm_id)))
+
+        destroy = Effect(EffectTemplate.parse('destroy this'), game, {}, active_player, permanent)
+        handle_all(game, destroy.execute())
+
+        self.assertNotIn(permanent.perm_id, game.battlefield)
+        self.assertFalse(list(game.triggered_effects.keys_by_perm_id(permanent.perm_id)))
+
+    def test_stale_trigger_is_reported_for_cleanup(self):
+        game, active_player, _ = minimal_game()
+        source = Card('source-secret-id', ArtCard.get_by_id(10201), active_player)
+        game.cards[source.secret_id] = source
+        active_player.hand.add(source)
+        handle_all(game, play_source(game, active_player, source))
+        permanent = next(iter(game.battlefield))
+        trigger_id = next(iter(game.triggered_effects.keys_by_perm_id(permanent.perm_id)))
+        del game.battlefield[permanent.perm_id]
+        game.trigger(('BEGIN_OF_TURN', active_player.player_id))
+
+        with self.assertLogs('state', level='WARNING') as captured:
+            triggered_effects, stale_trigger_ids = check_triggers(game)
+
+        self.assertEqual(triggered_effects, [])
+        self.assertEqual(stale_trigger_ids, [trigger_id])
+        self.assertIn('Removing stale trigger', captured.output[0])
 
 
 if __name__ == '__main__':
