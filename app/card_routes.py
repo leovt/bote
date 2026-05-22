@@ -2,7 +2,8 @@ import os
 import base64
 import mimetypes
 import re
-from flask import abort, jsonify, request, render_template, redirect, url_for, Markup, escape
+from flask import abort, jsonify, request, render_template, redirect, url_for
+from markupsafe import Markup, escape
 import randimage
 
 from app import app

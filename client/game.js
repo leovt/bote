@@ -47,6 +47,156 @@ function write_message(message) {
   messages.scrollTop = messages.scrollHeight;
 }
 
+function clearElement(element) {
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+}
+
+function playerBySeat(snapshot, isMe) {
+  return snapshot.players.find(player => player.is_me === isMe);
+}
+
+function cardElementFromSnapshot(card) {
+  if (card.hidden) {
+    return getBackfaceCardElement(card.card_id || 'hidden-card');
+  }
+  return getCardElement(card);
+}
+
+function setCardState(element, card, permanent) {
+  element.classList.remove('tap', 'damaged', 'attacking', 'blocking');
+  if (permanent && permanent.status.tapped) {
+    element.classList.add('tap');
+  }
+  if (permanent && permanent.damage > 0) {
+    element.classList.add('damaged');
+  }
+  if (permanent && permanent.status.attacking_player_id) {
+    element.classList.add('attacking');
+  }
+  if (permanent && permanent.status.blocking_perm_id) {
+    element.classList.add('blocking');
+  }
+  if (permanent && permanent.keywords) {
+    permanent.keywords.forEach(keyword => element.classList.add(keyword));
+  }
+}
+
+function renderZone(elementId, cards) {
+  let zone = document.getElementById(elementId);
+  clearElement(zone);
+  cards.forEach(card => zone.appendChild(cardElementFromSnapshot(card)));
+}
+
+function renderBattlefield(snapshot, player, elementId) {
+  let zone = document.getElementById(elementId);
+  clearElement(zone);
+  snapshot.battlefield
+    .filter(permanent => permanent.controller_id === player.player_id)
+    .forEach(permanent => {
+      let element = cardElementFromSnapshot(permanent.card);
+      setCardState(element, permanent.card, permanent);
+      zone.appendChild(element);
+    });
+}
+
+function renderStack(snapshot) {
+  let stack = document.getElementById('stack');
+  clearElement(stack);
+  snapshot.stack.forEach(item => {
+    let element;
+    if (item.card) {
+      element = cardElementFromSnapshot(item.card);
+    }
+    else {
+      element = document.createElement('div');
+      element.className = 'card ability';
+      element.id = item.stack_id;
+      element.innerText = 'Effect';
+    }
+    stack.appendChild(element);
+  });
+}
+
+function renderPlayerStats(player, prefix) {
+  document.getElementById(`${prefix}-name`).innerText = player.name;
+  document.getElementById(`${prefix}-life`).innerText = `Life: ${player.life}`;
+  document.getElementById(`${prefix}-energy`).innerText = `Energy: ${player.energy.pool}`;
+}
+
+function renderQuestionFromSnapshot(snapshot) {
+  let question = snapshot.question;
+  let btn = document.getElementById('confirm');
+  btn.innerText = "...";
+  btn.disabled = true;
+  clear_instruction();
+  var arrow = document.getElementById('arrow');
+  arrow.style.fill = "lightgrey";
+
+  if (!question) {
+    cleanupChooseActionUI();
+    window.question = null;
+    return;
+  }
+
+  if (question.player.is_me) {
+    if (window.question && window.question.id === question.id) {
+      cleanupFunctions[window.question.question]();
+      window.question = null;
+    }
+    var pass_oc = pass_only_choice(question);
+    var autopass = document.getElementById('autopass');
+    if (autopass.checked && pass_oc) {
+      window.setTimeout(send_answer, 1000, pass_oc);
+    }
+    else {
+      build_question_ui(question);
+    }
+  }
+  else {
+    btn.innerText = "waiting for " + question.player.name;
+    window.log_refresh_timeout_id = window.setTimeout(log_refresh, 1000);
+  }
+}
+
+function renderGameView(snapshot) {
+  let me = playerBySeat(snapshot, true);
+  let opponent = playerBySeat(snapshot, false);
+  if (!me || !opponent) {
+    return;
+  }
+
+  renderPlayerStats(me, 'my');
+  renderPlayerStats(opponent, 'op');
+  renderZone('hand', snapshot.zones[me.player_id].hand);
+  renderZone('my-graveyard', snapshot.zones[me.player_id].graveyard);
+  renderZone('op-graveyard', snapshot.zones[opponent.player_id].graveyard);
+  document.getElementById('op-hand').innerText = `${opponent.hand_count} cards`;
+  renderBattlefield(snapshot, me, 'bf-mine');
+  renderBattlefield(snapshot, opponent, 'bf-theirs');
+  renderStack(snapshot);
+  indicate_step({
+    step: snapshot.turn.step,
+    active_player: {is_me: snapshot.turn.active_player_id === me.player_id}
+  });
+  renderQuestionFromSnapshot(snapshot);
+}
+
+function refreshGameView() {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.addEventListener("load", function () {
+    if (httpRequest.status >= 400) {
+      var newWindow = window.open('', '_blank');
+      newWindow.document.write(httpRequest.responseText);
+      return;
+    }
+    renderGameView(JSON.parse(httpRequest.responseText));
+  });
+  httpRequest.open("GET", GAME_VIEW_URI);
+  httpRequest.send();
+}
+
 nextEvent = 0;
 function handleGameEvent(event) {
   //console.log({nextEvent: nextEvent, event_no: event.event_no, event_id: event.event_id});
@@ -308,28 +458,7 @@ function log_refresh () {
     }
     result = JSON.parse(httpRequest.responseText);
     result.event_log.forEach(handleGameEvent);
-    if (result.question) {
-      var btn = document.getElementById('confirm');
-      btn.innerText = "...";
-      btn.disabled = true;
-      clear_instruction();
-      var arrow = document.getElementById('arrow');
-      arrow.style.fill = "lightgrey";
-      if (result.question.player.is_me) {
-        var pass_oc = pass_only_choice(result.question);
-        var autopass = document.getElementById('autopass');
-        if (autopass.checked && pass_oc) {
-          window.setTimeout(send_answer, 1000, pass_oc);
-        }
-        else {
-          build_question_ui(result.question);
-        }
-      }
-      else {
-        btn.innerText = "waiting for " + result.question.player.name;
-        window.log_refresh_timeout_id = window.setTimeout(log_refresh, 1000);
-      }
-    }
+    refreshGameView();
     log_refresh_running = false;
   });
   let filter = Object.getOwnPropertyNames(gameEventHandler).join("_");
@@ -726,16 +855,19 @@ function cleanupChooseActionUI() {
   forEachKeyValue(question.choices, (action_id, action) => {
     if (action.action == 'play') {
       let card = document.getElementById(action.card_id);
+      if (!card) return;
       card.classList.remove('playable');
       card.removeAttribute('onclick');
     }
     if (action.action == 'discard') {
       let card = document.getElementById(action.card_id);
+      if (!card) return;
       card.classList.remove('discardable');
       card.removeAttribute('onclick');
     }
     if (action.action == 'activate') {
       let card = document.getElementById(action.card_id);
+      if (!card) return;
       card.classList.remove('activateable');
       let menu = document.getElementById('menu-'+action.card_id);
       if (menu) menu.parentNode.removeChild(menu);

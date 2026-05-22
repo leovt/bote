@@ -7,11 +7,21 @@ from flask_login import login_required, current_user
 
 from app import app
 from app.models import Deck, GameFrontend
+from app.game_view import serialize_game_view
 
 from state import Game
 
 
 games = {}
+
+
+def player_for_user(game, user):
+    if user.is_anonymous or game.game is None:
+        return None
+    for player in game.game.players.values():
+        if player.name == user.username:
+            return player
+    return None
 
 @app.route('/games')
 @login_required
@@ -133,6 +143,27 @@ def answer(game_id):
     game.question = None
     game.answer = ans
     return ('', 204)
+
+
+@app.route('/api/game/<game_id>/view')
+@login_required
+def game_view(game_id):
+    game = games.get(game_id)
+    if not game:
+        abort(404)
+
+    if current_user.username not in (game.user1, game.user2):
+        abort(403)
+
+    question = game.advance_game_state()
+    player = player_for_user(game, current_user)
+    if game.status == 'started' and player is None:
+        abort(403)
+
+    response = serialize_game_view(game, player)
+    if question:
+        response['question'] = question.serialize_for(player)
+    return jsonify(response)
 
 
 @app.route('/game/<game_id>/save', methods=["POST"])

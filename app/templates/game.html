@@ -65,6 +65,7 @@
 <script src="{{ url_for('static', filename='game.js') }}"></script>
 <script>
 game_uri = document.URL;
+GAME_VIEW_URI = "{{ url_for('game_view', game_id=game.id) }}";
 BACKFACE_URL = "{{ url_for('static', filename='backface.png') }}";
 VIDEOCONFERENCE_URL = 'https://meet.jit.si/{{ game.id }}';
 log_refresh();
