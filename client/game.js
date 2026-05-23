@@ -1002,7 +1002,7 @@ var indicate_step = (function() {
   };
 })();
 
-function animatedMove(element, target, delay=900){
+function animatedMove(element, target, delay=300){
   if (target === element.parentNode){
     return;
   }

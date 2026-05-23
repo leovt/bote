@@ -1,6 +1,6 @@
 #main-grid {
   display: grid;
-  grid-template-columns: 3fr 2fr 1fr 6fr;
+  grid-template-columns: 3fr 2fr 1fr 6fr minmax(14rem, 18rem);
   grid-template-rows: repeat(12, 1fr);
   justify-items: stretch;
   align-items: stretch;
@@ -97,8 +97,8 @@ html, body, #main-grid {
 }
 
 #msgbox {
-  grid-column: 2 / span 3;
-  grid-row: 12;
+  grid-column: 5;
+  grid-row: 1 / span 12;
   overflow: hidden;
 }
 
@@ -228,12 +228,8 @@ html, body, #main-grid {
 }
 
 #messages li {
-  background: lightblue;
-  border: 1px solid black;
-  border-radius: 0.5rem;
-  box-shadow: 0.2rem 0.2rem 0.3rem gray;
-  padding: 0.4rem;
-  margin: 0.3rem;
+  padding: 0.4rem 0.2rem;
+  margin: 0;
   max-width: 100%;
   word-wrap: break-word;
   box-sizing: border-box;
