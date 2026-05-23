@@ -50,6 +50,13 @@ class GameRunError(Exception):
         self.original_error = original_error
         self.game = game
         self.deserialized_game = deserialized_game
+        self.traceback = ''.join(
+            traceback.format_exception(
+                type(original_error),
+                original_error,
+                original_error.__traceback__,
+            )
+        )
 
 
 class Coverage:
@@ -220,6 +227,7 @@ def parse_args():
     parser.add_argument('--deck', choices=sorted(DECKS), default='test')
     parser.add_argument('--seed', type=int)
     parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('--traceback', action='store_true')
     parser.add_argument('--stop-on-failure', action='store_true')
     return parser.parse_args()
 
@@ -254,11 +262,15 @@ def main():
                 f'Game {game_index}: failed after {len(error.game.event_log)} events '
                 f'with {error.original_error.__class__.__name__}: {error.original_error}'
             )
+            if args.traceback:
+                print(error.traceback, end='')
             if args.stop_on_failure:
                 raise error.original_error
         except Exception as error:
             coverage.record_failure(game_index, error)
             print(f'Game {game_index}: failed with {error.__class__.__name__}: {error}')
+            if args.traceback:
+                traceback.print_exception(type(error), error, error.__traceback__)
             if args.stop_on_failure:
                 raise
 
@@ -271,6 +283,6 @@ if __name__ == '__main__':
         import state
         state.print = lambda *a, **b: None
         main()
-    except:
+    except Exception:
         traceback.print_exc()
         pdb.post_mortem()
