@@ -292,7 +292,7 @@ class Executor(lark.Transformer):
         objects = [args[0].perm_id]
         modifiers = args[1]
         until_end_of_turn = False
-        if len(args)>2:
+        if len(args) > 2 and args[2] is not None:
             assert args[2].data == 'until_end_of_turn'
             until_end_of_turn = True
         return [CreateContinuousEffectEvent(effect_id, perm_id, objects, modifiers, until_end_of_turn)]
