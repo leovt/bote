@@ -45,17 +45,33 @@ def upsert_deck(owner, name, cards, public=True):
     return deck
 
 
-def seed(username, email, password, deck_name, red_deck_name):
+def delete_deck(deck):
+    for deck_card in deck.cards:
+        db.session.delete(deck_card)
+    db.session.delete(deck)
+
+
+def seed(username, email, password, archive_username, archive_email, deck_name, red_deck_name):
     os.makedirs('savegames', exist_ok=True)
     with app.app_context():
         user = upsert_user(username, email, password)
+        archive_user = upsert_user(archive_username, archive_email, None)
         db.session.flush()
         decks = [
-            upsert_deck(user, deck_name, TEST_DECK),
-            upsert_deck(user, red_deck_name, RED_TEST_DECK),
+            upsert_deck(archive_user, deck_name, TEST_DECK, public=True),
+            upsert_deck(archive_user, red_deck_name, RED_TEST_DECK, public=True),
         ]
+        removed_user_decks = []
+        if user.id != archive_user.id:
+            for deck in Deck.query.filter(
+                    Deck.owner_id == user.id,
+                    Deck.name.in_([deck_name, red_deck_name])):
+                removed_user_decks.append(deck.name)
+                delete_deck(deck)
         summary = {
             'username': user.username,
+            'archive_username': archive_user.username,
+            'removed_user_decks': removed_user_decks,
             'decks': [
                 {
                     'name': deck.name,
@@ -73,6 +89,8 @@ def parse_args():
     parser.add_argument('--username', default='Leo')
     parser.add_argument('--email', default='leo@example.test')
     parser.add_argument('--password', default='password')
+    parser.add_argument('--archive-username', default='deck_archive')
+    parser.add_argument('--archive-email', default='deck-archive@example.test')
     parser.add_argument('--deck-name', default='Test Deck')
     parser.add_argument('--red-deck-name', default='Red Test Deck')
     return parser.parse_args()
@@ -84,6 +102,8 @@ def main():
         username=args.username,
         email=args.email,
         password=args.password,
+        archive_username=args.archive_username,
+        archive_email=args.archive_email,
         deck_name=args.deck_name,
         red_deck_name=args.red_deck_name,
     )
@@ -91,7 +111,13 @@ def main():
         f"{deck['name']!r} ({deck['card_rows']} card rows)"
         for deck in summary['decks']
     )
-    print(f"Seeded user {summary['username']!r} with decks {deck_summaries}.")
+    print(
+        f"Seeded user {summary['username']!r} and public decks for "
+        f"{summary['archive_username']!r}: {deck_summaries}."
+    )
+    if summary['removed_user_decks']:
+        removed_decks = ', '.join(repr(name) for name in summary['removed_user_decks'])
+        print(f"Removed old personal seed decks from {summary['username']!r}: {removed_decks}.")
 
 
 if __name__ == '__main__':
