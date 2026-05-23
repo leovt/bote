@@ -171,7 +171,8 @@ def cast_spell(game, player, card):
         yield from choose_x(game, choices, player.energy_pool.energy.total - cost.total, player)
         cost = cost.replace_variable(choices['x'])
     for effect in effect_templates(card.effect):
-        yield from make_choices(game, choices, effect, player, None)
+        if not (yield from make_choices(game, choices, effect, player, None)):
+            return
     yield PayEnergyEvent(player.player_id, str(cost))
     yield CastSpellEvent(next(game.unique_ids), player.player_id, card.secret_id, choices)
 
@@ -918,19 +919,22 @@ def player_action(game, player):
                     action='play', card_id=source.known_identity, text=f'play {source.name}')
 
         for card in player.hand.of_types('creature', 'sorcery', 'enchantment'):
-            if player.energy_pool.can_pay(card.cost.replace_variable(0)):
+            if (player.energy_pool.can_pay(card.cost.replace_variable(0)) and
+                    can_make_all_choices(game, effect_templates(card.effect), player, None)):
                 add_choice([(cast_spell, (game, player, card), {})],
                     action='play', card_id=card.known_identity, text=f'cast {card.name}')
 
     for card in player.hand.of_types('instant'):
-        if player.energy_pool.can_pay(card.cost.replace_variable(0)):
+        if (player.energy_pool.can_pay(card.cost.replace_variable(0)) and
+                can_make_all_choices(game, effect_templates(card.effect), player, None)):
             add_choice([(cast_spell, (game, player, card), {})],
                 action='play', card_id=card.known_identity, text=f'cast {card.name}')
 
     for permanent in game.battlefield.controlled_by(player):
         for ab_key, ability in enumerate(permanent.abilities):
             if isinstance(ability, ActivatableAbility):
-                if all(cost.can_pay(permanent, permanent.card) for cost in ability.cost):
+                if (all(cost.can_pay(permanent, permanent.card) for cost in ability.cost) and
+                        can_make_choices(game, ability.effect, player, permanent)):
                     add_choice([(cost.pay, (permanent, permanent.card), {})
                         for cost in ability.cost] + [(activate_ability, (game, ability, ab_key, player, permanent), {})],
                         action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
@@ -946,13 +950,26 @@ def player_action(game, player):
 
 def activate_ability(game, ability, ab_idx, controller, permanent):
     choices = {}
-    yield from make_choices(game, choices, ability.effect, controller, permanent)
+    if not (yield from make_choices(game, choices, ability.effect, controller, permanent)):
+        return
 
     if ability.is_energy_ability:
         effect = Effect(ability.effect, game, game.objects_from_ids(choices), controller, permanent)
         yield from effect.execute()
     else:
         yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, choices)
+
+def can_make_all_choices(game, effects, controller, permanent):
+    return all(
+        can_make_choices(game, effect, controller, permanent)
+        for effect in effects
+    )
+
+def can_make_choices(game, effect, controller, permanent):
+    return all(
+        any(select_objects(game, selector, controller, permanent))
+        for selector in effect.choices.values()
+    )
 
 def make_choices(game, choices, effect, controller, permanent):
     for id, selector in effect.choices.items():
@@ -961,13 +978,13 @@ def make_choices(game, choices, effect, controller, permanent):
             candidate.update({'action': 'target', 'text': 'target'})
             question_choices[next(game.unique_ids)] = candidate
         if not question_choices:
-            print('No valid choice found')
-            return #no valid choice
+            return False
         question = ChooseAction(game, controller, question_choices, 'target')
         yield QuestionEvent(question)
         answer = game.answer
         assert answer in question_choices
         choices[id] = question_choices[answer]
+    return True
 
 def choose_x(game, choices, max, controller):
     question_choices = {}
