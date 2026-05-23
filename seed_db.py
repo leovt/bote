@@ -3,7 +3,7 @@ import os
 
 from app import app, db
 from app.models import Deck, DeckCard, User
-from dummy_deck import TEST_DECK
+from dummy_deck import RED_TEST_DECK, TEST_DECK
 
 
 def upsert_user(username, email, password):
@@ -45,16 +45,24 @@ def upsert_deck(owner, name, cards, public=True):
     return deck
 
 
-def seed(username, email, password, deck_name):
+def seed(username, email, password, deck_name, red_deck_name):
     os.makedirs('savegames', exist_ok=True)
     with app.app_context():
         user = upsert_user(username, email, password)
         db.session.flush()
-        deck = upsert_deck(user, deck_name, TEST_DECK)
+        decks = [
+            upsert_deck(user, deck_name, TEST_DECK),
+            upsert_deck(user, red_deck_name, RED_TEST_DECK),
+        ]
         summary = {
             'username': user.username,
-            'deck_name': deck.name,
-            'card_rows': deck.cards.count(),
+            'decks': [
+                {
+                    'name': deck.name,
+                    'card_rows': deck.cards.count(),
+                }
+                for deck in decks
+            ],
         }
         db.session.commit()
         return summary
@@ -66,6 +74,7 @@ def parse_args():
     parser.add_argument('--email', default='leo@example.test')
     parser.add_argument('--password', default='password')
     parser.add_argument('--deck-name', default='Test Deck')
+    parser.add_argument('--red-deck-name', default='Red Test Deck')
     return parser.parse_args()
 
 
@@ -76,11 +85,13 @@ def main():
         email=args.email,
         password=args.password,
         deck_name=args.deck_name,
+        red_deck_name=args.red_deck_name,
     )
-    print(
-        f"Seeded user {summary['username']!r} with deck "
-        f"{summary['deck_name']!r} ({summary['card_rows']} card rows)."
+    deck_summaries = ', '.join(
+        f"{deck['name']!r} ({deck['card_rows']} card rows)"
+        for deck in summary['decks']
     )
+    print(f"Seeded user {summary['username']!r} with decks {deck_summaries}.")
 
 
 if __name__ == '__main__':
