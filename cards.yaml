@@ -365,6 +365,8 @@ cards:
         frame: red
 
   901:
+    names:
+      en: Goblin
     strength: 1
     toughness: 1
     token: True
@@ -375,6 +377,22 @@ cards:
 
     art:
       90101:
+        image: ''
+        attribution: ''
+
+  902:
+    names:
+      en: Elemental
+    strength: 1
+    toughness: 1
+    token: True
+    color: red
+    type: creature
+    subtypes:
+      - elemental
+
+    art:
+      90201:
         image: ''
         attribution: ''
 
