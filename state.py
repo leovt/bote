@@ -186,7 +186,7 @@ class Permanent:
         self.perm_id = perm_id
         self._game_ref = weakref.ref(game)
         self.card = card
-        self.controller = controller
+        self.base_controller = controller
         self.choices = choices
 
         self.tapped: bool = False
@@ -211,6 +211,16 @@ class Permanent:
     @property
     def abilities(self):
         return self.card.abilities
+
+    @property
+    def controller(self):
+        ret = self.base_controller
+        for effect in self.game.continuous_effects.values_by_object_id(self.perm_id):
+            assert self.perm_id in effect.object_ids
+            for modifier in effect.modifiers:
+                if modifier[0] == 'change_controller':
+                    ret = self.game.players[modifier[1]]
+        return ret
 
     @property
     def toughness(self):

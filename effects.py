@@ -230,6 +230,9 @@ class Sequencer(lark.Transformer):
     def remove_keyword(self, args):
         return ['remove_keyword', args[0]]
 
+    def change_controller(self, args):
+        return ['change_controller', args[0]]
+
     def step(self, args):
         return args[0].upper()
 
@@ -290,12 +293,22 @@ class Executor(lark.Transformer):
         if self._context.permanent:
             perm_id = self._context.permanent.perm_id
         objects = [args[0].perm_id]
-        modifiers = args[1]
+        modifiers = [
+            self.resolve_modifier(modifier)
+            for modifier in args[1]
+        ]
         until_end_of_turn = False
         if len(args) > 2 and args[2] is not None:
             assert args[2].data == 'until_end_of_turn'
             until_end_of_turn = True
         return [CreateContinuousEffectEvent(effect_id, perm_id, objects, modifiers, until_end_of_turn)]
+
+    def resolve_modifier(self, modifier):
+        if modifier[0] == 'change_controller':
+            controller = modifier[1]
+            if isinstance(controller, lark.Tree) and controller.data == 'effect_controller':
+                return ['change_controller', self._context.controller.player_id]
+        return modifier
 
     def triggered_effect(self, args):
         perm_id = None
