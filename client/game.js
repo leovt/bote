@@ -240,13 +240,14 @@ const gameEventHandler = {
       delta_stat: m => (m[1]<0?"":"+") + m[1] + "/" + (m[2]<0?"":"+") + m[2],
       add_keyword: m => m[1],
       remove_keyword: m => 'not ' + m[1],
+      change_controller: () => 'controlled',
     };
     event.objects.forEach(obj => {
       let card = getCardElement(obj.card);
       let modifiers = card.children[1];
       event.modifiers.forEach(mod => {
         let element = document.createElement('div');
-        element.innerText = mod_text[mod[0]](mod);
+        element.innerText = (mod_text[mod[0]] || (m => m[0]))(mod);
         element.setAttribute('class', 'modifier ' + mod[0] + ' ' + event.effect_id);
         modifiers.appendChild(element);
       });
@@ -382,7 +383,7 @@ const gameEventHandler = {
   },
 
   AttackEvent: function(event) {
-    write_message(`${event.player.name} received ${event.damage} damage.`);
+    write_message(`${event.attacker.card.name} attacks ${event.player.name}.`);
     let attacker = attackers[event.attacker.card.card_id];
     if (!attacker) {
       attacker = Attacker(event.attacker.card.card_id, null);
