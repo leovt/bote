@@ -210,6 +210,21 @@ class EffectTemplate:
     def unparse(self):
         return Unparser(self.choices).transform(self.tree)
 
+    def is_energy_only(self):
+        effect_types = {
+            'add_energy_effect',
+            'continuous_effect',
+            'create_token_effect',
+            'damage_effect',
+            'destruction_effect',
+        }
+        results = {
+            subtree.data
+            for subtree in self.tree.iter_subtrees()
+            if subtree.data in effect_types
+        }
+        return results == {'add_energy_effect'}
+
 
 class Sequencer(lark.Transformer):
     '''transform the parse tree into a sequence of execution-templates'''
@@ -326,8 +341,6 @@ class Executor(lark.Transformer):
         perm_id = None
         if self._context.permanent:
             perm_id = self._context.permanent.perm_id
-        if args[0] == ('ENTERS_THE_BATTLEFIELD', perm_id):
-            return args[1]
         trigger_id = next(self._context.game.unique_ids)
         #TODO: Problem: triggered events should be kept in unexecuted form.
         return [CreateTriggerEvent(trigger_id, perm_id, args[0], [evt.serialize() for evt in args[1]])]

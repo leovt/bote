@@ -144,11 +144,7 @@ class TriggerOnStack:
     permanent: object
 
     def resolve(self, game):
-        for event_spec in self.effect:
-            kwargs = dict(event_spec)
-            del kwargs['event_id']
-            event = event_classes[event_spec['event_id']](**kwargs)
-            yield event
+        yield from events_from_specs(self.effect)
 
     def __str__(self):
         return f'triggered effect of {self.permanent.card.name}'
@@ -166,6 +162,20 @@ def effect_templates(effect):
     if isinstance(effect, list):
         return effect
     return [effect]
+
+
+def events_from_specs(event_specs):
+    for event_spec in event_specs:
+        kwargs = dict(event_spec)
+        del kwargs['event_id']
+        yield event_classes[event_spec['event_id']](**kwargs)
+
+
+def event_specs_are_energy_only(event_specs):
+    return bool(event_specs) and all(
+        event_spec['event_id'] == AddEnergyEvent.event_id
+        for event_spec in event_specs
+    )
 
 
 def cast_spell(game, player, card):
@@ -459,6 +469,7 @@ class Game:
         permanent = Permanent(event.perm_id, self, card, self.players[event.controller_id], self.objects_from_ids(event.choices))
         self.battlefield[permanent.perm_id] = permanent
         event.permanent = permanent.serialize_for(self.players[0])
+        self.trigger(('ENTERS_THE_BATTLEFIELD', permanent.perm_id))
 
     def handle_ExitTheBattlefieldEvent(self, event):
         del self.battlefield[event.perm_id]
@@ -692,6 +703,8 @@ def game_events(game, skip_start):
                         if isinstance(tr_effect, tuple):
                             (permanent, ab_idx, ability) = tr_effect
                             yield ActivateAbilityEvent(next(game.unique_ids), permanent.perm_id, ab_idx, {})
+                        elif event_specs_are_energy_only(tr_effect.effect):
+                            yield from events_from_specs(tr_effect.effect)
                         else:
                             yield StackEffectEvent(next(game.unique_ids), tr_effect.perm_id, tr_effect.effect, None)
 
@@ -985,7 +998,7 @@ def activate_ability(game, ability, ab_idx, controller, permanent):
     if not (yield from make_choices(game, choices, ability.effect, controller, permanent)):
         return
 
-    if ability.is_energy_ability:
+    if ability.effect.is_energy_only():
         effect = Effect(ability.effect, game, game.objects_from_ids(choices), controller, permanent)
         yield from effect.execute()
     else:

@@ -43,8 +43,7 @@ class RuleCard:
             if 'cost' in ab_spec:
                 abilities.append(
                     ActivatableAbility(parse_cost(ab_spec['cost']),
-                                       EffectTemplate.parse(ab_spec['effect']),
-                                       ab_spec.get('energy_ability', False)))
+                                       EffectTemplate.parse(ab_spec['effect'])))
             else:
                 abilities.append(ab_spec)
 

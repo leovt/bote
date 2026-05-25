@@ -3,15 +3,29 @@ import unittest
 from cards import ArtCard, Card
 from energy import BLUE, GREEN, RED
 from event import (
+    ActivateAbilityEvent,
+    AddEnergyEvent,
     CastSpellEvent,
     ClearPoolEvent,
     EnterTheBattlefieldEvent,
     PutInGraveyardEvent,
+    QuestionEvent,
+    StackEffectEvent,
     StepEvent,
     event_classes,
 )
 from effects import Effect, EffectTemplate
-from state import Game, Player, Spell, check_triggers, play_source, turn_based_actions
+from state import (
+    Game,
+    Player,
+    Spell,
+    activate_ability,
+    check_triggers,
+    event_specs_are_energy_only,
+    game_events,
+    play_source,
+    turn_based_actions,
+)
 from state import end_of_step
 from step import STEP
 
@@ -30,6 +44,53 @@ def minimal_game(step=STEP.PRECOMBAT_MAIN):
 def handle_all(game, events):
     for event in events:
         game.handle(event)
+
+
+def handle_pending_triggers(game):
+    game.priority_player = game.active_player
+    emitted = []
+    for event in game_events(game, skip_start=True):
+        if isinstance(event, QuestionEvent):
+            break
+        emitted.append(event)
+        game.handle(event)
+    return emitted
+
+
+class TestEnergyOnlyTemplates(unittest.TestCase):
+    def test_energy_only_recognizes_immediate_and_triggered_energy(self):
+        energy_only_rules = [
+            'add {G} to you energy pool',
+            'add {G} to you energy pool; add {R} to you energy pool',
+            'when your turn begins: add {G} to your energy pool',
+        ]
+
+        for rule_text in energy_only_rules:
+            with self.subTest(rule_text=rule_text):
+                self.assertTrue(EffectTemplate.parse(rule_text).is_energy_only())
+
+    def test_energy_only_rejects_non_energy_and_mixed_results(self):
+        non_energy_rules = [
+            'chosen .creature has +1/+1 until end of turn',
+            'when your turn begins: add {G} to your energy pool; create 1 (90201) token',
+        ]
+
+        for rule_text in non_energy_rules:
+            with self.subTest(rule_text=rule_text):
+                self.assertFalse(EffectTemplate.parse(rule_text).is_energy_only())
+
+
+class TestEnergyOnlyEventSpecs(unittest.TestCase):
+    def test_only_add_energy_specs_are_energy_only(self):
+        self.assertTrue(event_specs_are_energy_only([
+            AddEnergyEvent(0, '{R}').serialize(),
+            AddEnergyEvent(0, '{G}').serialize(),
+        ]))
+        self.assertFalse(event_specs_are_energy_only([
+            AddEnergyEvent(0, '{R}').serialize(),
+            EnterTheBattlefieldEvent(None, 90201, 0, 'token-id', {}).serialize(),
+        ]))
+        self.assertFalse(event_specs_are_energy_only([]))
 
 
 class TestEnergyDrainTiming(unittest.TestCase):
@@ -83,9 +144,14 @@ class TestEnergyDrainTiming(unittest.TestCase):
         game.cards[source.secret_id] = source
         active_player.hand.add(source)
 
-        handle_all(game, play_source(game, active_player, source))
+        events = []
+        for event in play_source(game, active_player, source):
+            events.append(event)
+            game.handle(event)
+        events.extend(handle_pending_triggers(game))
 
         self.assertEqual(active_player.energy_pool.energy, RED)
+        self.assertFalse(any(isinstance(event, StackEffectEvent) for event in events))
 
     def test_source_adds_energy_after_turn_start_drain(self):
         game, active_player, _ = minimal_game(STEP.UNTAP)
@@ -94,6 +160,7 @@ class TestEnergyDrainTiming(unittest.TestCase):
         active_player.hand.add(source)
 
         handle_all(game, play_source(game, active_player, source))
+        handle_pending_triggers(game)
         active_player.energy_pool.add(GREEN)
 
         game.handle(StepEvent(STEP.UNTAP.name, active_player.player_id))
@@ -114,6 +181,59 @@ class TestEnergyDrainTiming(unittest.TestCase):
             game.handle(event)
 
         self.assertEqual(active_player.energy_pool.energy, RED)
+
+    def test_turn_start_energy_trigger_does_not_use_stack(self):
+        game, active_player, _ = minimal_game(STEP.UNTAP)
+        source = Card('source-secret-id', ArtCard.get_by_id(10201), active_player)
+        game.cards[source.secret_id] = source
+        active_player.hand.add(source)
+        handle_all(game, play_source(game, active_player, source))
+        handle_pending_triggers(game)
+        active_player.energy_pool.clear()
+        game.trigger(('BEGIN_OF_TURN', active_player.player_id))
+
+        emitted = handle_pending_triggers(game)
+
+        self.assertTrue(any(isinstance(event, AddEnergyEvent) for event in emitted))
+        self.assertFalse(any(isinstance(event, StackEffectEvent) for event in emitted))
+        self.assertEqual(active_player.energy_pool.energy, RED)
+
+    def test_activated_energy_effect_does_not_use_stack(self):
+        game, active_player, _ = minimal_game()
+        elf = Card('elf-secret-id', ArtCard.get_by_id(20401), active_player)
+        game.cards[elf.secret_id] = elf
+        game.handle(EnterTheBattlefieldEvent(
+            elf.secret_id, None, active_player.player_id, 'elf-permanent', {}))
+        permanent = game.battlefield['elf-permanent']
+        ability = permanent.abilities[0]
+
+        events = list(activate_ability(game, ability, 0, active_player, permanent))
+
+        self.assertTrue(any(isinstance(event, AddEnergyEvent) for event in events))
+        self.assertFalse(any(isinstance(event, ActivateAbilityEvent) for event in events))
+        handle_all(game, events)
+        self.assertEqual(active_player.energy_pool.energy, GREEN)
+
+    def test_non_energy_enters_trigger_uses_stack(self):
+        game, active_player, _ = minimal_game()
+        source = Card('source-secret-id', ArtCard.get_by_id(10201), active_player)
+        game.cards[source.secret_id] = source
+        game.handle(EnterTheBattlefieldEvent(
+            source.secret_id, None, active_player.player_id, 'source-permanent', {}))
+        permanent = game.battlefield['source-permanent']
+        trigger = Effect(
+            EffectTemplate.parse(
+                'when this enters the battlefield: create 1 (90201) token'),
+            game,
+            {},
+            active_player,
+            permanent,
+        )
+
+        handle_all(game, trigger.execute())
+        events = handle_pending_triggers(game)
+
+        self.assertTrue(any(isinstance(event, StackEffectEvent) for event in events))
 
     def test_destroy_effect_cleans_up_source_trigger(self):
         game, active_player, _ = minimal_game()
@@ -137,7 +257,7 @@ class TestEnergyDrainTiming(unittest.TestCase):
         active_player.hand.add(source)
         handle_all(game, play_source(game, active_player, source))
         permanent = next(iter(game.battlefield))
-        trigger_id = next(iter(game.triggered_effects.keys_by_perm_id(permanent.perm_id)))
+        trigger_ids = list(game.triggered_effects.keys_by_perm_id(permanent.perm_id))
         del game.battlefield[permanent.perm_id]
         game.trigger(('BEGIN_OF_TURN', active_player.player_id))
 
@@ -145,7 +265,7 @@ class TestEnergyDrainTiming(unittest.TestCase):
             triggered_effects, stale_trigger_ids = check_triggers(game)
 
         self.assertEqual(triggered_effects, [])
-        self.assertEqual(stale_trigger_ids, [trigger_id])
+        self.assertEqual(stale_trigger_ids, trigger_ids)
         self.assertIn('Removing stale trigger', captured.output[0])
 
 
@@ -198,6 +318,15 @@ class TestCastTriggers(unittest.TestCase):
 
         triggered_effects, _ = check_triggers(game)
         self.assertEqual(triggered_effects, [])
+
+    def test_pyroscientist_trigger_effect_specs_are_not_energy_only(self):
+        game, controller, _ = minimal_game()
+        self.install_pyroscientist(game, controller)
+
+        self.assertTrue(all(
+            not event_specs_are_energy_only(event.effect)
+            for event in game.triggered_effects.values()
+        ))
 
     def test_cast_trigger_unparses_as_canonical_rule_text(self):
         effect = EffectTemplate.parse(

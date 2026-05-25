@@ -49,7 +49,6 @@ class TapCost:
 class ActivatableAbility:
     cost: list
     effect: object
-    is_energy_ability: bool=False
 
     def __str__(self):
         return '%s: activate ability' % ', '.join(str(x) for x in self.cost)
