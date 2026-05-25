@@ -477,6 +477,7 @@ class Game:
         card = self.cards[event.card_secret_id]
         player.hand.discard(card)
         self.stack.append(Spell(event.stack_id, player, card, event.target))
+        self.trigger(('CAST', player.player_id, tuple(sorted(card.types))))
 
     def handle_ActivateAbilityEvent(self, event):
         permanent = self.battlefield[event.perm_id]
@@ -853,10 +854,19 @@ def check_triggers(game):
                     )
                     stale_trigger_ids.append(trigger_id)
                 continue
-            if tuple(tr_effect.trigger) == tuple(trigger):
+            if trigger_matches(tr_effect.trigger, trigger):
                 has_triggered.append(tr_effect)
 
     return has_triggered, stale_trigger_ids
+
+
+def trigger_matches(registered_trigger, occurred_trigger):
+    if registered_trigger[0] == 'CAST' and occurred_trigger[0] == 'CAST':
+        registered_player, accepted_types = registered_trigger[1:]
+        occurred_player, card_types = occurred_trigger[1:]
+        return (registered_player == occurred_player
+                and bool(set(accepted_types) & set(card_types)))
+    return tuple(registered_trigger) == tuple(occurred_trigger)
 
 
 def open_priority(game):

@@ -9,7 +9,7 @@ COMMENT: /\<[\w\s]+\>/
 // keyword: /flying|crush|readiness|cannot_block|cannot_attack/
 
 color: /red|green|blue|yellow|white/
-type: /player|permanent|creature|enchantment|source/
+type: /player|permanent|creature|enchantment|source|instant|sorcery/
 subtype: /goblin|dragon|elemental|minotaur|human/
 step: /end/
 energy: /(\{([0-9]+|[RGBWY])\})+/
@@ -33,6 +33,7 @@ trigger: _object "gets" "tapped" -> tap_trigger
        | step "step" "begins" -> step_begin_trigger
        | "your" "turn" "begins" -> turn_begin_trigger
        | this "enters" "the" "battlefield" -> enters_battlefield_trigger
+       | _object ("cast"|"casts") _object -> cast_trigger
 
 _immediate_effect: damage_effect
        | add_energy_effect
@@ -56,9 +57,10 @@ modifier: _signed_numeric "/" _signed_numeric -> delta_stat
         | "not" keyword -> remove_keyword
         | "controlled by" _object -> change_controller
 
-_object: all | this | effect_controller | _chosen | controller_of | enchanted
+_object: all | this | effect_controller | _chosen | controller_of | enchanted | any
 
 all: "all" selector
+any: "any" selector
 this: "this"
 effect_controller: "you" | "your"
 _chosen: chosen_spec | chosen_ref

@@ -357,7 +357,9 @@ cards:
     toughness: 1
     cost: '{R}{1}'
     type: creature
-    abilities: []
+    effects:
+      - "when you cast any .instant: create 1 <red elemental>(90201) token"
+      - "when you cast any .sorcery: create 1 <red elemental>(90201) token"
     art:
       11901:
         image: ''

@@ -140,7 +140,13 @@ class Unparser(lark.Transformer):
         return 'your turn begins'
 
     def effect_controller(self, args):
-        return 'your'
+        return 'you'
+
+    def any(self, args):
+        return f'any {args[0]}'
+
+    def cast_trigger(self, args):
+        return f'{args[0]} cast {args[1]}'
 
     def chosen_ref(self, args):
         label = str(args[0])
@@ -164,6 +170,9 @@ class Unparser(lark.Transformer):
 
     def damage_effect(self, args):
         return f'{args[0]} gets {args[1]} damage'
+
+    def create_token_effect(self, args):
+        return f'create {args[0]} ({args[1]}) token'
 
     def effects(self, args):
         return '; '.join(args)
@@ -277,7 +286,7 @@ class Executor(lark.Transformer):
 
     def this(self, args):
         return self._context.permanent
-        
+
     def effect_controller(self, args):
         return self._context.controller
 
@@ -337,6 +346,37 @@ class Executor(lark.Transformer):
 
     def enters_battlefield_trigger(self, args):
         return ('ENTERS_THE_BATTLEFIELD', args[0].perm_id)
+
+    def type(self, args):
+        return str(args[0])
+
+    def type_spec(self, args):
+        return ('TYPE', tuple(args))
+
+    def positive_selector(self, args):
+        return ('INCLUDE', args[0])
+
+    def negative_selector(self, args):
+        return ('EXCLUDE', args[0])
+
+    def selector(self, args):
+        return tuple(args)
+
+    def any(self, args):
+        accepted_types = []
+        for operator, specification in args[0]:
+            if operator != 'INCLUDE':
+                raise ValueError('cast trigger any selectors only support included types')
+            kind, values = specification
+            if kind != 'TYPE':
+                raise ValueError('cast trigger any selectors only support card types')
+            accepted_types.extend(values)
+        return ('ANY', tuple(accepted_types))
+
+    def cast_trigger(self, args):
+        caster, cast_filter = args
+        assert cast_filter[0] == 'ANY', cast_filter
+        return ('CAST', caster.player_id, cast_filter[1])
 
 class Effect:
     def __init__(self, template, game, choices, controller, permanent):

@@ -2,7 +2,13 @@ import unittest
 
 from cards import ArtCard, Card
 from energy import BLUE, GREEN, RED
-from event import ClearPoolEvent, StepEvent, event_classes
+from event import (
+    CastSpellEvent,
+    ClearPoolEvent,
+    EnterTheBattlefieldEvent,
+    StepEvent,
+    event_classes,
+)
 from effects import Effect, EffectTemplate
 from state import Game, Player, check_triggers, play_source, turn_based_actions
 from state import end_of_step
@@ -140,6 +146,66 @@ class TestEnergyDrainTiming(unittest.TestCase):
         self.assertEqual(triggered_effects, [])
         self.assertEqual(stale_trigger_ids, [trigger_id])
         self.assertIn('Removing stale trigger', captured.output[0])
+
+
+class TestCastTriggers(unittest.TestCase):
+    def install_pyroscientist(self, game, controller):
+        card = Card('pyro-secret-id', ArtCard.get_by_id(11901), controller)
+        game.cards[card.secret_id] = card
+        game.handle(EnterTheBattlefieldEvent(
+            card.secret_id, None, controller.player_id, 'pyro-permanent', {}))
+        permanent = game.battlefield['pyro-permanent']
+        for template in card.effect:
+            handle_all(game, Effect(template, game, {}, controller, permanent).execute())
+        return permanent
+
+    def test_pyroscientist_registers_simple_cast_triggers(self):
+        game, controller, _ = minimal_game()
+        self.install_pyroscientist(game, controller)
+
+        triggers = {
+            event.trigger
+            for event in game.triggered_effects.values()
+        }
+        self.assertEqual(triggers, {
+            ('CAST', controller.player_id, ('instant',)),
+            ('CAST', controller.player_id, ('sorcery',)),
+        })
+
+    def test_pyroscientist_triggers_only_for_matching_controller_cast(self):
+        game, controller, opponent = minimal_game()
+        self.install_pyroscientist(game, controller)
+        instant = Card('instant-secret-id', ArtCard.get_by_id(11401), controller)
+        game.cards[instant.secret_id] = instant
+        controller.hand.add(instant)
+
+        game.handle(CastSpellEvent(
+            'instant-stack-id', controller.player_id, instant.secret_id, {}))
+        triggered_effects, stale_trigger_ids = check_triggers(game)
+
+        self.assertEqual(stale_trigger_ids, [])
+        self.assertEqual(len(triggered_effects), 1)
+        self.assertEqual(triggered_effects[0].effect[0]['art_id'], 90201)
+
+        game.triggers.clear()
+        opponent_instant = Card(
+            'opponent-instant-secret-id', ArtCard.get_by_id(11401), opponent)
+        game.cards[opponent_instant.secret_id] = opponent_instant
+        opponent.hand.add(opponent_instant)
+        game.handle(CastSpellEvent(
+            'opponent-stack-id', opponent.player_id, opponent_instant.secret_id, {}))
+
+        triggered_effects, _ = check_triggers(game)
+        self.assertEqual(triggered_effects, [])
+
+    def test_cast_trigger_unparses_as_canonical_rule_text(self):
+        effect = EffectTemplate.parse(
+            'when you cast any .instant: create 1 (90201) token')
+
+        self.assertEqual(
+            effect.unparse(),
+            'when you cast any .instant: create 1 (90201) token',
+        )
 
 
 if __name__ == '__main__':
