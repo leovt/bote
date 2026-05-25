@@ -6,11 +6,12 @@ from event import (
     CastSpellEvent,
     ClearPoolEvent,
     EnterTheBattlefieldEvent,
+    PutInGraveyardEvent,
     StepEvent,
     event_classes,
 )
 from effects import Effect, EffectTemplate
-from state import Game, Player, check_triggers, play_source, turn_based_actions
+from state import Game, Player, Spell, check_triggers, play_source, turn_based_actions
 from state import end_of_step
 from step import STEP
 
@@ -206,6 +207,54 @@ class TestCastTriggers(unittest.TestCase):
             effect.unparse(),
             'when you cast any .instant: create 1 (90201) token',
         )
+
+
+class TestContinuousEffectResolution(unittest.TestCase):
+    def test_self_modifier_does_nothing_after_permanent_leaves(self):
+        game, controller, _ = minimal_game()
+        card = Card('creature-secret-id', ArtCard.get_by_id(10501), controller)
+        game.cards[card.secret_id] = card
+        game.handle(EnterTheBattlefieldEvent(
+            card.secret_id, None, controller.player_id, 'creature-permanent', {}))
+        permanent = game.battlefield['creature-permanent']
+        modifier = Effect(
+            EffectTemplate.parse('this has +1/+0 until end of turn'),
+            game,
+            {},
+            controller,
+            permanent,
+        )
+
+        del game.battlefield[permanent.perm_id]
+        events = modifier.execute()
+
+        self.assertEqual(events, [])
+        self.assertEqual(list(game.continuous_effects.keys()), [])
+
+
+class TestSpellResolution(unittest.TestCase):
+    def test_targeted_spell_does_nothing_if_target_has_left(self):
+        game, controller, _ = minimal_game()
+        target_card = Card('target-secret-id', ArtCard.get_by_id(10501), controller)
+        spell_card = Card('spell-secret-id', ArtCard.get_by_id(11401), controller)
+        game.cards[target_card.secret_id] = target_card
+        game.cards[spell_card.secret_id] = spell_card
+        game.handle(EnterTheBattlefieldEvent(
+            target_card.secret_id, None, controller.player_id, 'target-permanent', {}))
+        spell = Spell(
+            'spell-stack-id',
+            controller,
+            spell_card,
+            {'@1': {'type': 'permanent', 'perm_id': 'target-permanent'}},
+        )
+
+        del game.battlefield['target-permanent']
+        events = list(spell.resolve(game))
+
+        self.assertEqual(len(events), 1)
+        self.assertIsInstance(events[0], PutInGraveyardEvent)
+        handle_all(game, events)
+        self.assertIn(spell_card, controller.graveyard)
 
 
 if __name__ == '__main__':

@@ -78,6 +78,10 @@ class Spell:
     choices: dict
 
     def resolve(self, game):
+        if not game.choices_are_available(self.choices):
+            yield PutInGraveyardEvent(self.card.secret_id)
+            return
+        resolved_choices = game.objects_from_ids(self.choices)
         if {'creature', 'enchantment'} & self.card.types:
             perm_id = next(game.unique_ids)
             yield EnterTheBattlefieldEvent(self.card.secret_id,
@@ -96,7 +100,7 @@ class Spell:
             for template in effect_templates(self.card.effect):
                 effect = Effect(template,
                                 game,
-                                game.objects_from_ids(self.choices),
+                                resolved_choices,
                                 self.controller,
                                 permanent)
                 yield from effect.execute()
@@ -613,6 +617,14 @@ class Game:
             else:
                 choices[key] = self.battlefield[value['perm_id']]
         return choices
+
+    def choices_are_available(self, choices_ids):
+        return all(
+            key == 'x'
+            or value['type'] == 'player'
+            or value['perm_id'] in self.battlefield
+            for key, value in choices_ids.items()
+        )
 
     def run(self, skip_start=False):
         # todo: move to __init__

@@ -297,11 +297,14 @@ class Executor(lark.Transformer):
         return args[0]
 
     def continuous_effect(self, args):
+        affected_object = args[0]
+        if affected_object.perm_id not in self._context.game.battlefield:
+            return []
         effect_id = next(self._context.game.unique_ids)
         perm_id = None
         if self._context.permanent:
             perm_id = self._context.permanent.perm_id
-        objects = [args[0].perm_id]
+        objects = [affected_object.perm_id]
         modifiers = [
             self.resolve_modifier(modifier)
             for modifier in args[1]
