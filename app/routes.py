@@ -1,14 +1,13 @@
-import os
+from flask import render_template, redirect, url_for, request, abort, jsonify
 
-from flask import render_template, redirect, flash, url_for, request, abort, jsonify
-from flask_login import login_user, logout_user, current_user, login_required
-
-from app import app, db
-from app.models import User, Deck, DeckCard
-from app.forms import LoginForm, PasswordForm
-
-import time
-import cards
+from app import app
+from app.anonymous import (
+    active_players,
+    current_display_name,
+    ensure_player_id,
+    set_current_display_name,
+    touch_presence,
+)
 
 @app.route('/whoami')
 def hello():
@@ -17,61 +16,36 @@ def hello():
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('lobby'))
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
-            return redirect(url_for('login'))
-        login_user(user, remember=form.remember_me.data)
-        return redirect('/')
-    return render_template('login.html', title='Sign-In', form=form)
+    abort(404)
 
 
 @app.route('/logout')
 def logout():
-    logout_user()
     return redirect(url_for('hello'))
 
 
 @app.route('/change_password', methods=['GET', 'POST'])
-@login_required
 def change_password():
-    form = PasswordForm()
-    if form.validate_on_submit():
-        if not current_user.check_password(form.old_password.data):
-            logout_user()
-            return redirect(url_for('lobby'))
-
-        current_user.set_password(form.password.data)
-        db.session.commit()
-        return redirect(url_for('lobby'))
-    return render_template('password.html', title='Change Password', form=form)
+    abort(404)
 
 
 @app.route('/')
 def lobby():
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
-    if current_user.username == 'Leo':
-        savegames = os.listdir('savegames')
-    else:
-        savegames = []
-    return render_template('lobby.html', savegames=savegames)
+    touch_presence()
+    return render_template(
+        'lobby.html',
+        savegames=[],
+        player_id=ensure_player_id(),
+        display_name=current_display_name())
 
 global_chat_messages = []
-global_lobby_users_last_seen = {}
-
 @app.route('/chat_msg', methods=['POST'])
-@login_required
 def send_msg():
-    global_chat_messages.append((current_user.username, request.data.decode('utf8')))
+    player_id, name = touch_presence()
+    global_chat_messages.append((player_id, name, request.data.decode('utf8')))
     return ('', 204)
 
 @app.route('/chat_msg', methods=['GET'])
-@login_required
 def chat():
     try:
         first = int(request.args.get('first', 0))
@@ -80,71 +54,47 @@ def chat():
     if first < 0:
         abort(400)
 
-    global_lobby_users_last_seen[current_user.username] = time.time()
-    return jsonify([{'index': index, 'user': user, 'message': message}
-        for index, (user, message) in enumerate(global_chat_messages[first:], first)])
+    touch_presence()
+    return jsonify([{'index': index, 'user': name, 'message': message}
+        for index, (_, name, message) in enumerate(global_chat_messages[first:], first)])
 
 
 @app.route('/lobby_users')
-@login_required
 def lobby_users():
-    now = time.time()
+    player_id, _ = touch_presence()
     return jsonify([{
-        'user': user,
-        'status': ('away' if last_seen < now - 30 else 'here'),
-        'is_me': (user == current_user.username),
+        'player_id': user['player_id'],
+        'user': user['name'],
+        'status': user['status'],
+        'is_me': (user['player_id'] == player_id),
         }
-        for user, last_seen in global_lobby_users_last_seen.items()
+        for user in active_players()
     ])
 
 
+@app.route('/session/name', methods=['POST'])
+def session_name():
+    if request.json is None:
+        abort(415)
+    name = set_current_display_name(request.json.get('name'))
+    touch_presence()
+    return jsonify({'player_id': ensure_player_id(), 'display_name': name})
+
+
 @app.route('/decks')
-@login_required
 def decks():
-    decks = Deck.query.filter_by(owner_id=current_user.id)
-    return render_template('decks.html', decks=decks)
+    abort(404)
 
 
 @app.route('/decks', methods=['POST'])
-@login_required
 def new_deck():
-    deck = Deck(owner_id=current_user.id, name="Unnamed Deck")
-    db.session.add(deck)
-    db.session.commit()
-    return redirect(url_for('deck', deck_id=deck.id))
+    abort(404)
 
 
 @app.route('/deck/<deck_id>')
-@login_required
 def deck(deck_id):
-    deck = Deck.query.get_or_404(deck_id)
-    if (deck.owner_id != current_user.id):
-        abort(403);
-    all_cards = [c for c in cards.all() if not cards.card_spec(c['card_id']).get('token')]
-    return render_template('deck.html', deck=deck, cards=all_cards)
+    abort(404)
 
 @app.route('/deck/<deck_id>', methods=['POST'])
-@login_required
 def save_deck(deck_id):
-    deck = Deck.query.get_or_404(deck_id)
-    if (deck.owner_id != current_user.id):
-        abort(403);
-    if request.json is None:
-        abort(415)
-    deck.name = request.json['name']
-    deck.public = request.json['public']
-    art_ids = {c.art_id for c in deck.cards}
-    print("art_ids", art_ids)
-    print("json", request.json)
-    for art_id, count in request.json['cards'].items():
-        art_id = int(art_id)
-        count = int(count)
-        if art_id in art_ids:
-            deck.cards.filter_by(art_id=art_id).one().count = count
-            art_ids.remove(art_id)
-        else:
-            db.session.add(DeckCard(deck_id=deck.id, art_id=art_id, count=count))
-    for art_id in art_ids:
-        db.session.delete(deck.cards.filter_by(art_id=art_id).one())
-    db.session.commit()
-    return ('', 204)
+    abort(404)

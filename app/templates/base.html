@@ -9,17 +9,9 @@
       <link href="{{ url_for('static', filename='main.css') }}" rel="stylesheet">
     </head>
     <body>
-      {% if current_user.is_anonymous %}
-      <a href="{{ url_for('login') }}">Login</a>
-      {% else %}
-      You are logged in as {{current_user.username}}
       <ul class="menu">
         <li><a href="{{ url_for('lobby') }}" {% if request.endpoint == 'lobby' %} class="active" {% endif %}>Lobby</a></li>
-        <li><a href="{{ url_for('decks') }}" {% if request.endpoint == 'decks' %} class="active" {% endif %}>Decks</a></li>
-        <li><a href="{{ url_for('logout') }}">Logout</a></li>
-        <li><a href="{{ url_for('change_password') }}" {% if request.endpoint == 'change_password' %} class="active" {% endif %}>Change Password</a></li>
       </ul>
-      {% endif %}
       <hr>
       {% with messages = get_flashed_messages() %}
       {% if messages %}

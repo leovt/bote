@@ -1,13 +1,16 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from flask import url_for
+from datetime import datetime, timedelta
 
 from app import db, login_mgr
 
-from dummy_deck import TEST_DECK
 from state import Game
 import tools
 from aiplayers import random_answer
+
+games = {}
+
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -41,57 +44,137 @@ class DeckCard(db.Model):
     art_id = db.Column(db.Integer, primary_key=True)
     count = db.Column(db.Integer)
 
-class GameFrontend:
-    def __init__(self, user1, user2):
-        self.status = 'choose_deck'
-        self.user1 = user1
-        self.user2 = user2
-        self.deck1 = None
-        self.deck2 = None
-        self.game = None
-        self.id = tools.random_id()
-        if user2 == '__ai__random__':
-            self.deck2 = TEST_DECK
+class Table(db.Model):
+    __tablename__ = 'game_table'
 
+    id = db.Column(db.String(32), primary_key=True, default=tools.random_id)
+    status = db.Column(db.String(32), nullable=False, default='deck_selection')
+    player1 = db.Column(db.String(80), nullable=False)
+    player2 = db.Column(db.String(80), nullable=True)
+    deck1 = db.Column(db.JSON, nullable=True)
+    deck2 = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    def choose_deck(self, user, deck):
-        if self.status != 'choose_deck':
-            return
+    @property
+    def user1(self):
+        return self.player1
 
-        if user == self.user1 and self.deck1 is None:
-            self.deck1 = {c.art_id: c.count for c in deck.cards}
-        if user == self.user2 and self.deck2 is None:
-            self.deck2 = {c.art_id: c.count for c in deck.cards}
+    @property
+    def user2(self):
+        return self.player2
 
-        if self.deck1 is not None and self.deck2 is not None:
+    @property
+    def game(self):
+        return games.get(self.id)
+
+    def url(self):
+        return url_for('game', game_id=self.id)
+
+    def join_url(self):
+        return url_for('join_game', game_id=self.id)
+
+    def players(self):
+        return [player for player in (self.player1, self.player2) if player]
+
+    def has_player(self, player_id):
+        return player_id in (self.player1, self.player2)
+
+    def deck_for(self, player_id):
+        if player_id == self.player1:
+            return self.deck1
+        if player_id == self.player2:
+            return self.deck2
+        return None
+
+    def waiting_for_player(self, player_id):
+        return self.has_player(player_id) and self.deck_for(player_id) is None
+
+    def claim_second_seat(self, player_id):
+        if self.player2 is None and player_id != self.player1:
+            self.player2 = player_id
+            return True
+        return self.player2 == player_id
+
+    def choose_deck(self, player_id, deck):
+        if self.status != 'deck_selection' or not self.has_player(player_id):
+            return False
+
+        snapshot = {str(c.art_id): c.count for c in deck.cards}
+        if player_id == self.player1 and self.deck1 is None:
+            self.deck1 = snapshot
+        elif player_id == self.player2 and self.deck2 is None:
+            self.deck2 = snapshot
+        else:
+            return False
+
+        if self.player1 and self.player2 and self.deck1 is not None and self.deck2 is not None:
             self.start()
+        return True
+
+    def _deck_snapshot(self, deck):
+        return {int(art_id): int(count) for art_id, count in deck.items()}
 
     def start(self):
-        self.game = Game.create_duel(self.user1, self.deck1, self.user2, self.deck2)
-        self.status = 'started'
+        games[self.id] = Game.create_duel(
+            self.player1,
+            self._deck_snapshot(self.deck1),
+            self.player2,
+            self._deck_snapshot(self.deck2))
+        self.status = 'running'
 
+    def hydrate_game(self):
+        return self.game
+
+    def player_for_identity(self, player_id):
+        game = self.game
+        if game is None:
+            return None
+        for player in game.players.values():
+            if player.name == player_id:
+                return player
+        return None
 
     def advance_game_state(self):
-        if self.status != 'started':
+        if self.status != 'running':
+            return
+
+        game = self.game
+        if game is None:
             return
 
         while True:
-            question = self.game.next_decision()
+            question = game.next_decision()
             if not question:
                 self.status = 'ended'
                 return
 
             if question.player.name == '__ai__random__':
                 answer = random_answer(question)
-                ret = self.game.set_answer(question.player, answer)
+                ret = game.set_answer(question.player, answer)
                 assert ret, 'random answer is not valid'
-                self.game.question = None
+                game.question = None
+                game.answer = answer
             else:
                 return question
 
-
-    def url(self):
-        return url_for('game', game_id=self.id)
-
     def __str__(self):
-        return f"BOTE Game {self.user1} vs. {self.user2}"
+        return f"BOTE Table {self.player1} vs. {self.player2 or 'waiting'}"
+
+
+class Challenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    challenger = db.Column(db.String(80), nullable=False)
+    target = db.Column(db.String(80), nullable=False)
+    table_id = db.Column(db.String(32), db.ForeignKey('game_table.id'), nullable=False)
+    table = db.relationship('Table')
+    status = db.Column(db.String(32), nullable=False, default='pending')
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    @classmethod
+    def expire_old(cls, max_age=timedelta(minutes=5)):
+        cutoff = datetime.utcnow() - max_age
+        for challenge in cls.query.filter_by(status='pending').filter(cls.created_at < cutoff):
+            challenge.status = 'expired'
+            challenge.table.status = 'ended'

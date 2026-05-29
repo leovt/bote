@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+  <div>
+    <label for="display-name">Name:</label>
+    <input id="display-name" value="{{ display_name }}" maxlength="32">
+    <button onclick="save_name();">Save</button>
+    <button onclick="create_invite();">Create invite link</button>
+  </div>
   <div id="grid-lobby">
     <div id="cell-users">
     <h2>Users</h2>
@@ -27,6 +33,9 @@
     {% endfor %}
   </ul>
   {% endif %}
+  <script>
+    window.PLAYER_ID = "{{ player_id }}";
+  </script>
 
 {% endblock %}
 

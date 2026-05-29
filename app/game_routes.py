@@ -1,132 +1,250 @@
-import os
-import time
-import yaml
+from flask import abort, jsonify, redirect, request, render_template
 
-from flask import abort, jsonify, request, render_template
-from flask_login import login_required, current_user
-
-from app import app
-from app.models import Deck, GameFrontend
+from app import app, db
+from app.anonymous import (
+    display_name_for,
+    ensure_player_id,
+    touch_presence,
+)
+from app.models import Challenge, Deck, Table
 from app.game_view import serialize_game_view
 
-from state import Game
+from dummy_deck import TEST_DECK
 
 
-games = {}
+def _table_or_404(game_id):
+    return Table.query.get_or_404(game_id)
 
 
-def player_for_user(game, user):
-    if user.is_anonymous or game.game is None:
+def _active_table_for(player_id):
+    return Table.query.filter(
+        Table.status != 'ended',
+        db.or_(Table.player1 == player_id, Table.player2 == player_id)
+    ).first()
+
+
+def _public_decks():
+    return Deck.query.filter_by(public=True).all()
+
+
+def _viewer_for_table(table):
+    player_id = ensure_player_id()
+    if not table.has_player(player_id):
         return None
-    for player in game.game.players.values():
-        if player.name == user.username:
-            return player
-    return None
+    return table.player_for_identity(player_id)
+
+
+def _replace_player_names(value):
+    if isinstance(value, list):
+        return [_replace_player_names(item) for item in value]
+    if isinstance(value, dict):
+        replaced = {
+            key: _replace_player_names(item)
+            for key, item in value.items()
+        }
+        if 'player_id' in replaced and 'name' in replaced:
+            replaced['name'] = display_name_for(replaced['name'])
+        return replaced
+    return value
+
 
 @app.route('/games')
-@login_required
 def my_games():
-    '''produce a list of games for the current user'''
+    player_id, _ = touch_presence()
+    tables = Table.query.filter(
+        db.or_(Table.player1 == player_id, Table.player2 == player_id)
+    ).order_by(Table.updated_at.desc()).all()
     return jsonify([{
-        'id': game_id,
-        'url': game.url(),
-        'players': [game.user1, game.user2],
-        'status': game.status,
+        'id': table.id,
+        'url': table.url(),
+        'join_url': table.join_url(),
+        'players': [display_name_for(player) for player in table.players()],
+        'status': table.status,
         }
-        for game_id, game in games.items()
-        if current_user.username in (game.user1, game.user2)
+        for table in tables
     ])
 
 
 @app.route('/game/<game_id>')
-@login_required
 def game(game_id):
-    game = games.get(game_id)
-    if not game:
-        abort(404)
-    if game.status == 'choose_deck':
-        if (game.user1 == current_user.username and not game.deck1) or \
-            (game.user2 == current_user.username and not game.deck2):
-            my_decks = Deck.query.filter_by(owner_id=current_user.id)
-            pub_decks = Deck.query.filter(Deck.owner_id != current_user.id, Deck.public == True)
-        else:
-            my_decks = pub_decks = []
-        return render_template('choose_deck.html', game=game, my_decks=my_decks, pub_decks=pub_decks)
+    table = _table_or_404(game_id)
+    player_id, _ = touch_presence()
+    if not table.has_player(player_id):
+        abort(403)
 
-    if game.user1 == current_user.username:
-        my_name = game.user1
-        op_name = game.user2
-    else:
-        my_name = game.user2
-        op_name = game.user1
-    return render_template('game.html', game=game, my_name=my_name, op_name=op_name)
+    if table.status == 'deck_selection':
+        return render_template(
+            'choose_deck.html',
+            game=table,
+            player_id=player_id,
+            display_name_for=display_name_for,
+            pub_decks=_public_decks())
+
+    if table.status not in ('running', 'ended'):
+        abort(409)
+
+    my_name = display_name_for(player_id)
+    opponent = table.player2 if table.player1 == player_id else table.player1
+    op_name = display_name_for(opponent)
+    return render_template('game.html', game=table, my_name=my_name, op_name=op_name)
+
+
+@app.route('/game/<game_id>/join')
+def join_game(game_id):
+    table = _table_or_404(game_id)
+    player_id, _ = touch_presence()
+    if table.player1 == player_id:
+        return redirect(table.url())
+    if table.player2 and table.player2 != player_id:
+        abort(409)
+    if not table.claim_second_seat(player_id):
+        abort(409)
+    db.session.commit()
+    return redirect(table.url())
 
 
 @app.route('/game/<game_id>/choose_deck', methods=['POST'])
-@login_required
 def choose_deck(game_id):
-    game = games.get(game_id)
-    if not game:
-        abort(404)
-    deck = Deck.query.get(request.json['deck_id'])
-    if not deck:
+    table = _table_or_404(game_id)
+    player_id, _ = touch_presence()
+    if request.json is None:
+        abort(415)
+    if not table.has_player(player_id):
+        abort(403)
+
+    try:
+        deck_id = int(request.json['deck_id'])
+    except (KeyError, TypeError, ValueError):
+        abort(400)
+    deck = db.session.get(Deck, deck_id)
+    if not deck or not deck.public:
         abort(400)
 
-    if deck.public or deck.owner_id == current_user.id:
-        game.choose_deck(current_user.username, deck)
-        return ('', 204)
-
-    abort(400)
+    if not table.choose_deck(player_id, deck):
+        abort(409)
+    db.session.commit()
+    return ('', 204)
 
 
 @app.route('/game/create', methods=["POST"])
-@login_required
 def create_game():
     if request.json is None:
         abort(415)
 
-    new_game = GameFrontend(current_user.username, request.json['opponent'])
-    games[new_game.id] = new_game
-    assert new_game.url()
-    return "", 201, {'location': new_game.url()}
+    player_id, _ = touch_presence()
+    opponent = request.json.get('opponent')
+    if opponent != '__ai__random__':
+        abort(400)
+
+    table = Table(player1=player_id, player2='__ai__random__', status='deck_selection')
+    table.deck2 = {str(art_id): count for art_id, count in TEST_DECK.items()}
+    db.session.add(table)
+    db.session.commit()
+    return "", 201, {'location': table.url()}
+
+
+@app.route('/game/invite', methods=["POST"])
+def create_invite():
+    player_id, _ = touch_presence()
+    table = Table(player1=player_id, status='deck_selection')
+    db.session.add(table)
+    db.session.commit()
+    return jsonify({
+        'id': table.id,
+        'url': table.url(),
+        'join_url': table.join_url(),
+    }), 201, {'location': table.url()}
+
+
+@app.route('/challenge', methods=['POST'])
+def create_challenge():
+    if request.json is None:
+        abort(415)
+    challenger, _ = touch_presence()
+    target = request.json.get('target')
+    if not target or target == challenger:
+        abort(400)
+    Challenge.expire_old()
+    db.session.commit()
+    if _active_table_for(target):
+        return jsonify({'error': 'Player is already in another game.'}), 409
+
+    table = Table(player1=challenger, player2=target, status='waiting')
+    challenge = Challenge(challenger=challenger, target=target, table=table)
+    db.session.add(table)
+    db.session.add(challenge)
+    db.session.commit()
+    return jsonify({'challenge_id': challenge.id, 'table_url': table.url()}), 201
+
+
+@app.route('/challenges')
+def challenges():
+    player_id, _ = touch_presence()
+    Challenge.expire_old()
+    db.session.commit()
+    incoming = Challenge.query.filter_by(target=player_id, status='pending').all()
+    outgoing = Challenge.query.filter_by(challenger=player_id).filter(
+        Challenge.status.in_(('accepted', 'declined', 'expired'))
+    ).all()
+    return jsonify({
+        'incoming': [{
+            'id': challenge.id,
+            'from': display_name_for(challenge.challenger),
+            'table_url': challenge.table.url(),
+        } for challenge in incoming],
+        'outgoing': [{
+            'id': challenge.id,
+            'status': challenge.status,
+            'target': display_name_for(challenge.target),
+            'table_url': challenge.table.url(),
+        } for challenge in outgoing],
+    })
+
+
+@app.route('/challenge/<int:challenge_id>/respond', methods=['POST'])
+def respond_challenge(challenge_id):
+    if request.json is None:
+        abort(415)
+    player_id, _ = touch_presence()
+    challenge = Challenge.query.get_or_404(challenge_id)
+    if challenge.target != player_id:
+        abort(403)
+    if challenge.status != 'pending':
+        abort(409)
+
+    response = request.json.get('response')
+    if response == 'accept':
+        challenge.status = 'accepted'
+        challenge.table.status = 'deck_selection'
+    elif response == 'decline':
+        challenge.status = 'declined'
+        challenge.table.status = 'ended'
+    else:
+        abort(400)
+    db.session.commit()
+    return jsonify({'table_url': challenge.table.url(), 'status': challenge.status})
 
 
 @app.route('/game/load', methods=["POST"])
-@login_required
 def load_game():
-    if current_user.username != "Leo":
-        abort(404)
-
-    if request.json is None:
-        abort(415)
-
-    fname = os.path.basename(request.json['filename'])
-
-    with open('savegames/'+fname, encoding='utf8') as stream:
-        data = yaml.safe_load(stream)
-
-    new_game = GameFrontend(data['players'][0]['name'], data['players'][1]['name'])
-    new_game.game = Game.deserialize(data)
-    new_game.status = 'started'
-    games[new_game.id] = new_game
-    assert new_game.url()
-    return "", 201, {'location': new_game.url()}
+    abort(404)
 
 
 @app.route('/game/<game_id>/answer', methods=["POST"])
-@login_required
 def answer(game_id):
-    game = games.get(game_id)
-    if not game:
-        abort(404)
+    table = _table_or_404(game_id)
+    player_id, _ = touch_presence()
+    if table.status != 'running' or not table.has_player(player_id):
+        abort(403)
 
-    game = game.game
+    game = table.game
+    if game is None:
+        abort(409)
     if game.answer is not None or game.question is None:
         abort(409)
 
-    if game.question.player.name == current_user.username:
-        player = game.question.player
-    else:
+    player = table.player_for_identity(player_id)
+    if game.question.player is not player:
         abort(403)
 
     if request.json is None:
@@ -142,62 +260,50 @@ def answer(game_id):
 
     game.question = None
     game.answer = ans
+    db.session.commit()
     return ('', 204)
 
 
 @app.route('/api/game/<game_id>/view')
-@login_required
 def game_view(game_id):
-    game = games.get(game_id)
-    if not game:
-        abort(404)
-
-    if current_user.username not in (game.user1, game.user2):
+    table = _table_or_404(game_id)
+    player_id, _ = touch_presence()
+    if not table.has_player(player_id):
         abort(403)
 
-    question = game.advance_game_state()
-    player = player_for_user(game, current_user)
-    if game.status == 'started' and player is None:
+    if table.status == 'running' and table.game is None:
+        abort(409)
+
+    question = table.advance_game_state()
+    player = _viewer_for_table(table)
+    if table.status == 'running' and player is None:
         abort(403)
 
-    response = serialize_game_view(game, player)
+    response = serialize_game_view(table, player, display_name_for)
     if question:
         response['question'] = question.serialize_for(player)
+    response = _replace_player_names(response)
+    db.session.commit()
     return jsonify(response)
 
 
 @app.route('/game/<game_id>/save', methods=["POST"])
-@login_required
 def savegame(game_id):
-    if current_user.username != "Leo":
-        abort(404)
-
-    game = games.get(game_id)
-    if not game:
-        abort(404)
-
-    now = time.strftime("%Y-%m-%d-%H-%M-%S")
-    with open(f'savegames/game_{now}.yaml', 'w') as out:
-        yaml.dump(game.game.serialize(), out)
-
-    return ('', 204)
+    abort(404)
 
 
 @app.route('/game/<game_id>/log')
 def game_log(game_id):
-    game = games.get(game_id)
-    if not game:
-        abort(404)
+    table = _table_or_404(game_id)
+    player_id, _ = touch_presence()
+    if not table.has_player(player_id):
+        abort(403)
 
-    if current_user.is_anonymous:
-        player = None
-    else:
-        for p in game.game.players.values():
-            if p.name == current_user.username:
-                player = p
-                break
-        else:
-            player = None
+    game = table.hydrate_game()
+    if game is None:
+        abort(409)
+
+    player = table.player_for_identity(player_id)
 
     try:
         first = int(request.args.get('first', 0))
@@ -210,22 +316,22 @@ def game_log(game_id):
     if filter:
         filter = set(x.strip() for x in filter.split('_'))
 
-    # call advance_game_state before preparing the event_log,
-    # otherwise events created by advance_game_state would be missed
-    question = game.advance_game_state()
+    question = table.advance_game_state()
 
     event_log = []
-    for event_no, event in enumerate(game.game.event_log[first:], first):
-        serialized = event.serialize_for(player, game.game)
+    for event_no, event in enumerate(game.event_log[first:], first):
+        serialized = event.serialize_for(player, game)
         serialized['event_no'] = event_no
+        serialized = _replace_player_names(serialized)
         if filter is None or serialized['event_id'] in filter:
             event_log.append(serialized)
 
     response = {
-        'status': game.status,
+        'status': table.status,
         'event_log': event_log,
     }
     if question:
-        response['question'] = question.serialize_for(player)
+        response['question'] = _replace_player_names(question.serialize_for(player))
 
+    db.session.commit()
     return jsonify(response)

@@ -6,6 +6,26 @@ function send_msg() {
   chat_msg.value = '';
 }
 
+function save_name() {
+  let input = document.getElementById('display-name');
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.open("POST", `/session/name`);
+  httpRequest.setRequestHeader('Content-Type', 'application/json');
+  httpRequest.send(JSON.stringify({name: input.value}));
+}
+
+function create_invite() {
+  var game_window = window.open('', '_blank');
+  game_window.document.write('Creating invite ...');
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.addEventListener("load", function () {
+    var result = JSON.parse(httpRequest.responseText);
+    game_window.location.href = result.url;
+  });
+  httpRequest.open("POST", `/game/invite`);
+  httpRequest.send();
+}
+
 
 function duel(username) {
   var game_window = window.open('', '_blank');
@@ -19,6 +39,24 @@ function duel(username) {
   httpRequest.send(JSON.stringify({
     opponent: username
   }));
+}
+
+function challenge(playerId) {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.addEventListener("load", function () {
+    if (httpRequest.status === 409) {
+      alert(JSON.parse(httpRequest.responseText).error);
+      return;
+    }
+    if (httpRequest.status >= 400) {
+      alert(httpRequest.responseText);
+      return;
+    }
+    alert('Challenge sent.');
+  });
+  httpRequest.open("POST", `/challenge`);
+  httpRequest.setRequestHeader('Content-Type', 'application/json');
+  httpRequest.send(JSON.stringify({target: playerId}));
 }
 
 
@@ -57,7 +95,7 @@ function update_users() {
     var obsolete = new Set(Array.from(users.children).map(el => el.id));
     var result = JSON.parse(httpRequest.responseText);
     result.forEach(function(usr) {
-      let element_id = `user-${usr.user}`;
+      let element_id = `user-${usr.player_id}`;
       let element = document.getElementById(element_id);
       if (element) {
         obsolete.delete(element_id);
@@ -68,8 +106,10 @@ function update_users() {
         element.innerText = usr.user;
         if (!usr.is_me) {
           button = document.createElement('button');
-          button.innerText = "Duel";
-          button.setAttribute('onclick', `duel('${usr.user}')`);
+          button.innerText = "Challenge";
+          button.addEventListener('click', function () {
+            challenge(usr.player_id);
+          });
           element.appendChild(button);
         }
         users.appendChild(element);
@@ -110,8 +150,50 @@ function update_users() {
   window.setTimeout(update_users, 5000);
 }
 
+function check_challenges() {
+  var httpRequest = new XMLHttpRequest();
+  httpRequest.addEventListener("load", function () {
+    var result = JSON.parse(httpRequest.responseText);
+    result.incoming.forEach(function(challenge) {
+      var accepted = confirm(`${challenge.from} challenged you. Accept?`);
+      var responseRequest = new XMLHttpRequest();
+      responseRequest.open("POST", `/challenge/${challenge.id}/respond`);
+      responseRequest.setRequestHeader('Content-Type', 'application/json');
+      responseRequest.addEventListener("load", function () {
+        if (accepted && responseRequest.status < 400) {
+          window.open(JSON.parse(responseRequest.responseText).table_url, '_blank');
+        }
+      });
+      responseRequest.send(JSON.stringify({response: accepted ? 'accept' : 'decline'}));
+    });
+    result.outgoing.forEach(function(challenge) {
+      let seenKey = `challenge-${challenge.id}-${challenge.status}`;
+      if (sessionStorage.getItem(seenKey)) {
+        return;
+      }
+      sessionStorage.setItem(seenKey, '1');
+      if (challenge.status === 'accepted') {
+        window.open(challenge.table_url, '_blank');
+      } else {
+        alert(`${challenge.target} ${challenge.status} your challenge.`);
+      }
+    });
+  });
+  httpRequest.open("GET", `/challenges`);
+  httpRequest.send();
+  window.setTimeout(check_challenges, 3000);
+}
+
+document.getElementById('display-name').addEventListener('keyup', function(event) {
+  if (event.keyCode === 13) {
+    save_name();
+  }
+});
+document.getElementById('display-name').addEventListener('blur', save_name);
+
 read_msg();
 update_users();
+check_challenges();
 
 function loadsaved(filename) {
   var game_window = window.open('', '_blank');

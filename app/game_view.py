@@ -1,10 +1,10 @@
 from keywords import KEYWORDS
 
 
-def _player_summary(game, player, viewer):
+def _player_summary(game, player, viewer, name_for):
     return {
         'player_id': player.player_id,
-        'name': player.name,
+        'name': name_for(player.name),
         'is_me': player is viewer,
         'life': player.life,
         'energy': {
@@ -125,7 +125,7 @@ def _player_zones(player, viewer):
     }
 
 
-def serialize_game_view(frontend_game, viewer):
+def serialize_game_view(frontend_game, viewer, name_for=lambda name: name):
     game = frontend_game.game
     if game is None:
         return {
@@ -155,7 +155,7 @@ def serialize_game_view(frontend_game, viewer):
             ),
         },
         'players': [
-            _player_summary(game, player, viewer)
+            _player_summary(game, player, viewer, name_for)
             for player in game.players.values()
         ],
         'zones': {

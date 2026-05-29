@@ -2,35 +2,42 @@
 
 {% block content %}
     <div class="player{{ ' ready' if game.deck1 else '' }}">
-      <p>Name: {{ game.user1 }}</p>
+      <p>Name: {{ display_name_for(game.player1) }}</p>
       {% if game.deck1 %}
       <p>Ready</p>
+      {% elif game.player1 == player_id %}
+      <p>Choose your deck</p>
       {% else %}
       <p>Waiting...</p>
       {% endif %}
     </div>
     <div class="player{{ ' ready' if game.deck2 else '' }}">
-      <p>Name: {{ game.user2 }}</p>
+      <p>Name: {{ display_name_for(game.player2) }}</p>
       {% if game.deck2 %}
       <p>Ready</p>
+      {% elif game.player2 == player_id %}
+      <p>Choose your deck</p>
       {% else %}
       <p>Waiting...</p>
       {% endif %}
     </div>
-    {% if my_decks %}
-    <h2>Choose your deck</h2>
-    <ul>
-    {% for deck in my_decks %}
-    <li><button onclick="choose_deck('{{ deck.id }}');">{{ deck.name }}</button></li>
-    {% endfor %}
-    </ul>
+    {% if game.player2 is none %}
+    <p>
+      Invite link:
+      <input id="invite-link" value="{{ request.url_root.rstrip('/') }}{{ game.join_url() }}" readonly onclick="this.select();">
+      <button onclick="copy_invite_link();">Copy link</button>
+    </p>
     {% endif %}
-    <h2>Or choose a public deck</h2>
+    {% if game.waiting_for_player(player_id) %}
+    <h2>Choose a public deck</h2>
     <ul>
     {% for deck in pub_decks %}
-    <li><button onclick="choose_deck('{{ deck.id }}');">{{ deck.name }}</button>by {{ deck.owner.username }}</li>
+    <li><button onclick="choose_deck('{{ deck.id }}');">{{ deck.name }}</button>{% if deck.owner %} by {{ deck.owner.username }}{% endif %}</li>
     {% endfor %}
     </ul>
+    {% else %}
+    <p>Waiting for the other player.</p>
+    {% endif %}
     <script>
 function choose_deck(deck_id) {
   var httpRequest = new XMLHttpRequest();
@@ -38,6 +45,17 @@ function choose_deck(deck_id) {
   httpRequest.setRequestHeader('Content-Type', 'application/json');
   httpRequest.addEventListener("load", function(){location.reload(true)});
   httpRequest.send(JSON.stringify({deck_id:deck_id}));
+}
+
+function copy_invite_link() {
+  var input = document.getElementById('invite-link');
+  input.select();
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(input.value);
+  }
+  else {
+    document.execCommand('copy');
+  }
 }
 
 window.setTimeout(function(){location.reload(true);}, 3000);
