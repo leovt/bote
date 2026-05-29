@@ -278,8 +278,8 @@ cards:
       - keyword: readiness
     art:
       11301:
-        image: ''
-        attribution: ''
+        image: girag.png
+        attribution: leovt and chatgpt 2026
         frame: red
 
   114:
