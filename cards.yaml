@@ -28,6 +28,50 @@ types:
         en: Elf
         de: Elfe
         ko: 요정
+      bear:
+        en: Bear
+        de: Bär
+        ko: 곰
+      spider:
+        en: Spider
+        de: Spinne
+        ko: 거미
+      bird:
+        en: Bird
+        de: Vogel
+        ko: 새
+      wolf:
+        en: Wolf
+        de: Wolf
+        ko: 늑대
+      snake:
+        en: Snake
+        de: Schlange
+        ko: 뱀
+      boar:
+        en: Boar
+        de: Keiler
+        ko: 멧돼지
+      beast:
+        en: Beast
+        de: Bestie
+        ko: 야수
+      mammoth:
+        en: Mammoth
+        de: Mammut
+        ko: 매머드
+      wurm:
+        en: Wurm
+        de: Wurm
+        ko: 웜
+      basilisk:
+        en: Basilisk
+        de: Basilisk
+        ko: 바실리스크
+      druid:
+        en: Druid
+        de: Druide
+        ko: 드루이드
 
   source:
     de: Quelle
@@ -416,9 +460,9 @@ cards:
 
   202:
     names:
-      en: Abundance
-      de: Überfluss
-      ko: 과잉
+      en: Fertile Soil
+      de: Fruchtbarer Boden
+      ko: 비옥한 흙
     type: enchantment
     effect: "when enchanted .source gets tapped: add {G} to your energy pool"
     cost: '{G}'
@@ -435,9 +479,9 @@ cards:
 
   203:
     names:
-      en: Rapid Growth
-      de: Schneller Wuchs
-      ko: 빠른 생장
+      en: Primal Growth
+      de: Urwüchsige Kraft
+      ko: 원시 성장
     type: instant
     effect: chosen .creature has +3/+3 until end of turn
     cost: "{G}"
@@ -449,9 +493,9 @@ cards:
 
   204:
     names:
-      en: Kelrora Elves
-      de: Kelroraelfen
-      ko: 켈르로라 요정들
+      en: Forest Scout
+      de: Waldspäher
+      ko: 숲 정찰병
     type: creature
     subtypes:
       - elf
@@ -460,7 +504,7 @@ cards:
     toughness: 1
     abilities:
       - cost: '{T}'
-        effect: 'add {G} to you energy pool'
+        effect: 'add {G} to your energy pool'
     art:
       20401:
         image: ''
@@ -469,10 +513,12 @@ cards:
 
   205:
     names:
-      en: Degan Tusker
-      de: Degankeiler
-      ko: 데간 수멧돼지
+      en: Wild Boar
+      de: Wildschwein
+      ko: 야생 멧돼지
     type: creature
+    subtypes:
+      - boar
     cost: '{G}{4}'
     strength: 5
     toughness: 4
@@ -488,6 +534,8 @@ cards:
       de: Hausspinne
       ko: 집거미
     type: creature
+    subtypes:
+      - spider
     cost: '{G}{3}'
     strength: 2
     toughness: 4
@@ -498,6 +546,277 @@ cards:
         image: ''
         attribution: ''
         flavour:
-          en: It got its name due to its size rather than its dwelling
+          en: It got its name due to its size rather than its dwelling.
           de: Sie heisst nicht ihres Lebensraumes wegen so...
+        frame: green
+
+  207:
+    names:
+      en: Rainbow Bird
+      de: Regenbogenvogel
+      ko: 무지개 새
+    type: creature
+    subtypes:
+      - bird
+    cost: '{G}'
+    strength: 0
+    toughness: 1
+    abilities:
+      - keyword: flying
+      - cost: '{T}'
+        effect: 'add {R} to your energy pool'
+      - cost: '{T}'
+        effect: 'add {G} to your energy pool'
+    art:
+      20701:
+        image: ''
+        attribution: ''
+        frame: green
+
+  208:
+    names:
+      en: Grove Elder
+      de: Hainältester
+      ko: 숲 원로
+    type: creature
+    subtypes:
+      - druid
+    cost: '{G}{2}'
+    strength: 1
+    toughness: 1
+    abilities:
+      - cost: '{T}'
+        effect: 'untap chosen .source'
+    art:
+      20801:
+        image: ''
+        attribution: ''
+        frame: green
+
+  209:
+    names:
+      en: Grizzly Bear
+      de: Grizzlybär
+      ko: 회색곰
+    type: creature
+    subtypes:
+      - bear
+    cost: '{G}{1}'
+    strength: 2
+    toughness: 2
+    art:
+      20901:
+        image: ''
+        attribution: ''
+        frame: green
+
+  210:
+    names:
+      en: Forest Archers
+      de: Waldschützen
+      ko: 숲 궁수
+    type: creature
+    subtypes:
+      - elf
+    cost: '{G}{1}'
+    strength: 2
+    toughness: 1
+    abilities:
+      - keyword: intercept
+    art:
+      21001:
+        image: ''
+        attribution: ''
+        frame: green
+
+  211:
+    names:
+      en: Pack Wolf
+      de: Rudelwolf
+      ko: 무리 늑대
+    type: creature
+    subtypes:
+      - wolf
+    cost: '{G}'
+    strength: 1
+    toughness: 1
+    art:
+      21101:
+        image: ''
+        attribution: ''
+        frame: green
+
+  212:
+    names:
+      en: Venom Asp
+      de: Giftotter
+      ko: 독사
+    type: creature
+    subtypes:
+      - snake
+    cost: '{G}'
+    strength: 1
+    toughness: 1
+    art:
+      21201:
+        image: ''
+        attribution: ''
+        frame: green
+
+  213:
+    names:
+      en: Battle Mammoth
+      de: Kampfmammut
+      ko: 전투 매머드
+    type: creature
+    subtypes:
+      - mammoth
+    cost: '{G}{3}'
+    strength: 3
+    toughness: 3
+    abilities:
+      - keyword: crush
+    art:
+      21301:
+        image: ''
+        attribution: ''
+        frame: green
+
+  214:
+    names:
+      en: Spore Beast
+      de: Sporenbestie
+      ko: 포자 야수
+    type: creature
+    subtypes:
+      - beast
+    cost: '{G}{3}'
+    strength: 2
+    toughness: 2
+    effect: "when this gets damage: this has +1/+1"
+    art:
+      21401:
+        image: ''
+        attribution: ''
+        frame: green
+
+  215:
+    names:
+      en: Ancient Wurm
+      de: Uralter Wurm
+      ko: 고대 웜
+    type: creature
+    subtypes:
+      - wurm
+    cost: '{G}{5}'
+    strength: 6
+    toughness: 4
+    abilities:
+      - keyword: crush
+    art:
+      21501:
+        image: ''
+        attribution: ''
+        frame: green
+
+  216:
+    names:
+      en: Nature Titan
+      de: Naturtitan
+      ko: 자연 거인
+    type: creature
+    subtypes:
+      - elemental
+    cost: '{G}{G}{G}{3}'
+    strength: 7
+    toughness: 7
+    abilities:
+      - keyword: crush
+    effect: "when your turn begins: pay {G}{G}{G}{G} or destroy this"
+    art:
+      21601:
+        image: ''
+        attribution: ''
+        frame: green
+
+  217:
+    names:
+      en: Forest Sovereign
+      de: Waldherrscher
+      ko: 숲 군주
+    type: creature
+    subtypes:
+      - elemental
+    cost: '{G}{G}{4}'
+    strength: 4
+    toughness: 4
+    abilities:
+      - keyword: crush
+    art:
+      21701:
+        image: ''
+        attribution: ''
+        frame: green
+
+  218:
+    names:
+      en: Mist Veil
+      de: Nebelschleier
+      ko: 안개 장막
+    type: instant
+    cost: '{G}'
+    effect: prevent all battle damage until end of turn
+    art:
+      21801:
+        image: ''
+        attribution: ''
+        frame: green
+
+  219:
+    names:
+      en: Tempest
+      de: Sturmwind
+      ko: 폭풍
+    type: sorcery
+    cost: '{G}{X}'
+    effect: all .player gets X damage
+    effect: all .creature.flying gets X damage
+    art:
+      21901:
+        image: ''
+        attribution: ''
+        frame: green
+
+  220:
+    names:
+      en: Thorn Basilisk
+      de: Dornenbasilisk
+      ko: 가시 바실리스크
+    type: creature
+    subtypes:
+      - basilisk
+    cost: '{G}{3}'
+    strength: 2
+    toughness: 4
+    effect: "when this gets blocked by any .creature[c]: destroy [c]"
+    art:
+      22001:
+        image: ''
+        attribution: ''
+        frame: green
+
+  221:
+    names:
+      en: Provocation
+      de: Lockruf
+      ko: 도발
+    type: enchantment
+    subtypes:
+      - enchant_creature
+    cost: '{G}{1}'
+    effect: all .creature able to block enchanted .creature do so
+    art:
+      22101:
+        image: ''
+        attribution: ''
         frame: green

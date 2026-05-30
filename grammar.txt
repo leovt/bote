@@ -30,6 +30,8 @@ _effect: _immediate_effect
 triggered_effect: "when" trigger ":" _immediate_effect
 
 trigger: _object "gets" "tapped" -> tap_trigger
+       | _object "gets" "damage" -> damage_trigger
+       | _object "gets" "blocked" "by" _object -> blocked_by_trigger
        | step "step" "begins" -> step_begin_trigger
        | "your" "turn" "begins" -> turn_begin_trigger
        | this "enters" "the" "battlefield" -> enters_battlefield_trigger
@@ -40,12 +42,23 @@ _immediate_effect: damage_effect
        | destruction_effect
        | create_token_effect
        | continuous_effect
+       | untap_effect
+       | pay_or_destroy_effect
+       | must_block_effect
 
 damage_effect: _object "gets" _numeric "damage"
 destruction_effect: "destroy" _object
 add_energy_effect: "add" energy "to" _object "energy pool"
 create_token_effect: "create" _numeric "(" number ")" "token"
-continuous_effect: _object "has" modifier_list [until_end_of_turn]
+continuous_effect: _continuous_modifier [until_end_of_turn]
+untap_effect: "untap" _object
+pay_or_destroy_effect: "pay" energy "or" destruction_effect
+must_block_effect: _object "able" "to" "block" _object "do" "so"
+
+_continuous_modifier: _object "has" modifier_list
+                    | prevent_battle_damage
+
+prevent_battle_damage: "prevent" "all" "battle" "damage"
 
 until_end_of_turn: "until end of turn"
 
@@ -60,7 +73,7 @@ modifier: _signed_numeric "/" _signed_numeric -> delta_stat
 _object: all | this | effect_controller | _chosen | controller_of | enchanted | any
 
 all: "all" selector
-any: "any" selector
+any: "any" selector [chosen_label]
 this: "this"
 effect_controller: "you" | "your"
 _chosen: chosen_spec | chosen_ref
@@ -77,7 +90,7 @@ selector: selector_term+
 selector_term: "." _spec -> positive_selector
              | "!" _spec -> negative_selector
 
-_spec: type_spec | color_spec | other_spec | subtype_spec
+_spec: type_spec | color_spec | other_spec | subtype_spec | keyword_spec
 
 color_spec: "color" "(" color ("," color)* ")"
           | color
@@ -87,6 +100,8 @@ type_spec: "type" "(" type ("," type)* ")"
 
 subtype_spec: "subtype" "(" subtype ("," subtype)* ")"
           | subtype
+
+keyword_spec: keyword
 
 other_spec: "other"
 
