@@ -425,6 +425,7 @@ cards:
       90101:
         image: ''
         attribution: ''
+        frame: red
 
   902:
     names:
@@ -441,6 +442,7 @@ cards:
       90201:
         image: ''
         attribution: ''
+        frame: red
 
   201:
     names:

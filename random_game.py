@@ -10,7 +10,7 @@ import pdb
 
 from aiplayers import random_answer
 from cards import ArtCard, RuleCard
-from dummy_deck import RED_TEST_DECK, TEST_DECK
+from dummy_deck import GREEN_TEST_DECK, RED_TEST_DECK, TEST_DECK
 from event import (
     ActivateAbilityEvent,
     AddEnergyEvent,
@@ -21,6 +21,7 @@ from event import (
     EnterTheBattlefieldEvent,
     PlaySourceEvent,
     PlayerDamageEvent,
+    PlayerLosesEvent,
     StackEffectEvent,
 )
 from state import Game
@@ -31,6 +32,7 @@ sys.setrecursionlimit(50)
 DECKS = {
     'test': TEST_DECK,
     'red': RED_TEST_DECK,
+    'green': GREEN_TEST_DECK,
 }
 
 EFFECT_EVENT_TYPES = (
@@ -60,13 +62,15 @@ class GameRunError(Exception):
 
 
 class Coverage:
-    def __init__(self, deck):
+    def __init__(self, *decks):
         self.deck_card_ids = {
             ArtCard.get_by_id(art_id).rule_card.card_id
+            for deck in decks
             for art_id in deck
         }
         self.games = 0
         self.complete_games = 0
+        self.wins = Counter()
         self.event_counts = Counter()
         self.cards_played = Counter()
         self.cards_entered = Counter()
@@ -82,6 +86,7 @@ class Coverage:
         self.games += 1
         if complete:
             self.complete_games += 1
+            self.record_winner(game)
         self.max_events = max(self.max_events, len(game.event_log))
 
         for event in game.event_log:
@@ -116,12 +121,22 @@ class Coverage:
             if isinstance(event, EFFECT_EVENT_TYPES):
                 self.effect_events[event.__class__.__name__] += 1
 
+    def record_winner(self, game):
+        for event in reversed(game.event_log):
+            if isinstance(event, PlayerLosesEvent):
+                loser = game.players[event.player_id]
+                winner = game.players[loser.next_in_turn_id]
+                self.wins[winner.name] += 1
+                return
+
     def record_failure(self, game_index, error):
         self.failures.append((game_index, error.__class__.__name__, str(error)))
 
     def print_report(self):
         print(f'Ran {self.games} games.')
         print(f'Completed games: {self.complete_games}')
+        print(f'player1 wins: {self.wins["player1"]}')
+        print(f'player2 wins: {self.wins["player2"]}')
         print(f'Max events in one game: {self.max_events}')
         if self.failures:
             print(f'Failures: {len(self.failures)}')
@@ -201,8 +216,8 @@ def answer_all_questions(game):
         game.question = None
 
 
-def run_one_game(deck):
-    game = Game.create_duel('Leo', deck, 'Marc', deck)
+def run_one_game(deck1, deck2):
+    game = Game.create_duel('player1', deck1, 'player2', deck2)
     try:
         answer_all_questions(game)
     except Exception as error:
@@ -222,9 +237,25 @@ def run_one_game(deck):
 
 
 def parse_args():
+    available_decks = ', '.join(sorted(DECKS))
     parser = argparse.ArgumentParser(description='Run random BOTE games and report rough card/effect coverage.')
     parser.add_argument('-n', '--games', type=int, default=1)
-    parser.add_argument('--deck', choices=sorted(DECKS), default='test')
+    parser.add_argument(
+        '--deck',
+        '--deck1',
+        choices=sorted(DECKS),
+        default='test',
+        help=f"player1's deck. Available: {available_decks}. Default: %(default)s.",
+    )
+    parser.add_argument(
+        '--opponent-deck',
+        '--deck2',
+        choices=sorted(DECKS),
+        help=(
+            "player2's deck. Available: "
+            f"{available_decks}. Default: same as --deck."
+        ),
+    )
     parser.add_argument('--seed', type=int)
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--traceback', action='store_true')
@@ -239,16 +270,18 @@ def main():
     if not args.verbose:
         logging.getLogger('state').setLevel(logging.ERROR)
 
-    deck = DECKS[args.deck]
-    coverage = Coverage(deck)
+    deck1 = DECKS[args.deck]
+    deck2_name = args.opponent_deck or args.deck
+    deck2 = DECKS[deck2_name]
+    coverage = Coverage(deck1, deck2)
 
     for game_index in range(1, args.games + 1):
         try:
             if args.verbose:
-                game, deserialized_game = run_one_game(deck)
+                game, deserialized_game = run_one_game(deck1, deck2)
             else:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    game, deserialized_game = run_one_game(deck)
+                    game, deserialized_game = run_one_game(deck1, deck2)
             coverage.record_game(game)
             print(
                 f'Game {game_index}: '
