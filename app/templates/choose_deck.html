@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <div>
+      <label for="display-name">Your name:</label>
+      <input id="display-name" value="{{ display_name_for(player_id) }}" maxlength="32">
+    </div>
     <div id="player-1" class="player{{ ' ready' if game.deck1 else '' }}">
       <p>Name: <span class="player-name">{{ display_name_for(game.player1) }}</span></p>
       <p class="player-status">{{ 'Ready' if game.deck1 else ('Choose your deck' if game.player1 == player_id else 'Waiting...') }}</p>
@@ -61,6 +65,17 @@ function schedulePoll() {
   clearTimeout(pollTimeout);
   pollTimeout = window.setTimeout(pollStatus, 500);
 }
+
+function save_name() {
+  var input = document.getElementById('display-name');
+  var req = new XMLHttpRequest();
+  req.open("POST", "/session/name");
+  req.setRequestHeader('Content-Type', 'application/json');
+  req.send(JSON.stringify({name: input.value}));
+}
+var nameInput = document.getElementById('display-name');
+nameInput.addEventListener('blur', save_name);
+nameInput.addEventListener('keyup', function(e) { if (e.key === 'Enter') save_name(); });
 
 function choose_deck(deck_id) {
   var req = new XMLHttpRequest();

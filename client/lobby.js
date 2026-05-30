@@ -84,7 +84,7 @@ function read_msg() {
   });
   httpRequest.open("GET", `/chat_msg?first=${msg_count}`);
   httpRequest.send();
-  window.setTimeout(read_msg, 1000);
+  window.setTimeout(read_msg, 500);
 }
 
 function update_users() {
@@ -99,13 +99,16 @@ function update_users() {
       let element = document.getElementById(element_id);
       if (element) {
         obsolete.delete(element_id);
-      }
-      else {
+        element.querySelector('.user-name').textContent = usr.user;
+      } else {
         element = document.createElement('li');
         element.id = element_id;
-        element.innerText = usr.user;
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'user-name';
+        nameSpan.textContent = usr.user;
+        element.appendChild(nameSpan);
         if (!usr.is_me) {
-          button = document.createElement('button');
+          var button = document.createElement('button');
           button.innerText = "Challenge";
           button.addEventListener('click', function () {
             challenge(usr.player_id);
@@ -147,7 +150,7 @@ function update_users() {
   });
   httpRequest2.open("GET", `/games`);
   httpRequest2.send();
-  window.setTimeout(update_users, 5000);
+  window.setTimeout(update_users, 500);
 }
 
 function check_challenges() {
@@ -181,7 +184,7 @@ function check_challenges() {
   });
   httpRequest.open("GET", `/challenges`);
   httpRequest.send();
-  window.setTimeout(check_challenges, 3000);
+  window.setTimeout(check_challenges, 500);
 }
 
 document.getElementById('display-name').addEventListener('keyup', function(event) {
