@@ -779,8 +779,9 @@ cards:
       ko: 폭풍
     type: sorcery
     cost: '{G}{X}'
-    effect: all .player gets X damage
-    effect: all .creature.flying gets X damage
+    effects:
+      - all .player gets X damage
+      - all .creature.flying gets X damage
     art:
       21901:
         image: ''
