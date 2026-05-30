@@ -156,7 +156,7 @@ function renderQuestionFromSnapshot(snapshot) {
   }
   else {
     btn.innerText = "waiting for " + question.player.name;
-    window.log_refresh_timeout_id = window.setTimeout(log_refresh, 1000);
+    window.log_refresh_timeout_id = window.setTimeout(log_refresh, 200);
   }
 }
 

@@ -1,25 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="player{{ ' ready' if game.deck1 else '' }}">
-      <p>Name: {{ display_name_for(game.player1) }}</p>
-      {% if game.deck1 %}
-      <p>Ready</p>
-      {% elif game.player1 == player_id %}
-      <p>Choose your deck</p>
-      {% else %}
-      <p>Waiting...</p>
-      {% endif %}
+    <div id="player-1" class="player{{ ' ready' if game.deck1 else '' }}">
+      <p>Name: <span class="player-name">{{ display_name_for(game.player1) }}</span></p>
+      <p class="player-status">{{ 'Ready' if game.deck1 else ('Choose your deck' if game.player1 == player_id else 'Waiting...') }}</p>
     </div>
-    <div class="player{{ ' ready' if game.deck2 else '' }}">
-      <p>Name: {{ display_name_for(game.player2) }}</p>
-      {% if game.deck2 %}
-      <p>Ready</p>
-      {% elif game.player2 == player_id %}
-      <p>Choose your deck</p>
-      {% else %}
-      <p>Waiting...</p>
-      {% endif %}
+    <div id="player-2" class="player{{ ' ready' if game.deck2 else '' }}">
+      <p>Name: <span class="player-name">{{ display_name_for(game.player2) if game.player2 else '' }}</span></p>
+      <p class="player-status">{{ 'Ready' if game.deck2 else ('Choose your deck' if game.player2 == player_id else 'Waiting...') }}</p>
     </div>
     {% if game.player2 is none %}
     <p>
@@ -39,12 +27,50 @@
     <p>Waiting for the other player.</p>
     {% endif %}
     <script>
+var STATUS_URL = "{{ url_for('game_status', game_id=game.id) }}";
+var CHOOSE_URL = "{{ url_for('choose_deck', game_id=game.id) }}";
+var pollTimeout = null;
+
+function updatePlayerUI(slot, name, ready) {
+  var el = document.getElementById('player-' + slot);
+  if (!el) return;
+  el.querySelector('.player-name').textContent = name || 'Waiting...';
+  el.querySelector('.player-status').textContent = ready ? 'Ready' : (name ? 'Choosing...' : 'Waiting...');
+  el.classList.toggle('ready', ready);
+}
+
+function pollStatus() {
+  var req = new XMLHttpRequest();
+  req.open("GET", STATUS_URL);
+  req.addEventListener("load", function() {
+    if (req.status !== 200) return schedulePoll();
+    var data = JSON.parse(req.responseText);
+    if (data.status === 'running') {
+      window.location.href = data.game_url;
+      return;
+    }
+    updatePlayerUI(1, data.player1, data.player1_ready);
+    updatePlayerUI(2, data.player2, data.player2_ready);
+    schedulePoll();
+  });
+  req.addEventListener("error", schedulePoll);
+  req.send();
+}
+
+function schedulePoll() {
+  clearTimeout(pollTimeout);
+  pollTimeout = window.setTimeout(pollStatus, 500);
+}
+
 function choose_deck(deck_id) {
-  var httpRequest = new XMLHttpRequest();
-  httpRequest.open("POST", "{{ url_for('choose_deck', game_id=game.id) }}");
-  httpRequest.setRequestHeader('Content-Type', 'application/json');
-  httpRequest.addEventListener("load", function(){location.reload(true)});
-  httpRequest.send(JSON.stringify({deck_id:deck_id}));
+  var req = new XMLHttpRequest();
+  req.open("POST", CHOOSE_URL);
+  req.setRequestHeader('Content-Type', 'application/json');
+  req.addEventListener("load", function() {
+    clearTimeout(pollTimeout);
+    pollStatus();
+  });
+  req.send(JSON.stringify({deck_id: deck_id}));
 }
 
 function copy_invite_link() {
@@ -52,13 +78,11 @@ function copy_invite_link() {
   input.select();
   if (navigator.clipboard) {
     navigator.clipboard.writeText(input.value);
-  }
-  else {
+  } else {
     document.execCommand('copy');
   }
 }
 
-window.setTimeout(function(){location.reload(true);}, 3000);
-
+schedulePoll();
     </script>
 {% endblock %}

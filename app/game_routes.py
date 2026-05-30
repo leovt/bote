@@ -225,6 +225,22 @@ def respond_challenge(challenge_id):
     return jsonify({'table_url': challenge.table.url(), 'status': challenge.status})
 
 
+@app.route('/api/game/<game_id>/status')
+def game_status(game_id):
+    table = _table_or_404(game_id)
+    player_id, _ = touch_presence()
+    if not table.has_player(player_id):
+        abort(403)
+    return jsonify({
+        'status': table.status,
+        'game_url': table.url(),
+        'player1': display_name_for(table.player1),
+        'player2': display_name_for(table.player2),
+        'player1_ready': table.deck1 is not None,
+        'player2_ready': table.deck2 is not None,
+    })
+
+
 @app.route('/game/load', methods=["POST"])
 def load_game():
     abort(404)
