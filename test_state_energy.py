@@ -5,13 +5,17 @@ from energy import BLUE, GREEN, RED
 from event import (
     ActivateAbilityEvent,
     AddEnergyEvent,
+    BlockEvent,
     CastSpellEvent,
     ClearPoolEvent,
+    DamageEvent,
     EnterTheBattlefieldEvent,
+    PlayerDamageEvent,
     PutInGraveyardEvent,
     QuestionEvent,
     StackEffectEvent,
     StepEvent,
+    UntapEvent,
     event_classes,
 )
 from effects import Effect, EffectTemplate
@@ -55,6 +59,14 @@ def handle_pending_triggers(game):
         emitted.append(event)
         game.handle(event)
     return emitted
+
+
+def put_card_on_battlefield(game, controller, art_id, perm_id):
+    card = Card(f'{perm_id}-secret-id', ArtCard.get_by_id(art_id), controller)
+    game.cards[card.secret_id] = card
+    game.handle(EnterTheBattlefieldEvent(
+        card.secret_id, None, controller.player_id, perm_id, {}))
+    return game.battlefield[perm_id]
 
 
 class TestEnergyOnlyTemplates(unittest.TestCase):
@@ -338,7 +350,126 @@ class TestCastTriggers(unittest.TestCase):
         )
 
 
+class TestCombatTriggerRegistration(unittest.TestCase):
+    def register_trigger(self, rule_text):
+        game, controller, _ = minimal_game()
+        permanent = put_card_on_battlefield(game, controller, 20901, 'trigger-permanent')
+        template = EffectTemplate.parse(rule_text)
+        handle_all(game, Effect(template, game, {}, controller, permanent).execute())
+        return game, permanent, next(iter(game.triggered_effects.values()))
+
+    def test_damage_trigger_registers_simple_tuple(self):
+        _, permanent, trigger = self.register_trigger(
+            'when this gets damage: this has +1/+1')
+
+        self.assertEqual(trigger.trigger, ('DAMAGE', permanent.perm_id))
+
+    def test_blocked_by_trigger_registers_simple_tuple_with_filter(self):
+        _, permanent, trigger = self.register_trigger(
+            'when this gets blocked by any .creature: this has +1/+1')
+
+        self.assertEqual(
+            trigger.trigger,
+            ('BLOCKED_BY', permanent.perm_id, ('ANY', ('creature',))),
+        )
+
+    def test_damage_event_matches_damage_trigger(self):
+        game, permanent, trigger = self.register_trigger(
+            'when this gets damage: this has +1/+1')
+
+        game.handle(DamageEvent(permanent.perm_id, 1))
+        triggered_effects, stale_trigger_ids = check_triggers(game)
+
+        self.assertEqual(stale_trigger_ids, [])
+        self.assertEqual(triggered_effects, [trigger])
+
+    def test_block_event_matches_blocked_by_trigger_filter(self):
+        game, attacker, trigger = self.register_trigger(
+            'when this gets blocked by any .creature: this has +1/+1')
+        blocker = put_card_on_battlefield(game, game.players[1], 20901, 'blocker')
+
+        game.handle(BlockEvent(attacker.perm_id, [blocker.perm_id]))
+        triggered_effects, stale_trigger_ids = check_triggers(game)
+
+        self.assertEqual(stale_trigger_ids, [])
+        self.assertEqual(triggered_effects, [trigger])
+
+    def test_block_event_ignores_blockers_that_do_not_match_filter(self):
+        game, attacker, _ = self.register_trigger(
+            'when this gets blocked by any .creature: this has +1/+1')
+        blocker = put_card_on_battlefield(game, game.players[1], 20101, 'source-blocker')
+
+        game.handle(BlockEvent(attacker.perm_id, [blocker.perm_id]))
+        triggered_effects, stale_trigger_ids = check_triggers(game)
+
+        self.assertEqual(stale_trigger_ids, [])
+        self.assertEqual(triggered_effects, [])
+
+
 class TestContinuousEffectResolution(unittest.TestCase):
+    def test_all_player_damage_resolves_to_player_damage_events(self):
+        game, controller, _ = minimal_game()
+        events = Effect(
+            EffectTemplate.parse('all .player gets 1 damage'),
+            game,
+            {},
+            controller,
+            None,
+        ).execute()
+
+        self.assertEqual(
+            [(event.player_id, event.damage) for event in events],
+            [(0, 1), (1, 1)],
+        )
+        self.assertTrue(all(isinstance(event, PlayerDamageEvent) for event in events))
+
+    def test_all_flying_creature_damage_filters_by_keyword(self):
+        game, controller, _ = minimal_game()
+        flying = put_card_on_battlefield(game, controller, 20701, 'flying-permanent')
+        put_card_on_battlefield(game, controller, 20901, 'ground-permanent')
+
+        events = Effect(
+            EffectTemplate.parse('all .creature.flying gets 1 damage'),
+            game,
+            {},
+            controller,
+            None,
+        ).execute()
+
+        self.assertEqual(
+            [(event.perm_id, event.damage) for event in events],
+            [(flying.perm_id, 1)],
+        )
+        self.assertTrue(all(isinstance(event, DamageEvent) for event in events))
+
+    def test_untap_effect_resolves_to_untap_events(self):
+        game, controller, _ = minimal_game()
+        source = put_card_on_battlefield(game, controller, 20101, 'source-permanent')
+
+        events = Effect(
+            EffectTemplate.parse('untap chosen .source'),
+            game,
+            {'@1': source},
+            controller,
+            None,
+        ).execute()
+
+        self.assertEqual([event.perm_id for event in events], [source.perm_id])
+        self.assertTrue(all(isinstance(event, UntapEvent) for event in events))
+
+    def test_unsupported_prevent_battle_damage_is_explicit_noop(self):
+        game, controller, _ = minimal_game()
+
+        events = Effect(
+            EffectTemplate.parse('prevent all battle damage until end of turn'),
+            game,
+            {},
+            controller,
+            None,
+        ).execute()
+
+        self.assertEqual(events, [])
+
     def test_self_modifier_does_nothing_after_permanent_leaves(self):
         game, controller, _ = minimal_game()
         card = Card('creature-secret-id', ArtCard.get_by_id(10501), controller)

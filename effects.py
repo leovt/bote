@@ -4,12 +4,16 @@ import lark
 from keywords import KEYWORDS
 RESERVED_LABELS = ['enchanted', 'x']
 
+import energy
+
 from event import (AddEnergyEvent,
+                   PayEnergyEvent,
                    PlayerDamageEvent,
                    DamageEvent,
                    CreateContinuousEffectEvent,
                    EnterTheBattlefieldEvent,
                    CreateTriggerEvent,
+                   UntapEvent,
                   )
 from rules_actions import put_in_graveyard_events
 
@@ -286,15 +290,19 @@ class Executor(lark.Transformer):
         return [AddEnergyEvent(player.player_id, energy)]
 
     def destruction_effect(self, args):
-        permanent = args[0]
-        return list(put_in_graveyard_events(self._context.game, permanent))
+        return [
+            event
+            for permanent in self.iter_objects(args[0])
+            for event in put_in_graveyard_events(self._context.game, permanent)
+        ]
 
     def damage_effect(self, args):
-        print(args)
-        if hasattr(args[0], 'name'):
-            return [PlayerDamageEvent(args[0].player_id, args[1])]
-        else:
-            return [DamageEvent(args[0].perm_id, args[1])]
+        return [
+            PlayerDamageEvent(obj.player_id, args[1])
+            if hasattr(obj, 'name')
+            else DamageEvent(obj.perm_id, args[1])
+            for obj in self.iter_objects(args[0])
+        ]
 
     def create_token_effect(self, args):
         count, art_id = args
@@ -323,23 +331,55 @@ class Executor(lark.Transformer):
         return args[0]
 
     def continuous_effect(self, args):
-        affected_object = args[0]
-        if affected_object.perm_id not in self._context.game.battlefield:
+        if args[0] == 'prevent_battle_damage':
             return []
         effect_id = next(self._context.game.unique_ids)
         perm_id = None
         if self._context.permanent:
             perm_id = self._context.permanent.perm_id
-        objects = [affected_object.perm_id]
+        objects = [
+            obj.perm_id
+            for obj in self.iter_objects(args[0])
+            if obj.perm_id in self._context.game.battlefield
+        ]
+        if not objects:
+            return []
         modifiers = [
             self.resolve_modifier(modifier)
             for modifier in args[1]
         ]
         until_end_of_turn = False
         if len(args) > 2 and args[2] is not None:
-            assert args[2].data == 'until_end_of_turn'
+            assert args[2] == 'until_end_of_turn'
             until_end_of_turn = True
         return [CreateContinuousEffectEvent(effect_id, perm_id, objects, modifiers, until_end_of_turn)]
+
+    def prevent_battle_damage(self, args):
+        return 'prevent_battle_damage'
+
+    def until_end_of_turn(self, args):
+        return 'until_end_of_turn'
+
+    def untap_effect(self, args):
+        return [
+            UntapEvent(permanent.perm_id)
+            for permanent in self.iter_objects(args[0])
+        ]
+
+    def must_block_effect(self, args):
+        return []
+
+    def pay_or_destroy_effect(self, args):
+        cost, destruction_events = args
+        parsed_cost = energy.Energy.parse(cost)
+        if self._context.controller.energy_pool.can_pay(parsed_cost):
+            return [PayEnergyEvent(self._context.controller.player_id, cost)]
+        return destruction_events
+
+    def iter_objects(self, objects):
+        if isinstance(objects, list):
+            return objects
+        return [objects]
 
     def resolve_modifier(self, modifier):
         if modifier[0] == 'change_controller':
@@ -365,6 +405,12 @@ class Executor(lark.Transformer):
     def tap_trigger(self, args):
         return ['TAP', args[0].perm_id]
 
+    def damage_trigger(self, args):
+        return ('DAMAGE', args[0].perm_id)
+
+    def blocked_by_trigger(self, args):
+        return ('BLOCKED_BY', args[0].perm_id, args[1])
+
     def step_begin_trigger(self, args):
         return ('BEGIN_OF_STEP', args[0])
 
@@ -374,11 +420,60 @@ class Executor(lark.Transformer):
     def enters_battlefield_trigger(self, args):
         return ('ENTERS_THE_BATTLEFIELD', args[0].perm_id)
 
+    def all(self, args):
+        return [
+            obj
+            for obj in list(self._context.game.players.values()) + list(self._context.game.battlefield)
+            if self.object_matches_selector(obj, args[0])
+        ]
+
+    def object_matches_selector(self, obj, selector):
+        for operator, specification in selector:
+            matches = self.object_matches_spec(obj, specification)
+            if operator == 'INCLUDE' and not matches:
+                return False
+            if operator == 'EXCLUDE' and matches:
+                return False
+        return True
+
+    def object_matches_spec(self, obj, specification):
+        kind, values = specification
+        if kind == 'TYPE':
+            obj_types = {'player'} if hasattr(obj, 'player_id') else obj.types
+            return bool(set(values) & obj_types)
+        if kind == 'KEYWORD':
+            return not hasattr(obj, 'player_id') and any(obj.has(keyword) for keyword in values)
+        if kind == 'SUBTYPE':
+            return not hasattr(obj, 'player_id') and bool(set(values) & obj.subtypes)
+        if kind == 'COLOR':
+            return False
+        if kind == 'OTHER':
+            return obj is not self._context.permanent
+        return False
+
     def type(self, args):
+        return str(args[0])
+
+    def color(self, args):
+        return str(args[0])
+
+    def subtype(self, args):
         return str(args[0])
 
     def type_spec(self, args):
         return ('TYPE', tuple(args))
+
+    def color_spec(self, args):
+        return ('COLOR', tuple(args))
+
+    def subtype_spec(self, args):
+        return ('SUBTYPE', tuple(args))
+
+    def keyword_spec(self, args):
+        return ('KEYWORD', tuple(args))
+
+    def other_spec(self, args):
+        return ('OTHER', ())
 
     def positive_selector(self, args):
         return ('INCLUDE', args[0])

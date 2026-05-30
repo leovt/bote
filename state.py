@@ -472,6 +472,8 @@ class Game:
         self.trigger(('ENTERS_THE_BATTLEFIELD', permanent.perm_id))
 
     def handle_ExitTheBattlefieldEvent(self, event):
+        if event.perm_id not in self.battlefield:
+            return
         del self.battlefield[event.perm_id]
 
     def handle_PutInGraveyardEvent(self, event):
@@ -512,9 +514,13 @@ class Game:
         self.triggered_effects[event.trigger_id] = event
 
     def handle_EndContinuousEffectEvent(self, event):
+        if event.effect_id not in self.continuous_effects.keys():
+            return
         del self.continuous_effects[event.effect_id]
 
     def handle_EndTriggerEvent(self, event):
+        if event.trigger_id not in self.triggered_effects.keys():
+            return
         del self.triggered_effects[event.trigger_id]
 
     def handle_ResolveEvent(self, event):
@@ -544,10 +550,14 @@ class Game:
         attacker.blockers = [self.battlefield[x] for x in event.blocker_ids]
         for b in attacker.blockers:
             b.blocking = attacker
+            self.trigger(('BLOCKED_BY', event.attacker_id, b.perm_id))
 
     def handle_DamageEvent(self, event):
+        if event.perm_id not in self.battlefield:
+            return
         permanent = self.battlefield[event.perm_id]
         permanent.damage.append(Damage(event.damage))
+        self.trigger(('DAMAGE', event.perm_id))
 
     def handle_PlayerDamageEvent(self, event):
         player = self.players[event.player_id]
@@ -879,19 +889,32 @@ def check_triggers(game):
                     )
                     stale_trigger_ids.append(trigger_id)
                 continue
-            if trigger_matches(tr_effect.trigger, trigger):
+            if trigger_matches(game, tr_effect.trigger, trigger):
                 has_triggered.append(tr_effect)
 
     return has_triggered, stale_trigger_ids
 
 
-def trigger_matches(registered_trigger, occurred_trigger):
+def trigger_matches(game, registered_trigger, occurred_trigger):
     if registered_trigger[0] == 'CAST' and occurred_trigger[0] == 'CAST':
         registered_player, accepted_types = registered_trigger[1:]
         occurred_player, card_types = occurred_trigger[1:]
         return (registered_player == occurred_player
                 and bool(set(accepted_types) & set(card_types)))
+    if registered_trigger[0] == 'BLOCKED_BY' and occurred_trigger[0] == 'BLOCKED_BY':
+        registered_attacker, blocker_filter = registered_trigger[1:]
+        occurred_attacker, blocker_id = occurred_trigger[1:]
+        if registered_attacker != occurred_attacker:
+            return False
+        return object_matches_filter(game.battlefield[blocker_id], blocker_filter)
     return tuple(registered_trigger) == tuple(occurred_trigger)
+
+
+def object_matches_filter(obj, object_filter):
+    if object_filter[0] == 'ANY':
+        accepted_types = object_filter[1]
+        return bool(set(accepted_types) & set(obj.types))
+    return False
 
 
 def open_priority(game):
