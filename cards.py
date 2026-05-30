@@ -1,9 +1,36 @@
 from dataclasses import dataclass, field
 import functools
+import logging
 import yaml
 import energy
 from abilities import ActivatableAbility, parse_cost, parse_trigger
 from effects import EffectTemplate
+
+logger = logging.getLogger(__name__)
+
+class CardLoadErrors(Exception):
+    def __init__(self, errors):
+        self.errors = list(errors)
+        super().__init__(self._format_message())
+
+    def _format_message(self):
+        lines = [f'{len(self.errors)} card(s) failed to parse']
+        for card_id, name, detail in self.errors:
+            lines.append(f'- card {card_id} ({name}): {detail}')
+        return '\n'.join(lines)
+
+
+def _validate_card_spec(card):
+    for ab_spec in card.get('abilities', []):
+        if 'cost' in ab_spec:
+            parse_cost(ab_spec['cost'])
+        if 'effect' in ab_spec:
+            EffectTemplate.parse(ab_spec['effect'])
+    if 'effect' in card:
+        EffectTemplate.parse(card['effect'])
+    for effect_spec in card.get('effects', []):
+        EffectTemplate.parse(effect_spec)
+
 
 def instance_loader(loader):
     cache = {}
@@ -150,26 +177,41 @@ def load_yaml():
     cards = {}
     art_cards = {}
 
+    errors = []
     for card_id, card in data['cards'].items():
         assert card_id not in cards
+        card = dict(card)
         card['card_id'] = card_id
-        cards[card_id] = card
         typespec = types[card['type']]
-        for subtype in cards.get('subtypes', []):
+        for subtype in card.get('subtypes', []):
             assert subtype in typespec['subtypes']
 
+        try:
+            _validate_card_spec(card)
+        except Exception as exc:
+            name = card.get('names', {}).get('en', '<unnamed>')
+            errors.append((card_id, name, str(exc)))
+            continue
+
+        cards[card_id] = card
         for art_id, art in card.get('art', {}).items():
             assert art_id not in art_cards
+            art = dict(art)
             art['art_id'] = art_id
             art['card_id'] = card_id
             art_cards[art_id] = art
 
-    return types, cards, art_cards
+    for card_id, name, detail in errors:
+        logger.error('Skipping unreadable card %s (%s): %s', card_id, name, detail)
+
+    return types, cards, art_cards, errors
 
 def all():
     return _art_cards.values()
 
-_types, _cards, _art_cards = load_yaml()
+_types, _cards, _art_cards, _load_errors = load_yaml()
+if _load_errors:
+    raise CardLoadErrors(_load_errors)
 del load_yaml
 
 if __name__ == '__main__':
