@@ -582,13 +582,14 @@ cards:
       ko: 숲 원로
     type: creature
     subtypes:
+      - elf
       - druid
     cost: '{G}{2}'
     strength: 1
     toughness: 1
     abilities:
       - cost: '{T}'
-        effect: 'untap chosen .source'
+        effect: 'chosen .other.elf has +1/+1 and intercept until end of turn'
     art:
       20801:
         image: ''

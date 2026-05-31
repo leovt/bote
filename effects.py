@@ -81,6 +81,25 @@ class Unparser(lark.Transformer):
     def __default__(self, data, children, meta):
         assert False, f'{self.__class__.__name__}.{data} not implemented'
 
+    def _modifier_text(self, modifier):
+        if modifier[0] == 'delta_stat':
+            return f'{modifier[1]:+d}/{modifier[2]:+d}'
+        if modifier[0] == 'set_stat':
+            return f'{modifier[1]}/{modifier[2]}'
+        if modifier[0] == 'add_keyword':
+            return modifier[1]
+        if modifier[0] == 'remove_keyword':
+            return f'not {modifier[1]}'
+        if modifier[0] == 'change_controller':
+            return f'controlled by {modifier[1]}'
+        assert False, f'unknown modifier {modifier}'
+
+    def _modifier_list_text(self, modifiers):
+        return ' and '.join(
+            self._modifier_text(modifier)
+            for modifier in modifiers
+        )
+
     def until_end_of_turn(self, args):
         return 'until end of turn'
 
@@ -99,6 +118,17 @@ class Unparser(lark.Transformer):
         if len(args) == 1:
             return args[0]
         return f'type({",".join(args)})'
+
+    def subtype(self, args):
+        return args[0]
+
+    def subtype_spec(self, args):
+        if len(args) == 1:
+            return args[0]
+        return f'subtype({",".join(args)})'
+
+    def other_spec(self, args):
+        return 'other'
 
     def positive_selector(self, args):
         return '.' + args[0]
@@ -181,7 +211,10 @@ class Unparser(lark.Transformer):
         return f'all {args[0]}'
 
     def continuous_effect(self, args):
-        return f'{args[0]} has {args[1]} {args[2]}'
+        suffix = ''
+        if len(args) > 2 and args[2]:
+            suffix = f' {args[2]}'
+        return f'{args[0]} has {self._modifier_list_text(args[1])}{suffix}'
 
     def damage_effect(self, args):
         return f'{args[0]} gets {args[1]} damage'
@@ -190,20 +223,13 @@ class Unparser(lark.Transformer):
         return f'create {args[0]} ({args[1]}) token'
 
     def put_counter_effect(self, args):
-        modifier = args[0]
-        if modifier[0] == 'delta_stat':
-            strength = f'{modifier[1]:+d}'
-            toughness = f'{modifier[2]:+d}'
-        else:
-            strength = modifier[1]
-            toughness = modifier[2]
-        return f'put a {strength}/{toughness} counter on {args[1]}'
+        return f'put a {self._modifier_text(args[0])} counter on {args[1]}'
 
     def effects(self, args):
         return '; '.join(args)
 
     def selector(self, args):
-        return args[0]
+        return ''.join(args)
 
     def number(self, args):
         return args[0]
