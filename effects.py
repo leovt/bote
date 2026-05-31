@@ -189,6 +189,16 @@ class Unparser(lark.Transformer):
     def create_token_effect(self, args):
         return f'create {args[0]} ({args[1]}) token'
 
+    def put_counter_effect(self, args):
+        modifier = args[0]
+        if modifier[0] == 'delta_stat':
+            strength = f'{modifier[1]:+d}'
+            toughness = f'{modifier[2]:+d}'
+        else:
+            strength = modifier[1]
+            toughness = modifier[2]
+        return f'put a {strength}/{toughness} counter on {args[1]}'
+
     def effects(self, args):
         return '; '.join(args)
 
@@ -310,6 +320,9 @@ class Executor(lark.Transformer):
                     self._context.controller.player_id,
                     next(self._context.game.unique_ids), {})
                 for _ in range(count)]
+
+    def put_counter_effect(self, args):
+        return []
 
     def variable(self, args):
         return self._context.choices['x']
