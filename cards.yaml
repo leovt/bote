@@ -253,8 +253,8 @@ cards:
 
     art:
       10901:
-        image: ''
-        attribution: ''
+        image: 'outrage.png'
+        attribution: 'leovt and chatgpt 2026'
         frame: red
 
   110:
@@ -627,8 +627,8 @@ cards:
       - keyword: intercept
     art:
       21001:
-        image: ''
-        attribution: ''
+        image: archers.png
+        attribution: 'leovt and chatgpt 2026'
         frame: green
 
   211:
@@ -699,7 +699,7 @@ cards:
     art:
       21401:
         image: spore_beast.png
-        attribution: ''
+        attribution: 'leovt and chatgpt 2026'
         frame: green
 
   215:
@@ -777,7 +777,7 @@ cards:
   219:
     names:
       en: Tempest
-      de: Sturmwind
+      de: Sturm
       ko: 폭풍
     type: sorcery
     cost: '{G}{X}'
@@ -786,8 +786,8 @@ cards:
       - all .creature.flying gets X damage
     art:
       21901:
-        image: ''
-        attribution: ''
+        image: 'tempest.png'
+        attribution: 'leovt and chatgpt 2026'
         frame: green
 
   220:
