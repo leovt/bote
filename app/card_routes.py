@@ -1,9 +1,10 @@
 import os
 import base64
-import mimetypes
+from io import BytesIO
 import re
 from flask import abort, jsonify, request, render_template, redirect, url_for
 from markupsafe import Markup, escape
+from PIL import Image, ImageOps
 import randimage
 
 from app import app
@@ -65,9 +66,16 @@ def create_data_url(filename):
     'XTewJXdkwJbcswPYkjsy4OnTQWBL7siAJblnB7Alt+oHbMk9Ox4wkgeq48l3qF4wkkeqX3nav+'
     'BZXKh+5Q2Hc+PdCup+/a0O4prV/Z1fg/mBJ9tvPSCnP7LvLHgAAAAASUVORK5CYII=')
     try:
-        with open(filename, 'rb') as infile:
-            data = base64.b64encode(infile.read()).decode('ascii')
-        mimetype, _ = mimetypes.guess_type(filename)
+        with Image.open(filename) as image:
+            image = ImageOps.fit(
+                image.convert('RGB'),
+                (480, 320),
+                method=Image.Resampling.LANCZOS,
+            )
+            outfile = BytesIO()
+            image.save(outfile, format='WEBP', quality=82, method=6)
+            data = base64.b64encode(outfile.getvalue()).decode('ascii')
+            mimetype = 'image/webp'
     except OSError:
         data = MISSING_IMAGE
         mimetype = 'image/png'
