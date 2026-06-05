@@ -175,8 +175,8 @@ cards:
     toughness: 3
     art:
       10401:
-        image: ''
-        attribution: ''
+        image: angry_minotaur_10401.png
+        attribution: leovt and openai 2026
         frame: red
 
   105:
@@ -240,8 +240,8 @@ cards:
         effect: "chosen .other.goblin has +1/+1 and flying until end of turn"
     art:
       10801:
-        image: ''
-        attribution: ''
+        image: goblin_corporal_10801.png
+        attribution: leovt and openai 2026
         frame: red
 
   109:
@@ -423,8 +423,8 @@ cards:
 
     art:
       90101:
-        image: ''
-        attribution: ''
+        image: goblin_90101.png
+        attribution: leovt and openai 2026
         frame: red
 
   902:
@@ -771,8 +771,8 @@ cards:
     effect: prevent all battle damage until end of turn
     art:
       21801:
-        image: ''
-        attribution: ''
+        image: mist_veil_21801.png
+        attribution: leovt and openai 2026
         frame: green
 
   219:
@@ -805,8 +805,8 @@ cards:
     effect: "when this gets blocked by any .creature[c]: destroy [c]"
     art:
       22001:
-        image: ''
-        attribution: ''
+        image: thorn_basilisk_22001.png
+        attribution: leovt and openai 2026
         frame: green
 
   221:
