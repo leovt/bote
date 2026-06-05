@@ -22,6 +22,27 @@ def card_view(card_id):
     return render_template('card.html', card=card, name=name)
 
 
+@app.route('/card/')
+@app.route('/card')
+def card_index_redirect():
+    return redirect(url_for('cards_view'))
+
+
+@app.route('/cards/')
+@app.route('/cards')
+def cards_view():
+    lang = request.headers.get('accept-language', '')[:2]
+    card_rows = []
+    for art_card in sorted(cards.all(), key=lambda card: card['art_id']):
+        card = cards.card_spec(art_card['card_id'])
+        card_rows.append({
+            'art_id': art_card['art_id'],
+            'card_id': art_card['card_id'],
+            'name': get_lang(card.get('names', {}), lang),
+        })
+    return render_template('cards.html', cards=card_rows)
+
+
 def get_lang(names, lang):
     ''' From a dict of {lang: name} return the best match
       - the requested language
