@@ -1,5 +1,6 @@
 savegames/
 hash_images/
+art_previews/
 app/app.db
 
 # Byte-compiled / optimized / DLL files

@@ -10,7 +10,7 @@ COMMENT: /\<[\w\s]+\>/
 
 color: /red|green|blue|yellow|white/
 type: /player|permanent|creature|enchantment|source|instant|sorcery/
-subtype: /goblin|dragon|elemental|minotaur|human/
+subtype: /goblin|dragon|elemental|minotaur|human|elf/
 step: /end/
 energy: /(\{([0-9]+|[RGBWY])\})+/
 number: /[0-9]+/
