@@ -25,7 +25,7 @@ DEFAULT_SIZE = "1536x1024"
 DEFAULT_QUALITY = "auto"
 FINAL_IMAGE_INSTRUCTIONS = (
     "Horizontal 3:2 composition, strong readable silhouette, dramatic lighting, rich environment. "
-    "No text, no logos, no card border, no watermark, no UI elements."
+    "No text, no numbers, no sigils, no symbols, no logos, no card border, no watermark, no UI elements."
 )
 STYLE_VARIANTS = {
     "red": [
@@ -133,6 +133,34 @@ def card_rules(card):
     return "; ".join(rules)
 
 
+def describe_card_for_gpt_prompt(card):
+    bits = [card["type"]]
+    if card.get("subtypes"):
+        bits.append(" ".join(card["subtypes"]))
+    return ", ".join(bits)
+
+
+def sanitized_rules_for_gpt_prompt(card):
+    rules = []
+    if card.get("effect"):
+        rules.append(card["effect"])
+    rules.extend(card.get("effects", []))
+    for ability in card.get("abilities", []):
+        if "keyword" in ability:
+            rules.append(ability["keyword"])
+        elif "effect" in ability:
+            rules.append(ability["effect"])
+    text = "; ".join(rules)
+    text = re.sub(r"\{[^}]*\}", "", text)
+    text = re.sub(r"\[[^\]]*\]", "", text)
+    text = re.sub(r"\([^)]*\)", "", text)
+    text = re.sub(r"\b\d+\b", "", text)
+    text = re.sub(r"\b[A-Z]\b", "", text)
+    text = text.replace(".", " ")
+    text = re.sub(r"[+*/=]", " ", text)
+    return " ".join(text.split())
+
+
 def final_image_prompt(prompt):
     return f"{prompt.rstrip(' .')}. {FINAL_IMAGE_INSTRUCTIONS}"
 
@@ -205,8 +233,12 @@ def response_summary(response):
 def prompt_brief(card, art):
     name = english_name(card)
     flavour = art.get("flavour", {}).get("en", "")
-    rules = card_rules(card)
-    details = [f"Card name: {name}", f"Card details: {describe_card(card)}"]
+    rules = sanitized_rules_for_gpt_prompt(card)
+    details = [f"Card name: {name}", f"Card details: {describe_card_for_gpt_prompt(card)}"]
+    if card.get("token"):
+        details.append(
+            "This is token creature art: keep the scene plain, simple, and low texture detail."
+        )
     if rules:
         details.append(f"Abilities and rules: {rules}")
     if flavour:
@@ -223,8 +255,12 @@ def propose_gpt_prompt(card, art, prompt_model, prompt_max_output_tokens):
             "Write one concise image-generation prompt for original fantasy card game artwork. "
             "Use the card name, creature/type details, abilities, rules, and flavor as inspiration. "
             "Do not use any existing character, franchise, artist name, logo, or copyrighted setting. "
-            "Do not include text rendering instructions or aspect-ratio instructions. "
+            "Do not mention or request text, letters, numbers, sigils, symbols, runes, emblems, card UI, "
+            "game pieces, tabletop objects, hands, frames, borders, or anything outside the fictional scene. "
+            "Do not include numeric stats, costs, quantities, or rules syntax in the prompt. "
+            "Do not include aspect-ratio instructions. "
             "Do not assume a fixed visual style; propose a distinctive style and scene that fit this card. "
+            "If the card is a token, keep the art plain, simple, and low texture detail. "
             "Return only the image prompt, one paragraph."
         ),
         "input": prompt_brief(card, art),
@@ -258,7 +294,39 @@ def propose_gpt_prompt(card, art, prompt_model, prompt_max_output_tokens):
     return final_image_prompt(prompt)
 
 
+def token_subject(card, art):
+    color = card.get("color") or art.get("frame") or ""
+    subtypes = card.get("subtypes", [])
+    if "goblin" in subtypes:
+        return "plain goblin"
+    if subtypes:
+        subject = " ".join([color, subtypes[0], "creature"])
+    else:
+        subject = " ".join([color, english_name(card), "creature"])
+    return " ".join(subject.split())
+
+
+def propose_token_prompt(card, art):
+    subject = token_subject(card, art)
+    landscape = random.choice([
+        "a rocky plain landscape",
+        "a barren rocky foothill landscape",
+        "a sparse stone plain with low hills",
+        "a simple rocky landscape with open sky",
+    ])
+    prompt = (
+        f"A fantasy card game illustration of a {subject}. "
+        f"It is a token creature, so use low texture simple art, one creature in {landscape}."
+    )
+    if "goblin" in card.get("subtypes", []):
+        prompt += " Low emphasis on nose and ears."
+    return final_image_prompt(prompt)
+
+
 def propose_local_prompt(card, art):
+    if card.get("token"):
+        return propose_token_prompt(card, art)
+
     name = english_name(card)
     frame = art.get("frame") or card.get("color") or "neutral"
     frame_styles = STYLE_VARIANTS.get(frame, STYLE_VARIANTS["neutral"])
@@ -282,11 +350,10 @@ def propose_local_prompt(card, art):
     return final_image_prompt(prompt)
 
 
-def propose_prompts(card, art, prompt_model, prompt_max_output_tokens, local_count=2):
-    print(f"Generating one prompt with {prompt_model}...")
-    prompts = [propose_gpt_prompt(card, art, prompt_model, prompt_max_output_tokens)]
+def propose_prompts(card, art, local_count=2):
+    prompts = []
     seen = set(prompts)
-    while len(prompts) < local_count + 1:
+    while len(prompts) < local_count:
         prompt = propose_local_prompt(card, art)
         if prompt in seen:
             continue
@@ -303,6 +370,14 @@ def slugify(value):
     return value or "card"
 
 
+def read_input(prompt):
+    try:
+        return input(prompt)
+    except (KeyboardInterrupt, EOFError):
+        print()
+        return None
+
+
 def print_missing(items):
     if not items:
         print("No cards without images found.")
@@ -316,7 +391,10 @@ def print_missing(items):
 def choose_missing_card(items):
     print_missing(items)
     while items:
-        value = input("\nArt id to generate (or q): ").strip()
+        value = read_input("\nArt id to generate (or q): ")
+        if value is None:
+            return None
+        value = value.strip()
         if value.lower() in {"q", "quit", "exit"}:
             return None
         try:
@@ -332,32 +410,48 @@ def choose_missing_card(items):
 
 
 def choose_prompt(card, art, prompt_model, prompt_max_output_tokens):
-    prompts = propose_prompts(card, art, prompt_model, prompt_max_output_tokens)
+    prompts = propose_prompts(card, art)
     while True:
         print("\nProposed prompts:")
         for index, prompt in enumerate(prompts, start=1):
             print(f"\n[{index}]\n{prompt}")
-        choice = input("\nChoose 1-3, [a 1-3]ppend, [e]dit, [r]eroll, [n]o: ").strip().lower()
-        if choice in {"1", "2", "3"}:
+        choice = read_input("\nChoose number, [g]pt prompt, [a N]ppend, [e]dit, [r]eroll, [n]o: ")
+        if choice is None:
+            return None
+        choice = choice.strip().lower()
+        if choice.isdigit() and 1 <= int(choice) <= len(prompts):
             return prompts[int(choice) - 1]
-        append_match = re.fullmatch(r"a(?:ppend)?\s+([1-3])", choice)
+        append_match = re.fullmatch(r"a(?:ppend)?\s+(\d+)", choice)
         if append_match:
             prompt_index = int(append_match.group(1)) - 1
-            addition = input(f"Append to prompt {prompt_index + 1}: ").strip()
+            if not 0 <= prompt_index < len(prompts):
+                print(f"Please choose a prompt between 1 and {len(prompts)}.")
+                continue
+            addition = read_input(f"Append to prompt {prompt_index + 1}: ")
+            if addition is None:
+                return None
+            addition = addition.strip()
             if addition:
                 prompts[prompt_index] = f"{prompts[prompt_index].rstrip()} {addition}"
+            continue
+        if choice in {"g", "gpt", "llm"}:
+            print(f"Generating one prompt with {prompt_model}...")
+            prompts.append(propose_gpt_prompt(card, art, prompt_model, prompt_max_output_tokens))
             continue
         if choice in {"n", "no", "q", "quit"}:
             return None
         if choice in {"r", "reroll"}:
-            prompts = propose_prompts(card, art, prompt_model, prompt_max_output_tokens)
+            prompts = propose_prompts(card, art)
             continue
         if choice in {"e", "edit"}:
-            edited = input("Paste edited prompt: ").strip()
+            edited = read_input("Paste edited prompt: ")
+            if edited is None:
+                return None
+            edited = edited.strip()
             if edited:
                 return edited
             continue
-        print("Please choose 1, 2, 3, a 1, a 2, a 3, e, r, or n.")
+        print("Please choose a prompt number, g, a N, e, r, or n.")
 
 
 def is_optional_parameter_error(exc, keys):
@@ -476,7 +570,10 @@ def approve_preview(preview_path):
     print(f"\nPreview image saved to: {preview_path}")
     print("Open that file to inspect it before adding it to cards.yaml.")
     while True:
-        choice = input("Preview action: [o]pen, [y]es add, [n]o keep, [d]elete: ").strip().lower()
+        choice = read_input("Preview action: [o]pen, [y]es add, [n]o keep, [d]elete: ")
+        if choice is None:
+            return "keep"
+        choice = choice.strip().lower()
         if choice in {"o", "open"}:
             open_preview(preview_path)
             continue
@@ -598,10 +695,7 @@ def main(argv=None):
         if item is None:
             return 0
         _card_id, card, _art_id, art = item
-        for index, prompt in enumerate(
-            propose_prompts(card, art, args.prompt_model, args.prompt_max_output_tokens),
-            start=1,
-        ):
+        for index, prompt in enumerate(propose_prompts(card, art), start=1):
             print(f"[{index}] {prompt}\n")
         return 0
 
