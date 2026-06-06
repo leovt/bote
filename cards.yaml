@@ -304,8 +304,8 @@ cards:
       - keyword: readiness
     art:
       11201:
-        image: ''
-        attribution: ''
+        image: fireelemental_11201.png
+        attribution: leovt using gpt 2026
         frame: red
 
   113:
@@ -335,8 +335,8 @@ cards:
 
     art:
       11401:
-        image: ''
-        attribution: ''
+        image: incinerate_11401.png
+        attribution: leovt and openai 2026
         frame: red
 
   115:
@@ -348,8 +348,8 @@ cards:
 
     art:
       11501:
-        image: ''
-        attribution: ''
+        image: war_cry_11501.png
+        attribution: leovt and openai 2026
         frame: red
 
   116:
@@ -361,8 +361,8 @@ cards:
 
     art:
       11601:
-        image: ''
-        attribution: ''
+        image: fireball_11601.png
+        attribution: leovt and openai 2026
         frame: red
 
   117:
@@ -377,8 +377,8 @@ cards:
 
     art:
       11701:
-        image: ''
-        attribution: ''
+        image: sparks_11701.png
+        attribution: leovt and openai 2026
         frame: red
 
   118:
@@ -390,8 +390,8 @@ cards:
 
     art:
       11801:
-        image: ''
-        attribution: ''
+        image: goblin_patrol_11801.png
+        attribution: leovt and openai 2026
         frame: red
 
   119:
@@ -406,8 +406,8 @@ cards:
       - "when you cast any .sorcery: create 1 <red elemental>(90201) token"
     art:
       11901:
-        image: ''
-        attribution: ''
+        image: pyroscientist_11901.png
+        attribution: leovt and openai 2026
         frame: red
 
   901:
@@ -592,8 +592,8 @@ cards:
         effect: 'chosen .other.elf has +1/+1 and intercept until end of turn'
     art:
       20801:
-        image: ''
-        attribution: ''
+        image: grove_elder_20801.png
+        attribution: leovt and openai 2026
         frame: green
 
   209:
@@ -662,8 +662,8 @@ cards:
     toughness: 1
     art:
       21201:
-        image: ''
-        attribution: ''
+        image: venom_asp_21201.png
+        attribution: leovt and openai 2026
         frame: green
 
   213:
@@ -681,8 +681,8 @@ cards:
       - keyword: crush
     art:
       21301:
-        image: ''
-        attribution: ''
+        image: battle_mammoth_21301.png
+        attribution: leovt and openai 2026
         frame: green
 
   214:
@@ -738,8 +738,8 @@ cards:
     effect: "when your turn begins: pay {G}{G}{G}{G} or destroy this"
     art:
       21601:
-        image: ''
-        attribution: ''
+        image: nature_titan_21601.png
+        attribution: leovt and openai 2026
         frame: green
 
   217:
@@ -757,8 +757,8 @@ cards:
       - keyword: crush
     art:
       21701:
-        image: ''
-        attribution: ''
+        image: forest_sovereign_21701.png
+        attribution: leovt and openai 2026
         frame: green
 
   218:
