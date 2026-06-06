@@ -287,8 +287,8 @@ cards:
         effect: this has +1/+0 until end of turn
     art:
       11101:
-        image: ''
-        attribution: ''
+        image: minor_dragon_11101.png
+        attribution: leovt and openai 2026
         frame: red
 
   112:
@@ -440,8 +440,8 @@ cards:
 
     art:
       90201:
-        image: ''
-        attribution: ''
+        image: elemental_90201.png
+        attribution: leovt and openai 2026
         frame: red
 
   201:
@@ -509,8 +509,8 @@ cards:
         effect: 'add {G} to your energy pool'
     art:
       20401:
-        image: ''
-        attribution: ''
+        image: forest_scout_20401.png
+        attribution: leovt and openai 2026
         frame: green
 
   205:
@@ -526,8 +526,8 @@ cards:
     toughness: 4
     art:
       20501:
-        image: ''
-        attribution: ''
+        image: wild_boar_20501.png
+        attribution: leovt and openai 2026
         frame: green
 
   206:
@@ -571,8 +571,8 @@ cards:
         effect: 'add {G} to your energy pool'
     art:
       20701:
-        image: ''
-        attribution: ''
+        image: rainbow_bird_20701.png
+        attribution: leovt and openai 2026
         frame: green
 
   208:
@@ -609,8 +609,8 @@ cards:
     toughness: 2
     art:
       20901:
-        image: ''
-        attribution: ''
+        image: grizzly_bear_20901.png
+        attribution: leovt and openai 2026
         frame: green
 
   210:
@@ -645,8 +645,8 @@ cards:
     toughness: 1
     art:
       21101:
-        image: ''
-        attribution: ''
+        image: pack_wolf_21101.png
+        attribution: leovt and openai 2026
         frame: green
 
   212:
@@ -718,8 +718,8 @@ cards:
       - keyword: crush
     art:
       21501:
-        image: ''
-        attribution: ''
+        image: ancient_wurm_21501.png
+        attribution: leovt and openai 2026
         frame: green
 
   216:
