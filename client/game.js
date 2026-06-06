@@ -89,6 +89,151 @@ function renderZone(elementId, cards) {
   cards.forEach(card => zone.appendChild(cardElementFromSnapshot(card)));
 }
 
+const ENERGY_COLOR_MAP = [
+  ['red',       '#dd3333'],
+  ['yellow',    '#ffcc00'],
+  ['blue',      '#3355dd'],
+  ['green',     '#339933'],
+  ['white',     '#eeeeee'],
+];
+
+function renderEnergyBar(energyData, nbSources, bfElementId) {
+  const bf = document.getElementById(bfElementId);
+  if (!bf) return;
+  const barId = bfElementId + '-energy-bar';
+  let svg = document.getElementById(barId);
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = barId;
+    svg.classList.add('energy-bar');
+    bf.appendChild(svg);
+  }
+
+  const total = energyData ? energyData.total : 0;
+  const totalCircles = Math.max(total, nbSources);
+  if (!totalCircles) {
+    svg.style.display = 'none';
+    return;
+  }
+  svg.style.display = '';
+
+  const GAP = 2;
+  const R = Math.max(4, Math.round((bf.clientWidth / 2 - 14 * GAP) / 30));
+  const D = R * 2;
+  svg.setAttribute('width', totalCircles * (D + GAP) - GAP);
+  svg.setAttribute('height', D);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const ns = 'http://www.w3.org/2000/svg';
+
+  if (energyData) {
+    const bd = energyData.breakdown || {};
+    const parts = [`total energy: ${total}`];
+    for (const [key] of ENERGY_COLOR_MAP) {
+      if (bd[key] > 0) parts.push(`max ${bd[key]} ${key}`);
+    }
+    if ((bd.colorless || 0) > 0) parts.push(`max ${bd.colorless} colorless`);
+    const title = document.createElementNS(ns, 'title');
+    title.textContent = parts.join(', ');
+    svg.appendChild(title);
+  }
+
+  const emptyCount = Math.max(0, nbSources - total);
+
+  // Build per-circle color arrays, or flag for gradient rect (3+ mixed colors)
+  const circleColors = [];
+  let gradientRectColors = null;
+  if (total > 0 && energyData && energyData.breakdown) {
+    const bd = energyData.breakdown;
+    const sumColored = ENERGY_COLOR_MAP.reduce((s, [k]) => s + (bd[k] || 0), 0);
+    if (sumColored > total) {
+      const nonzero = ENERGY_COLOR_MAP
+        .map(([key, color]) => [color, Math.min(total, bd[key] || 0)])
+        .filter(([, count]) => count > 0);
+      if (nonzero.length === 1) {
+        const [[color, count]] = nonzero;
+        for (let i = 0; i < count; i++) circleColors.push([color]);
+      } else if (nonzero.length === 2) {
+        const [[color1, count1], [color2, count2]] = nonzero;
+        const mix = count1 + count2 - total;
+        for (let i = 0; i < count1 - mix; i++) circleColors.push([color1]);
+        for (let i = 0; i < mix; i++) circleColors.push([color1, color2]);
+        for (let i = 0; i < count2 - mix; i++) circleColors.push([color2]);
+      } else {
+        gradientRectColors = nonzero.map(([color]) => color);
+      }
+    } else {
+      for (const [key, color] of ENERGY_COLOR_MAP) {
+        for (let i = 0; i < (bd[key] || 0); i++) circleColors.push([color]);
+      }
+      while (circleColors.length < total) circleColors.push(['#aaaaaa']);
+    }
+  }
+
+  const drawCircle = (idx, colors, stroke) => {
+    const cx = idx * (D + GAP) + R, cy = R, innerR = R - 1;
+    if (!colors) {
+      const c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', innerR);
+      c.setAttribute('fill', 'none');
+      c.setAttribute('stroke', stroke); c.setAttribute('stroke-width', '1.5');
+      svg.appendChild(c);
+    } else if (colors.length === 1) {
+      const c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', innerR);
+      c.setAttribute('fill', colors[0]);
+      svg.appendChild(c);
+    } else {
+      const n = colors.length;
+      for (let i = 0; i < n; i++) {
+        const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
+        const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+        const x1 = cx + innerR * Math.cos(a0), y1 = cy + innerR * Math.sin(a0);
+        const x2 = cx + innerR * Math.cos(a1), y2 = cy + innerR * Math.sin(a1);
+        const p = document.createElementNS(ns, 'path');
+        p.setAttribute('d', `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${innerR} ${innerR} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`);
+        p.setAttribute('fill', colors[i]);
+        svg.appendChild(p);
+      }
+    }
+  };
+
+  for (let i = 0; i < emptyCount; i++) drawCircle(i, null, '#888888');
+
+  if (gradientRectColors) {
+    const rectW = total * D + (total - 1) * GAP;
+    const rectX = emptyCount * (D + GAP);
+    const gradId = barId + '-mixgrad';
+    const n = gradientRectColors.length;
+    const BLUR = (R / 2) / rectW;
+    const defs = document.createElementNS(ns, 'defs');
+    const grad = document.createElementNS(ns, 'linearGradient');
+    grad.id = gradId;
+    gradientRectColors.forEach((color, i) => {
+      const addStop = (offset, c) => {
+        const s = document.createElementNS(ns, 'stop');
+        s.setAttribute('offset', Math.min(1, Math.max(0, offset)));
+        s.setAttribute('stop-color', c);
+        grad.appendChild(s);
+      };
+      if (i === 0) addStop(0, color);
+      else addStop(i / n + BLUR, color);
+      if (i === n - 1) addStop(1, color);
+      else addStop((i + 1) / n - BLUR, color);
+    });
+    defs.appendChild(grad);
+    svg.appendChild(defs);
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', rectX); rect.setAttribute('y', 0);
+    rect.setAttribute('width', rectW); rect.setAttribute('height', D);
+    rect.setAttribute('rx', R); rect.setAttribute('ry', R);
+    rect.setAttribute('fill', `url(#${gradId})`);
+    svg.appendChild(rect);
+  } else {
+    for (let i = 0; i < circleColors.length; i++) drawCircle(emptyCount + i, circleColors[i], null);
+  }
+}
+
 function renderBattlefield(snapshot, player, elementId) {
   let zone = document.getElementById(elementId);
   clearElement(zone);
@@ -99,6 +244,11 @@ function renderBattlefield(snapshot, player, elementId) {
       setCardState(element, permanent.card, permanent);
       zone.appendChild(element);
     });
+  const nbSources = snapshot.battlefield
+    .filter(p => p.controller_id === player.player_id && p.types.includes('source'))
+    .length;
+  zone.dataset.nbSources = nbSources;
+  renderEnergyBar(player.energy, nbSources, elementId);
 }
 
 function renderStack(snapshot) {
@@ -339,16 +489,25 @@ const gameEventHandler = {
   AddEnergyEvent: function(event) {
     document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
             .innerText = `Energy: ${event.new_total}`;
+    const bfId = event.player.is_me ? 'bf-mine' : 'bf-theirs';
+    const nbSources = parseInt(document.getElementById(bfId).dataset.nbSources || '0', 10);
+    renderEnergyBar(event.new_energy, nbSources, bfId);
   },
 
   PayEnergyEvent: function(event) {
     document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
             .innerText = `Energy: ${event.new_total}`;
+    const bfId = event.player.is_me ? 'bf-mine' : 'bf-theirs';
+    const nbSources = parseInt(document.getElementById(bfId).dataset.nbSources || '0', 10);
+    renderEnergyBar(event.new_energy, nbSources, bfId);
   },
 
   ClearPoolEvent: function(event) {
     document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
             .innerText = "Energy: {0}";
+    const bfId = event.player.is_me ? 'bf-mine' : 'bf-theirs';
+    const nbSources = parseInt(document.getElementById(bfId).dataset.nbSources || '0', 10);
+    renderEnergyBar({total: 0, breakdown: {}}, nbSources, bfId);
   },
 
   PlayerDamageEvent: function(event) {

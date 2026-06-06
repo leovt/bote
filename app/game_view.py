@@ -10,6 +10,20 @@ def _player_summary(game, player, viewer, name_for):
         'energy': {
             'pool': str(player.energy_pool.energy),
             'capacity': player.energy_pool.energy.total,
+            'total': player.energy_pool.energy.total,
+            'breakdown': {
+                'red': player.energy_pool.energy.red,
+                'yellow': player.energy_pool.energy.yellow,
+                'blue': player.energy_pool.energy.blue,
+                'green': player.energy_pool.energy.green,
+                'white': player.energy_pool.energy.white,
+                'colorless': max(0, player.energy_pool.energy.total
+                    - player.energy_pool.energy.red
+                    - player.energy_pool.energy.yellow
+                    - player.energy_pool.energy.blue
+                    - player.energy_pool.energy.green
+                    - player.energy_pool.energy.white),
+            },
         },
         'hand_count': len(player.hand),
         'library_count': len(player.library),

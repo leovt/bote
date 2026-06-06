@@ -20,6 +20,20 @@ from rules_actions import put_in_graveyard_events as put_in_graveyard
 logger = logging.getLogger(__name__)
 
 
+def _energy_breakdown(e):
+    return {
+        'total': e.total,
+        'breakdown': {
+            'red': e.red,
+            'yellow': e.yellow,
+            'blue': e.blue,
+            'green': e.green,
+            'white': e.white,
+            'colorless': max(0, e.total - e.red - e.yellow - e.blue - e.green - e.white),
+        },
+    }
+
+
 def is_simple(value):
     if isinstance(value, (int, str, bool, type(None))):
         return True
@@ -413,11 +427,13 @@ class Game:
         player = self.players[event.player_id]
         player.energy_pool.pay(energy.Energy.parse(event.energy))
         event.new_total = str(player.energy_pool.energy)
+        event.new_energy = _energy_breakdown(player.energy_pool.energy)
 
     def handle_AddEnergyEvent(self, event):
         player = self.players[event.player_id]
         player.energy_pool.add(energy.Energy.parse(event.energy))
         event.new_total = str(player.energy_pool.energy)
+        event.new_energy = _energy_breakdown(player.energy_pool.energy)
 
     def handle_DrawCardEvent(self, event):
         player = self.players[event.player_id]

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Energy Bar Test</title>
+  <style>
+    body { font-family: monospace; background: #1a1a1a; color: #ddd; padding: 2em; }
+    label { display: block; margin-bottom: 0.3em; color: #aaa; }
+    input[type=text], input[type=number] {
+      background: #333; color: #eee; border: 1px solid #555;
+      padding: 0.3em 0.5em; font-family: monospace; font-size: 1em;
+      width: 10em; margin-bottom: 1em;
+    }
+    .row { display: flex; gap: 2em; align-items: flex-start; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; }
+    .preview {
+      background: darkolivegreen;
+      width: 600px; height: 120px;
+      position: relative;
+      border: 1px solid #555;
+      margin-top: 1.5em;
+    }
+    .energy-bar { position: absolute; top: 4px; right: 4px; }
+    .parsed { margin-top: 1em; color: #888; font-size: 0.85em; }
+    .error { color: #f66; }
+    h2 { color: #ccc; margin-bottom: 0.5em; }
+  </style>
+</head>
+<body>
+  <h2>Energy Bar Test</h2>
+  <div class="row">
+    <div class="field">
+      <label>Energy pool (e.g. {R}{R}{G}{2})</label>
+      <input type="text" id="energy-input" value="{R}{R}{G}" oninput="update()">
+    </div>
+    <div class="field">
+      <label>nb_sources (0 = auto)</label>
+      <input type="number" id="sources-input" value="15" min="0" max="20" oninput="update()">
+    </div>
+  </div>
+  <div class="parsed" id="parsed-output"></div>
+  <div class="preview" id="preview"></div>
+
+<script src="game.js"></script>
+<script>
+function parseEnergy(str) {
+  const tokens = [...str.matchAll(/\{(-?\d+|[RYBGWXrybgwx])\}/g)].map(m => m[1].toUpperCase());
+  if (tokens.length === 0) return null;
+  let total = 0, red = 0, yellow = 0, blue = 0, green = 0, white = 0;
+  for (const t of tokens) {
+    if      (t === 'R') { red++;    total++; }
+    else if (t === 'Y') { yellow++; total++; }
+    else if (t === 'B') { blue++;   total++; }
+    else if (t === 'G') { green++;  total++; }
+    else if (t === 'W') { white++;  total++; }
+    else { const n = parseInt(t, 10); if (!isNaN(n)) total += n; }
+  }
+  const colorless = total - red - yellow - blue - green - white;
+  return { total, breakdown: { red, yellow, blue, green, white, colorless } };
+}
+
+function update() {
+  const energyStr = document.getElementById('energy-input').value;
+  const nbSourcesInput = parseInt(document.getElementById('sources-input').value, 10) || 0;
+  const out = document.getElementById('parsed-output');
+
+  const energy = parseEnergy(energyStr);
+  if (!energy) {
+    out.innerHTML = '<span class="error">Could not parse energy string.</span>';
+    renderEnergyBar(null, 0, 'preview');
+    return;
+  }
+
+  const { total, breakdown } = energy;
+  const nbSources = nbSourcesInput > 0 ? nbSourcesInput : total;
+
+  out.textContent = `total=${total}  nb_sources=${nbSources}  |  ` +
+    [...ENERGY_COLOR_MAP.map(([k]) => `${k}=${breakdown[k]||0}`), `colorless=${breakdown.colorless}`]
+      .filter(s => !s.endsWith('=0')).join('  ');
+
+  renderEnergyBar(energy, nbSources, 'preview');
+}
+
+// Tests
+(function() {
+  const t = parseEnergy('{R}{R}{G}{-1}');
+  console.assert(t !== null,                  '{R}{R}{G}{-1}: parsed');
+  console.assert(t.total === 2,               `{R}{R}{G}{-1}: total=${t.total}, want 2`);
+  console.assert(t.breakdown.red === 2,       `{R}{R}{G}{-1}: red=${t.breakdown.red}, want 2`);
+  console.assert(t.breakdown.green === 1,     `{R}{R}{G}{-1}: green=${t.breakdown.green}, want 1`);
+  console.assert(t.breakdown.colorless === -1,`{R}{R}{G}{-1}: colorless=${t.breakdown.colorless}, want -1`);
+})();
+
+update();
+</script>
+</body>
+</html>
