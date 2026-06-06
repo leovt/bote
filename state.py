@@ -512,6 +512,14 @@ class Game:
         self.stack.append(TriggerOnStack(event.stack_id, event.effect, permanent))
 
     def handle_CreateContinuousEffectEvent(self, event):
+        if any(m[0] == 'change_controller' for m in event.modifiers):
+            for perm_id in event.object_ids:
+                if perm_id in self.battlefield:
+                    perm = self.battlefield[perm_id]
+                    old_controller = perm.controller
+                    new_controller = next(self.players[m[1]] for m in event.modifiers if m[0] == 'change_controller')
+                    if old_controller is not new_controller:
+                        perm.on_battlefield_at_begin_of_turn = False
         self.continuous_effects[event.effect_id] = event
 
     def handle_CreateTriggerEvent(self, event):
@@ -520,7 +528,15 @@ class Game:
     def handle_EndContinuousEffectEvent(self, event):
         if event.effect_id not in self.continuous_effects.keys():
             return
+        prior = self.continuous_effects[event.effect_id]
+        if any(m[0] == 'change_controller' for m in prior.modifiers):
+            controllers_before = {perm_id: self.battlefield[perm_id].controller
+                                  for perm_id in prior.object_ids if perm_id in self.battlefield}
         del self.continuous_effects[event.effect_id]
+        if any(m[0] == 'change_controller' for m in prior.modifiers):
+            for perm_id, old_controller in controllers_before.items():
+                if perm_id in self.battlefield and old_controller is not self.battlefield[perm_id].controller:
+                    self.battlefield[perm_id].on_battlefield_at_begin_of_turn = False
 
     def handle_EndTriggerEvent(self, event):
         if event.trigger_id not in self.triggered_effects.keys():
