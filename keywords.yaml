@@ -47,3 +47,11 @@ firststrike:
   name:
     en: First Strike
     de: Erstschlag
+
+taunt:
+  name:
+    en: Taunt
+    de: Herausfordern
+  rule_text:
+    en: All creatures able to block this creature must do so.
+    de: Alle Kreaturen, die diese Kreatur blocken können, müssen dies tun.

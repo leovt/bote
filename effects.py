@@ -397,9 +397,6 @@ class Executor(lark.Transformer):
             for permanent in self.iter_objects(args[0])
         ]
 
-    def must_block_effect(self, args):
-        return []
-
     def pay_or_destroy_effect(self, args):
         cost, destruction_events = args
         parsed_cost = energy.Energy.parse(cost)

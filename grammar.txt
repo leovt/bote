@@ -45,7 +45,6 @@ _immediate_effect: damage_effect
        | put_counter_effect
        | untap_effect
        | pay_or_destroy_effect
-       | must_block_effect
 
 damage_effect: _object "gets" _numeric "damage"
 destruction_effect: "destroy" _object
@@ -55,7 +54,6 @@ continuous_effect: _continuous_modifier [until_end_of_turn]
 put_counter_effect: "put" "a" modifier "counter" "on" _object
 untap_effect: "untap" _object
 pay_or_destroy_effect: "pay" energy "or" destruction_effect
-must_block_effect: _object "able" "to" "block" _object "do" "so"
 
 _continuous_modifier: _object "has" modifier_list
                     | prevent_battle_damage

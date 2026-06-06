@@ -14,7 +14,10 @@ def random_answer(question):
     if question.__class__.__name__ == "DeclareBlockers":
         answer = {}
         for i, ch in question.choices.items():
-            if random.random() > 0.7:
+            taunt_attackers = [k for k, a in ch['attackers'].items() if a.has('taunt')]
+            if taunt_attackers:
+                answer[i] = random.choice(taunt_attackers)
+            elif random.random() > 0.7:
                 answer[i] = random.choice(list(ch['attackers']))
         return answer
 

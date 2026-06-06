@@ -818,7 +818,7 @@ cards:
     subtypes:
       - enchant_creature
     cost: '{G}{1}'
-    effect: all .creature able to block enchanted .creature do so
+    effect: enchanted .creature has taunt
     art:
       22101:
         image: instigator.png

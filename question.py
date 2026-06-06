@@ -54,11 +54,20 @@ class DeclareBlockers(Question):
         self.id = next(game.unique_ids)
 
     def validate(self, player, answer):
-        return (player is self.player and
+        if not (player is self.player and
                 isinstance(answer, dict) and
                 all(k in self.choices and
                     v in self.choices[k]['attackers']
-                    for k,v in answer.items()))
+                    for k, v in answer.items())):
+            return False
+        for key, spec in self.choices.items():
+            can_block_taunt = any(a.has('taunt') for a in spec['attackers'].values())
+            if can_block_taunt:
+                blocking_taunt = (key in answer and
+                                  self.choices[key]['attackers'][answer[key]].has('taunt'))
+                if not blocking_taunt:
+                    return False
+        return True
 
     def serialize_for(self, player):
         return dict(
@@ -66,7 +75,8 @@ class DeclareBlockers(Question):
             question = 'DeclareBlockers',
             player = self.player.serialize_for(player),
             choices = {key: {'candidate': choice['candidate'].serialize_for(player),
-                             'attackers': {k: v.serialize_for(player) for k, v in choice['attackers'].items()}}
+                             'attackers': {k: {**v.serialize_for(player), 'taunt': v.has('taunt')}
+                                           for k, v in choice['attackers'].items()}}
                        for key, choice in self.choices.items()}
         )
 
