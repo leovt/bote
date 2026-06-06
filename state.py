@@ -828,19 +828,22 @@ def turn_based_actions(game):
         # TODO: do not skip this step if any attacker or blocker has first strike.
         yield StepEvent(STEP.SECOND_STRIKE_DAMAGE.name, game.active_player.player_id)
     elif game.step == STEP.SECOND_STRIKE_DAMAGE:
-        for attacker in game.battlefield.filter(lambda x:x.attacking):
-            remaining_strength = attacker.strength
-            for b, blocker in enumerate(attacker.blockers):
-                if b == len(attacker.blockers)-1:
-                    # TODO: trample
-                    damage = remaining_strength
-                else:
-                    damage = min(remaining_strength, blocker.strength)
-                remaining_strength -= damage
-                yield DamageEvent(blocker.perm_id, damage)
-                yield DamageEvent(attacker.perm_id, blocker.strength)
-            if remaining_strength:
-                yield PlayerDamageEvent(attacker.attacking.player_id, remaining_strength)
+        if not has_prevent_battle_damage(game):
+            for attacker in game.battlefield.filter(lambda x:x.attacking):
+                remaining_strength = attacker.strength
+                for b, blocker in enumerate(attacker.blockers):
+                    if b == len(attacker.blockers)-1:
+                        if attacker.has('crush'):
+                            damage = min(remaining_strength, blocker.toughness)
+                        else:
+                            damage = remaining_strength
+                    else:
+                        damage = min(remaining_strength, blocker.strength)
+                    remaining_strength -= damage
+                    yield DamageEvent(blocker.perm_id, damage)
+                    yield DamageEvent(attacker.perm_id, blocker.strength)
+                if remaining_strength:
+                    yield PlayerDamageEvent(attacker.attacking.player_id, remaining_strength)
         yield from open_priority(game)
     else:
         yield from open_priority(game)
@@ -848,6 +851,13 @@ def turn_based_actions(game):
 def lose_the_game(player):
     print(f'player {player.name} loses the game')
     assert False, 'not implemented'
+
+def has_prevent_battle_damage(game):
+    return any(
+        modifier[0] == 'prevent_battle_damage'
+        for effect in game.continuous_effects.values()
+        for modifier in effect.modifiers
+    )
 
 def end_continuous_effects(game):
     for effect_id in list(game.continuous_effects.keys_until_end_of_turn()):

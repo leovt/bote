@@ -370,12 +370,11 @@ class Executor(lark.Transformer):
         return args[0]
 
     def continuous_effect(self, args):
-        if args[0] == 'prevent_battle_damage':
-            return []
         effect_id = next(self._context.game.unique_ids)
-        perm_id = None
-        if self._context.permanent:
-            perm_id = self._context.permanent.perm_id
+        perm_id = self._context.permanent.perm_id if self._context.permanent else None
+        until_end_of_turn = args[-1] == 'until_end_of_turn'
+        if args[0] == 'prevent_battle_damage':
+            return [CreateContinuousEffectEvent(effect_id, perm_id, [], [['prevent_battle_damage']], until_end_of_turn)]
         objects = [
             obj.perm_id
             for obj in self.iter_objects(args[0])
@@ -383,14 +382,7 @@ class Executor(lark.Transformer):
         ]
         if not objects:
             return []
-        modifiers = [
-            self.resolve_modifier(modifier)
-            for modifier in args[1]
-        ]
-        until_end_of_turn = False
-        if len(args) > 2 and args[2] is not None:
-            assert args[2] == 'until_end_of_turn'
-            until_end_of_turn = True
+        modifiers = [self.resolve_modifier(modifier) for modifier in args[1]]
         return [CreateContinuousEffectEvent(effect_id, perm_id, objects, modifiers, until_end_of_turn)]
 
     def prevent_battle_damage(self, args):
