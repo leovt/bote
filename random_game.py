@@ -216,12 +216,15 @@ def answer_all_questions(game):
         game.question = None
 
 
-def run_one_game(deck1, deck2):
+def run_one_game(deck1, deck2, fast=False):
     game = Game.create_duel('player1', deck1, 'player2', deck2)
     try:
         answer_all_questions(game)
     except Exception as error:
         raise GameRunError(error, game) from error
+
+    if fast:
+        return game, None
 
     game_data = game.serialize()
     for event in game.event_log:
@@ -260,6 +263,7 @@ def parse_args():
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--traceback', action='store_true')
     parser.add_argument('--stop-on-failure', action='store_true')
+    parser.add_argument('--fast', action='store_true', help='Skip serialization/deserialization round-trip.')
     return parser.parse_args()
 
 
@@ -278,16 +282,19 @@ def main():
     for game_index in range(1, args.games + 1):
         try:
             if args.verbose:
-                game, deserialized_game = run_one_game(deck1, deck2)
+                game, deserialized_game = run_one_game(deck1, deck2, fast=args.fast)
             else:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    game, deserialized_game = run_one_game(deck1, deck2)
+                    game, deserialized_game = run_one_game(deck1, deck2, fast=args.fast)
             coverage.record_game(game)
-            print(
-                f'Game {game_index}: '
-                f'{len(game.event_log)} events, '
-                f'{len(deserialized_game.event_log)} after deserialize.'
-            )
+            if args.fast:
+                print(f'Game {game_index}: {len(game.event_log)} events.')
+            else:
+                print(
+                    f'Game {game_index}: '
+                    f'{len(game.event_log)} events, '
+                    f'{len(deserialized_game.event_log)} after deserialize.'
+                )
         except GameRunError as error:
             coverage.record_failure(game_index, error.original_error)
             coverage.record_game(error.game, complete=False)
