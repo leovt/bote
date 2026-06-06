@@ -115,7 +115,7 @@ def str_ability(a, lang):
                 'de': '{} am Ende des Zuges',
                 'ko': '턴종료에 {}',
                 }, lang).format(a['effect'])
-    return escape(str(a))
+    return parse_symbols_html(str(a))
 
 
 def parse_symbols_html(text):
@@ -156,8 +156,8 @@ def art_svg(art_id, lang):
 
     rule_list = []
     if 'effect' in card:
-        rule_list.append(escape(card['effect']))
-    rule_list.extend(escape(effect) for effect in card.get('effects', []))
+        rule_list.append(parse_symbols_html(card['effect']))
+    rule_list.extend(parse_symbols_html(effect) for effect in card.get('effects', []))
     rule_list.extend(str_ability(a, lang) for a in card.get('abilities', []))
 
     flavour = art_card.get('flavour', {}).get(lang)
