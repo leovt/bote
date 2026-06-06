@@ -122,7 +122,6 @@ def parse_symbols_html(text):
     text = escape(text)
     def repl(match):
         symb = match.group(1).lower()
-        print(match.groups(), symb)
         if symb in 'rygbw1x':
             href = '#energy_' + symb
         elif symb == 't':
