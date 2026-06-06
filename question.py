@@ -13,6 +13,7 @@ class ChooseAction(Question):
 
     def validate(self, player, answer):
         return (player is self.player and
+                isinstance(answer, (str, int)) and
                 answer in self.choices)
 
     def serialize_for(self, player):
