@@ -222,9 +222,6 @@ class Unparser(lark.Transformer):
     def create_token_effect(self, args):
         return f'create {args[0]} ({args[1]}) token'
 
-    def put_counter_effect(self, args):
-        return f'put a {self._modifier_text(args[0])} counter on {args[1]}'
-
     def effects(self, args):
         return '; '.join(args)
 
@@ -347,8 +344,7 @@ class Executor(lark.Transformer):
                     next(self._context.game.unique_ids), {})
                 for _ in range(count)]
 
-    def put_counter_effect(self, args):
-        return []
+
 
     def variable(self, args):
         return self._context.choices['x']

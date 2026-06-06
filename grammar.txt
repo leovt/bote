@@ -42,7 +42,7 @@ _immediate_effect: damage_effect
        | destruction_effect
        | create_token_effect
        | continuous_effect
-       | put_counter_effect
+
        | untap_effect
        | pay_or_destroy_effect
 
@@ -51,7 +51,7 @@ destruction_effect: "destroy" _object
 add_energy_effect: "add" energy "to" _object "energy pool"
 create_token_effect: "create" _numeric "(" number ")" "token"
 continuous_effect: _continuous_modifier [until_end_of_turn]
-put_counter_effect: "put" "a" modifier "counter" "on" _object
+
 untap_effect: "untap" _object
 pay_or_destroy_effect: "pay" energy "or" destruction_effect
 

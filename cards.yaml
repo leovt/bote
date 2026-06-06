@@ -696,7 +696,7 @@ cards:
     cost: '{G}{3}'
     strength: 2
     toughness: 2
-    effect: "when this gets damage: put a +1/+1 counter on this"
+    effect: "when this gets damage: this has +1/+1"
     art:
       21401:
         image: spore_beast.png
