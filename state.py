@@ -70,6 +70,10 @@ class ObjectView:
         return self.filter(lambda x: x.attacking is player)
 
     @property
+    def attackers(self):
+        return self.filter(lambda x: x.attacking)
+
+    @property
     def blockers(self):
         return self.filter(lambda x: x.blocking)
 
@@ -495,6 +499,15 @@ class Game:
     def handle_ExitTheBattlefieldEvent(self, event):
         if event.perm_id not in self.battlefield:
             return
+        permanent = self.battlefield[event.perm_id]
+        for attacker in self.battlefield:
+            if permanent in attacker.blockers:
+                attacker.blockers.remove(permanent)
+        if permanent.blocking:
+            permanent.blocking = False
+        if permanent.attacking:
+            permanent.attacking = False
+            permanent.blockers.clear()
         del self.battlefield[event.perm_id]
 
     def handle_PutInGraveyardEvent(self, event):
@@ -864,7 +877,7 @@ def turn_based_actions(game):
                 yield BlockEvent(attacker.perm_id, [b.perm_id for b in blockers])
         yield from open_priority(game)
     elif game.step == STEP.FIRST_STRIKE_DAMAGE:
-        if not any(attacker.has('firststrike') for attacker in game.battlefield.attacking(game.active_player)) and \
+        if not any(attacker.has('firststrike') for attacker in game.battlefield.attackers) and \
             not any(blocker.has('firststrike') for blocker in game.battlefield.blockers):
             yield StepEvent(STEP.SECOND_STRIKE_DAMAGE.name, game.active_player.player_id)
         else:

@@ -10,6 +10,7 @@ from event import (
     ClearPoolEvent,
     DamageEvent,
     EnterTheBattlefieldEvent,
+    ExitTheBattlefieldEvent,
     PlayerDamageEvent,
     PutInGraveyardEvent,
     QuestionEvent,
@@ -404,6 +405,33 @@ class TestCombatTriggerRegistration(unittest.TestCase):
 
         self.assertEqual(stale_trigger_ids, [])
         self.assertEqual(triggered_effects, [])
+
+
+class TestCombatCleanup(unittest.TestCase):
+    def test_exiting_blocker_is_removed_from_attacker_blockers(self):
+        game, attacker_player, blocker_player = minimal_game()
+        attacker = put_card_on_battlefield(game, attacker_player, 20901, 'attacker')
+        blocker = put_card_on_battlefield(game, blocker_player, 20901, 'blocker')
+
+        game.handle(BlockEvent(attacker.perm_id, [blocker.perm_id]))
+        game.handle(ExitTheBattlefieldEvent(blocker.perm_id))
+
+        self.assertEqual(attacker.blockers, [])
+        self.assertFalse(blocker.blocking)
+        self.assertNotIn(blocker.perm_id, game.battlefield)
+
+    def test_exiting_attacker_clears_its_combat_state(self):
+        game, attacker_player, blocker_player = minimal_game()
+        attacker = put_card_on_battlefield(game, attacker_player, 20901, 'attacker')
+        blocker = put_card_on_battlefield(game, blocker_player, 20901, 'blocker')
+        game.handle(BlockEvent(attacker.perm_id, [blocker.perm_id]))
+        attacker.attacking = blocker_player
+
+        game.handle(ExitTheBattlefieldEvent(attacker.perm_id))
+
+        self.assertFalse(attacker.attacking)
+        self.assertEqual(attacker.blockers, [])
+        self.assertNotIn(attacker.perm_id, game.battlefield)
 
 
 class TestContinuousEffectResolution(unittest.TestCase):
