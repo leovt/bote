@@ -21,6 +21,7 @@ function _getCardElement(card_id, url){
 
     element.setAttribute('id', card_id);
     element.setAttribute('class', 'card');
+    element.style.setProperty('animation-delay', `${-Math.random() * 10}s`);
     element.appendChild(img);
 
     var modifiers = document.createElement('div');
