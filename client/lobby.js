@@ -6,6 +6,13 @@ function send_msg() {
   chat_msg.value = '';
 }
 
+function logHttpError(context, httpRequest) {
+  console.error(
+    `${context} failed with HTTP ${httpRequest.status}`,
+    httpRequest.responseText || httpRequest
+  );
+}
+
 function save_name() {
   let input = document.getElementById('display-name');
   var httpRequest = new XMLHttpRequest();
@@ -19,6 +26,11 @@ function create_invite() {
   game_window.document.write('Creating invite ...');
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
+    if (httpRequest.status >= 400) {
+      logHttpError('create_invite', httpRequest);
+      game_window.close();
+      return;
+    }
     var result = JSON.parse(httpRequest.responseText);
     game_window.location.href = result.url;
   });
@@ -32,6 +44,11 @@ function duel(username) {
   game_window.document.write('Loading game ...');
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
+    if (httpRequest.status >= 400) {
+      logHttpError('duel', httpRequest);
+      game_window.close();
+      return;
+    }
     game_window.location.href = httpRequest.getResponseHeader('Location');
   });
   httpRequest.open("POST", `/game/create`);
@@ -45,11 +62,11 @@ function challenge(playerId) {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     if (httpRequest.status === 409) {
-      alert(JSON.parse(httpRequest.responseText).error);
+      logHttpError('challenge', httpRequest);
       return;
     }
     if (httpRequest.status >= 400) {
-      alert(httpRequest.responseText);
+      logHttpError('challenge', httpRequest);
       return;
     }
     alert('Challenge sent.');
@@ -163,6 +180,10 @@ function check_challenges() {
       responseRequest.open("POST", `/challenge/${challenge.id}/respond`);
       responseRequest.setRequestHeader('Content-Type', 'application/json');
       responseRequest.addEventListener("load", function () {
+        if (responseRequest.status >= 400) {
+          logHttpError('respond_challenge', responseRequest);
+          return;
+        }
         if (accepted && responseRequest.status < 400) {
           window.open(JSON.parse(responseRequest.responseText).table_url, '_blank');
         }
@@ -204,6 +225,11 @@ function loadsaved(filename) {
   var httpRequest = new XMLHttpRequest();
   httpRequest.open("POST", `/game/load`);
   httpRequest.addEventListener("load", function () {
+    if (httpRequest.status >= 400) {
+      logHttpError('loadsaved', httpRequest);
+      game_window.close();
+      return;
+    }
     game_window.location.href = httpRequest.getResponseHeader('Location');
   });
   httpRequest.setRequestHeader('Content-Type', 'application/json');

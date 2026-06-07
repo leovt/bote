@@ -53,6 +53,13 @@ function clearElement(element) {
   }
 }
 
+function logHttpError(context, httpRequest) {
+  console.error(
+    `${context} failed with HTTP ${httpRequest.status}`,
+    httpRequest.responseText || httpRequest
+  );
+}
+
 function playerBySeat(snapshot, isMe) {
   return snapshot.players.find(player => player.is_me === isMe);
 }
@@ -373,8 +380,7 @@ function refreshGameView() {
   var httpRequest = new XMLHttpRequest();
   httpRequest.addEventListener("load", function () {
     if (httpRequest.status >= 400) {
-      var newWindow = window.open('', '_blank');
-      newWindow.document.write(httpRequest.responseText);
+      logHttpError('refreshGameView', httpRequest);
       return;
     }
     renderGameView(JSON.parse(httpRequest.responseText));
@@ -646,11 +652,14 @@ function log_refresh () {
   httpRequest.addEventListener("load", function () {
     if (httpRequest.status == 409) {
       // Todo remove when issue #10 is fixed
-      console.log(httpRequest);
+      logHttpError('log_refresh', httpRequest);
+      log_refresh_running = false;
+      return;
     }
     else if (httpRequest.status >= 400) {
-      var newWindow = window.open('', '_blank');
-      newWindow.document.write(httpRequest.responseText);
+      logHttpError('log_refresh', httpRequest);
+      log_refresh_running = false;
+      return;
     }
     result = JSON.parse(httpRequest.responseText);
     result.event_log.forEach(handleGameEvent);
@@ -1138,11 +1147,12 @@ function send_answer (answer) {
   httpRequest.addEventListener("load", function(){
     if (httpRequest.status == 409) {
       // Todo remove when issue #10 is fixed
-      console.log(httpRequest);
+      logHttpError('send_answer', httpRequest);
+      return;
     }
     else if (httpRequest.status >= 400) {
-      var newWindow = window.open('', '_blank');
-      newWindow.document.write(httpRequest.responseText);
+      logHttpError('send_answer', httpRequest);
+      return;
     }
     document.getElementById('answer').setAttribute('style', 'display: none;');
     log_refresh();
