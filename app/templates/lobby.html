@@ -11,7 +11,12 @@
     <div id="cell-users">
     <h2>Users</h2>
     <ul id="users" class="scroll-list">
-      <li class="robot_user">__ai__random__ <button onclick="duel('__ai__random__')">Duel</button></li>
+      {% for ai_player in ai_players %}
+      <li class="robot_user" id="user-{{ ai_player.player_id }}">
+        <span class="user-name">{{ ai_player.name }}</span>
+        <button onclick="duel('{{ ai_player.player_id }}')">Duel</button>
+      </li>
+      {% endfor %}
     </ul>
     </div>
     <div id="cell-games">

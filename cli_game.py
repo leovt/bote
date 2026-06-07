@@ -3,7 +3,7 @@ import pdb
 
 import cli
 from state import setup_duel, game_events
-from dummy_deck import TEST_DECK
+from test_decks import RED_TEST_DECK
 
 
 def print_player_view(view):
@@ -47,7 +47,7 @@ def run_game(game):
             game.question = None
 
 try:
-    game = setup_duel('Leo', TEST_DECK, 'Marc', TEST_DECK)
+    game = setup_duel('Leo', RED_TEST_DECK, 'Marc', RED_TEST_DECK)
     run_game(game)
 except:
     traceback.print_exc()

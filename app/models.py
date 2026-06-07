@@ -8,6 +8,7 @@ from app import db, login_mgr
 from state import Game
 import tools
 from aiplayers import random_answer
+from test_decks import AI_TEST_PLAYERS
 
 games = {}
 
@@ -150,7 +151,7 @@ class Table(db.Model):
                 self.status = 'ended'
                 return
 
-            if question.player.name == '__ai__random__':
+            if question.player.name in AI_TEST_PLAYERS:
                 answer = random_answer(question)
                 ret = game.set_answer(question.player, answer)
                 assert ret, 'random answer is not valid'

@@ -9,7 +9,7 @@ from app.anonymous import (
 from app.models import Challenge, Deck, Table
 from app.game_view import serialize_game_view
 
-from dummy_deck import TEST_DECK
+from test_decks import AI_TEST_PLAYERS
 
 
 def _table_or_404(game_id):
@@ -133,11 +133,12 @@ def create_game():
 
     player_id, _ = touch_presence()
     opponent = request.json.get('opponent')
-    if opponent != '__ai__random__':
+    ai_player = AI_TEST_PLAYERS.get(opponent)
+    if ai_player is None:
         abort(400)
 
-    table = Table(player1=player_id, player2='__ai__random__', status='deck_selection')
-    table.deck2 = {str(art_id): count for art_id, count in TEST_DECK.items()}
+    table = Table(player1=player_id, player2=opponent, status='deck_selection')
+    table.deck2 = {str(art_id): count for art_id, count in ai_player['deck'].items()}
     db.session.add(table)
     db.session.commit()
     return "", 201, {'location': table.url()}

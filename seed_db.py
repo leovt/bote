@@ -3,7 +3,7 @@ import os
 
 from app import app, db
 from app.models import Deck, DeckCard, User
-from dummy_deck import GREEN_TEST_DECK, RED_TEST_DECK, TEST_DECK
+from test_decks import GREEN_TEST_DECK, RED_GREEN_TEST_DECK, RED_TEST_DECK
 
 
 def upsert_user(username, email, password):
@@ -51,22 +51,30 @@ def delete_deck(deck):
     db.session.delete(deck)
 
 
-def seed(username, email, password, archive_username, archive_email, deck_name, red_deck_name, green_deck_name='Green Test Deck'):
+def seed(
+        username,
+        email,
+        password,
+        archive_username,
+        archive_email,
+        red_deck_name,
+        green_deck_name='Green Test Deck',
+        red_green_deck_name='Red Green Test Deck'):
     os.makedirs('savegames', exist_ok=True)
     with app.app_context():
         user = upsert_user(username, email, password)
         archive_user = upsert_user(archive_username, archive_email, None)
         db.session.flush()
         decks = [
-            upsert_deck(archive_user, deck_name, TEST_DECK, public=True),
             upsert_deck(archive_user, red_deck_name, RED_TEST_DECK, public=True),
             upsert_deck(archive_user, green_deck_name, GREEN_TEST_DECK, public=True),
+            upsert_deck(archive_user, red_green_deck_name, RED_GREEN_TEST_DECK, public=True),
         ]
         removed_user_decks = []
         if user.id != archive_user.id:
             for deck in Deck.query.filter(
                     Deck.owner_id == user.id,
-                    Deck.name.in_([deck_name, red_deck_name, green_deck_name])):
+                    Deck.name.in_([red_deck_name, green_deck_name, red_green_deck_name])):
                 removed_user_decks.append(deck.name)
                 delete_deck(deck)
         summary = {
@@ -92,9 +100,9 @@ def parse_args():
     parser.add_argument('--password', default='password')
     parser.add_argument('--archive-username', default='deck_archive')
     parser.add_argument('--archive-email', default='deck-archive@example.test')
-    parser.add_argument('--deck-name', default='Test Deck')
     parser.add_argument('--red-deck-name', default='Red Test Deck')
     parser.add_argument('--green-deck-name', default='Green Test Deck')
+    parser.add_argument('--red-green-deck-name', default='Red Green Test Deck')
     return parser.parse_args()
 
 
@@ -106,9 +114,9 @@ def main():
         password=args.password,
         archive_username=args.archive_username,
         archive_email=args.archive_email,
-        deck_name=args.deck_name,
         red_deck_name=args.red_deck_name,
         green_deck_name=args.green_deck_name,
+        red_green_deck_name=args.red_green_deck_name,
     )
     deck_summaries = ', '.join(
         f"{deck['name']!r} ({deck['card_rows']} card rows)"

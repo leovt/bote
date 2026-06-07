@@ -3,6 +3,8 @@ import uuid
 
 from flask import session
 
+from test_decks import AI_TEST_PLAYERS
+
 
 PLAYER_SESSION_KEY = 'anonymous_player_id'
 NAME_SESSION_KEY = 'anonymous_display_name'
@@ -54,8 +56,8 @@ def touch_presence():
 
 
 def display_name_for(player_id):
-    if player_id == '__ai__random__':
-        return 'Random AI'
+    if player_id in AI_TEST_PLAYERS:
+        return AI_TEST_PLAYERS[player_id]['name']
     if not player_id:
         return 'Waiting...'
     if not player_id.startswith('session:'):

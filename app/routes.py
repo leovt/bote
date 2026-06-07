@@ -8,6 +8,7 @@ from app.anonymous import (
     set_current_display_name,
     touch_presence,
 )
+from test_decks import AI_TEST_PLAYERS
 
 @app.route('/whoami')
 def hello():
@@ -34,6 +35,10 @@ def lobby():
     touch_presence()
     return render_template(
         'lobby.html',
+        ai_players=[
+            {'player_id': player_id, 'name': player['name']}
+            for player_id, player in AI_TEST_PLAYERS.items()
+        ],
         savegames=[],
         player_id=ensure_player_id(),
         display_name=current_display_name())

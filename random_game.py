@@ -10,7 +10,7 @@ import pdb
 
 from aiplayers import random_answer
 from cards import ArtCard, RuleCard
-from dummy_deck import GREEN_TEST_DECK, RED_TEST_DECK, TEST_DECK
+from test_decks import GREEN_TEST_DECK, RED_GREEN_TEST_DECK, RED_TEST_DECK
 from event import (
     ActivateAbilityEvent,
     AddEnergyEvent,
@@ -30,9 +30,9 @@ from state import Game
 sys.setrecursionlimit(50)
 
 DECKS = {
-    'test': TEST_DECK,
     'red': RED_TEST_DECK,
     'green': GREEN_TEST_DECK,
+    'red-green': RED_GREEN_TEST_DECK,
 }
 
 EFFECT_EVENT_TYPES = (
