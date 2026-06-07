@@ -74,7 +74,7 @@ function update() {
   const nbSources = nbSourcesInput > 0 ? nbSourcesInput : total;
 
   out.textContent = `total=${total}  nb_sources=${nbSources}  |  ` +
-    [...ENERGY_COLOR_MAP.map(([k]) => `${k}=${breakdown[k]||0}`), `colorless=${breakdown.colorless}`]
+    [...ENERGY_STYLE_MAP.map(([k]) => `${k}=${breakdown[k]||0}`), `colorless=${breakdown.colorless}`]
       .filter(s => !s.endsWith('=0')).join('  ');
 
   renderEnergyBar(energy, nbSources, 'preview');

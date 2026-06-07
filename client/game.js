@@ -89,13 +89,14 @@ function renderZone(elementId, cards) {
   cards.forEach(card => zone.appendChild(cardElementFromSnapshot(card)));
 }
 
-const ENERGY_COLOR_MAP = [
-  ['red',       '#dd3333'],
-  ['yellow',    '#ffcc00'],
-  ['blue',      '#3355dd'],
-  ['green',     '#339933'],
-  ['white',     '#eeeeee'],
+const ENERGY_STYLE_MAP = [
+  ['red',       { fill: 'lightpink', stroke: 'red' }],
+  ['yellow',    { fill: 'cornsilk', stroke: 'gold' }],
+  ['blue',      { fill: 'lightblue', stroke: 'blue' }],
+  ['green',     { fill: 'lightgreen', stroke: 'green' }],
+  ['white',     { fill: 'white', stroke: 'lightgrey' }],
 ];
+const COLORLESS_ENERGY_STYLE = { fill: 'lightgrey', stroke: 'grey' };
 
 function renderEnergyBar(energyData, nbSources, bfElementId) {
   const bf = document.getElementById(bfElementId);
@@ -129,7 +130,7 @@ function renderEnergyBar(energyData, nbSources, bfElementId) {
   if (energyData) {
     const bd = energyData.breakdown || {};
     const parts = [`total energy: ${total}`];
-    for (const [key] of ENERGY_COLOR_MAP) {
+    for (const [key] of ENERGY_STYLE_MAP) {
       if (bd[key] > 0) parts.push(`max ${bd[key]} ${key}`);
     }
     if ((bd.colorless || 0) > 0) parts.push(`max ${bd.colorless} colorless`);
@@ -145,28 +146,28 @@ function renderEnergyBar(energyData, nbSources, bfElementId) {
   let gradientRectColors = null;
   if (total > 0 && energyData && energyData.breakdown) {
     const bd = energyData.breakdown;
-    const sumColored = ENERGY_COLOR_MAP.reduce((s, [k]) => s + (bd[k] || 0), 0);
+    const sumColored = ENERGY_STYLE_MAP.reduce((s, [k]) => s + (bd[k] || 0), 0);
     if (sumColored > total) {
-      const nonzero = ENERGY_COLOR_MAP
-        .map(([key, color]) => [color, Math.min(total, bd[key] || 0)])
+      const nonzero = ENERGY_STYLE_MAP
+        .map(([key, style]) => [style, Math.min(total, bd[key] || 0)])
         .filter(([, count]) => count > 0);
       if (nonzero.length === 1) {
-        const [[color, count]] = nonzero;
-        for (let i = 0; i < count; i++) circleColors.push([color]);
+        const [[style, count]] = nonzero;
+        for (let i = 0; i < count; i++) circleColors.push([style]);
       } else if (nonzero.length === 2) {
-        const [[color1, count1], [color2, count2]] = nonzero;
+        const [[style1, count1], [style2, count2]] = nonzero;
         const mix = count1 + count2 - total;
-        for (let i = 0; i < count1 - mix; i++) circleColors.push([color1]);
-        for (let i = 0; i < mix; i++) circleColors.push([color1, color2]);
-        for (let i = 0; i < count2 - mix; i++) circleColors.push([color2]);
+        for (let i = 0; i < count1 - mix; i++) circleColors.push([style1]);
+        for (let i = 0; i < mix; i++) circleColors.push([style1, style2]);
+        for (let i = 0; i < count2 - mix; i++) circleColors.push([style2]);
       } else {
-        gradientRectColors = nonzero.map(([color]) => color);
+        gradientRectColors = nonzero.map(([style]) => style);
       }
     } else {
-      for (const [key, color] of ENERGY_COLOR_MAP) {
-        for (let i = 0; i < (bd[key] || 0); i++) circleColors.push([color]);
+      for (const [key, style] of ENERGY_STYLE_MAP) {
+        for (let i = 0; i < (bd[key] || 0); i++) circleColors.push([style]);
       }
-      while (circleColors.length < total) circleColors.push(['#aaaaaa']);
+      while (circleColors.length < total) circleColors.push([COLORLESS_ENERGY_STYLE]);
     }
   }
 
@@ -181,10 +182,25 @@ function renderEnergyBar(energyData, nbSources, bfElementId) {
     } else if (colors.length === 1) {
       const c = document.createElementNS(ns, 'circle');
       c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', innerR);
-      c.setAttribute('fill', colors[0]);
+      c.setAttribute('fill', colors[0].fill);
+      c.setAttribute('stroke', colors[0].stroke); c.setAttribute('stroke-width', '1.5');
       svg.appendChild(c);
     } else {
       const n = colors.length;
+      const outlineGradId = `${barId}-circle-${idx}-outline`;
+      const defs = document.createElementNS(ns, 'defs');
+      const grad = document.createElementNS(ns, 'linearGradient');
+      grad.id = outlineGradId;
+      grad.setAttribute('x1', '0%'); grad.setAttribute('y1', '0%');
+      grad.setAttribute('x2', '100%'); grad.setAttribute('y2', '100%');
+      colors.forEach((style, i) => {
+        const stop = document.createElementNS(ns, 'stop');
+        stop.setAttribute('offset', n === 1 ? 0 : i / (n - 1));
+        stop.setAttribute('stop-color', style.stroke);
+        grad.appendChild(stop);
+      });
+      defs.appendChild(grad);
+      svg.appendChild(defs);
       for (let i = 0; i < n; i++) {
         const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
         const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
@@ -192,13 +208,18 @@ function renderEnergyBar(energyData, nbSources, bfElementId) {
         const x2 = cx + innerR * Math.cos(a1), y2 = cy + innerR * Math.sin(a1);
         const p = document.createElementNS(ns, 'path');
         p.setAttribute('d', `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${innerR} ${innerR} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`);
-        p.setAttribute('fill', colors[i]);
+        p.setAttribute('fill', colors[i].fill);
         svg.appendChild(p);
       }
+      const outline = document.createElementNS(ns, 'circle');
+      outline.setAttribute('cx', cx); outline.setAttribute('cy', cy); outline.setAttribute('r', innerR);
+      outline.setAttribute('fill', 'none');
+      outline.setAttribute('stroke', `url(#${outlineGradId})`); outline.setAttribute('stroke-width', '1.5');
+      svg.appendChild(outline);
     }
   };
 
-  for (let i = 0; i < emptyCount; i++) drawCircle(i, null, '#888888');
+  for (let i = 0; i < emptyCount; i++) drawCircle(i, null, COLORLESS_ENERGY_STYLE.stroke);
 
   if (gradientRectColors) {
     const rectW = total * D + (total - 1) * GAP;
@@ -209,25 +230,40 @@ function renderEnergyBar(energyData, nbSources, bfElementId) {
     const defs = document.createElementNS(ns, 'defs');
     const grad = document.createElementNS(ns, 'linearGradient');
     grad.id = gradId;
-    gradientRectColors.forEach((color, i) => {
-      const addStop = (offset, c) => {
+    const strokeGrad = document.createElementNS(ns, 'linearGradient');
+    const strokeGradId = barId + '-mixstrokegrad';
+    strokeGrad.id = strokeGradId;
+    gradientRectColors.forEach((style, i) => {
+      const addStop = (target, offset, c) => {
         const s = document.createElementNS(ns, 'stop');
         s.setAttribute('offset', Math.min(1, Math.max(0, offset)));
         s.setAttribute('stop-color', c);
-        grad.appendChild(s);
+        target.appendChild(s);
       };
-      if (i === 0) addStop(0, color);
-      else addStop(i / n + BLUR, color);
-      if (i === n - 1) addStop(1, color);
-      else addStop((i + 1) / n - BLUR, color);
+      if (i === 0) {
+        addStop(grad, 0, style.fill);
+        addStop(strokeGrad, 0, style.stroke);
+      } else {
+        addStop(grad, i / n + BLUR, style.fill);
+        addStop(strokeGrad, i / n + BLUR, style.stroke);
+      }
+      if (i === n - 1) {
+        addStop(grad, 1, style.fill);
+        addStop(strokeGrad, 1, style.stroke);
+      } else {
+        addStop(grad, (i + 1) / n - BLUR, style.fill);
+        addStop(strokeGrad, (i + 1) / n - BLUR, style.stroke);
+      }
     });
     defs.appendChild(grad);
+    defs.appendChild(strokeGrad);
     svg.appendChild(defs);
     const rect = document.createElementNS(ns, 'rect');
     rect.setAttribute('x', rectX); rect.setAttribute('y', 0);
     rect.setAttribute('width', rectW); rect.setAttribute('height', D);
     rect.setAttribute('rx', R); rect.setAttribute('ry', R);
     rect.setAttribute('fill', `url(#${gradId})`);
+    rect.setAttribute('stroke', `url(#${strokeGradId})`); rect.setAttribute('stroke-width', '1.5');
     svg.appendChild(rect);
   } else {
     for (let i = 0; i < circleColors.length; i++) drawCircle(emptyCount + i, circleColors[i], null);
