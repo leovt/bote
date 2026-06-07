@@ -1,17 +1,23 @@
+function setupCardPreview() {
+  document.addEventListener('mouseover', function(event) {
+    if (!event.target.matches('.card img')) return;
+    var cardview = document.getElementById('cardview');
+    cardview.src = event.target.src;
+    cardview.style.visibility = "visible";
+  });
+  document.addEventListener('mouseout', function(event) {
+    if (!event.target.matches('.card img')) return;
+    document.getElementById('cardview').style.visibility = "hidden";
+  });
+}
+
+setupCardPreview();
+
 function _getCardElement(card_id, url){
   var element = document.getElementById(card_id);
   if (!element) {
     element = document.createElement('div');
     var img = document.createElement('img');
-    img.onmouseover = function() {
-      var cardview = document.getElementById('cardview');
-      cardview.src = img.src;
-      cardview.style.visibility = "visible";
-    };
-    img.onmouseout = function() {
-      var cardview = document.getElementById('cardview');
-      cardview.style.visibility = "hidden";
-    };
 
     element.setAttribute('id', card_id);
     element.setAttribute('class', 'card');
@@ -563,7 +569,7 @@ const gameEventHandler = {
   StepEvent: function(event) {
     indicate_step(event);
     ['playable', 'discardable', 'activateable', 'selectable',
-     'placeholder', 'inmotion'].forEach(
+     'low-priority', 'placeholder', 'inmotion'].forEach(
        className => Array.from(document.getElementsByClassName(className)).forEach(
          element => element.classList.remove(className)));
     if (event.step == 'BEGIN_COMBAT') {
@@ -628,14 +634,16 @@ const gameEventHandler = {
 function pass_only_choice(question) {
   if (question.question == 'ChooseAction') {
     var pass;
-    var count = 0;
+    var meaningfulActionCount = 0;
     forEachKeyValue(question.choices, (action_id, action) => {
       if (action.action === 'pass') {
         pass = action_id;
       }
-      count += 1;
+      else if (action.priority !== 'low') {
+        meaningfulActionCount += 1;
+      }
     });
-    if (count == 1) {
+    if (pass && meaningfulActionCount == 0) {
       return pass;
     }
   }
@@ -914,6 +922,7 @@ function build_question_ui(question){
       if (action.action == 'play') {
         let card = document.getElementById(action.card_id);
         card.classList.add('playable');
+        if (action.priority == 'low') card.classList.add('low-priority');
         card.onclick = makeOnclick(action_id);
       }
       if (action.action == 'discard') {
@@ -931,6 +940,7 @@ function build_question_ui(question){
           card = document.getElementById(action.card_id);
         }
         card.classList.add('selectable');
+        if (action.priority == 'low') card.classList.add('low-priority');
         card.onclick = makeOnclick(action_id);
       }
       if (action.action == 'choose_x') {
@@ -955,6 +965,7 @@ function build_question_ui(question){
       if (action.action == 'activate') {
         let card = document.getElementById(action.card_id);
         card.classList.add('activateable');
+        if (action.priority == 'low') card.classList.add('low-priority');
         let menu = document.getElementById('menu-'+action.card_id);
         if (!menu) {
           menu = document.createElement('div');
@@ -1061,7 +1072,7 @@ function cleanupChooseActionUI() {
     if (action.action == 'play') {
       let card = document.getElementById(action.card_id);
       if (!card) return;
-      card.classList.remove('playable');
+      card.classList.remove('playable', 'low-priority');
       card.removeAttribute('onclick');
     }
     if (action.action == 'discard') {
@@ -1073,7 +1084,7 @@ function cleanupChooseActionUI() {
     if (action.action == 'activate') {
       let card = document.getElementById(action.card_id);
       if (!card) return;
-      card.classList.remove('activateable');
+      card.classList.remove('activateable', 'low-priority');
       let menu = document.getElementById('menu-'+action.card_id);
       if (menu) menu.parentNode.removeChild(menu);
     }

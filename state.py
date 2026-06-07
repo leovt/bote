@@ -1,12 +1,13 @@
 import weakref
 import logging
+import re
 
 from dataclasses import dataclass, field
 from collections import defaultdict, OrderedDict
 import energy
 from keywords import KEYWORDS
 from library import Library
-from abilities import ActivatableAbility, TapCost
+from abilities import ActivatableAbility, EnergyCost, TapCost
 from bote_collections import IndexedOrderedCollection, TriggerCollection
 from event import *
 from question import ChooseAction, DeclareBlockers, DeclareAttackers, OrderBlockers
@@ -784,11 +785,13 @@ def turn_based_actions(game):
         yield from end_of_step(game)
     elif game.step == STEP.DRAW:
         yield from draw_card(game, game.active_player)
-        yield from open_priority(game)
+        yield from end_of_step(game)
     elif game.step == STEP.CLEANUP:
         yield from discard_excess_cards(game)
         yield ClearDamageEvent()
         yield from end_continuous_effects(game)
+        yield from end_of_step(game)
+    elif game.step in (STEP.BEGIN_COMBAT, STEP.END_OF_COMBAT, STEP.END):
         yield from end_of_step(game)
     elif game.step == STEP.DECLARE_ATTACKERS:
         candidates = {next(game.unique_ids): permanent for permanent in
@@ -1031,6 +1034,154 @@ def play_source(game, player, card):
         effect = Effect(template, game, {}, player, permanent)
         yield from effect.execute()
 
+def energy_can_pay(available_energy, cost):
+    return (available_energy - cost).is_valid()
+
+def ability_costs_can_be_paid_with_energy(costs, permanent, card, available_energy):
+    for cost in costs:
+        if isinstance(cost, EnergyCost):
+            if not energy_can_pay(available_energy, cost.energy):
+                return False
+            available_energy -= cost.energy
+        elif not cost.can_pay(permanent, card):
+            return False
+    return True
+
+def energy_cost_for_ability(costs):
+    ret = energy.ZERO
+    for cost in costs:
+        if isinstance(cost, EnergyCost):
+            ret += cost.energy
+    return ret
+
+def card_can_be_cast_with_energy(game, player, card, available_energy):
+    return (
+        energy_can_pay(available_energy, card.cost.replace_variable(0)) and
+        can_make_all_choices(game, effect_templates(card.effect), player, None)
+    )
+
+def action_signature(description):
+    if description['action'] == 'play':
+        return 'play', description['card_id']
+    if description['action'] == 'activate':
+        return 'activate', description['card_id'], description['ab_key']
+    return description['action'],
+
+def non_energy_actions_with_energy(game, player, available_energy):
+    actions = []
+    if (
+            player is game.active_player and
+            game.step in (STEP.PRECOMBAT_MAIN, STEP.POSTCOMBAT_MAIN) and
+            not game.stack):
+        if can_play_source(player):
+            for source in player.hand.sources:
+                actions.append({
+                    'effects': [(play_source, (game, player, source), {})],
+                    'description': {
+                        'action': 'play',
+                        'card_id': source.known_identity,
+                        'text': f'play {source.name}',
+                    },
+                })
+
+        for card in player.hand.of_types('creature', 'sorcery', 'enchantment'):
+            if card_can_be_cast_with_energy(game, player, card, available_energy):
+                actions.append({
+                    'effects': [(cast_spell, (game, player, card), {})],
+                    'description': {
+                        'action': 'play',
+                        'card_id': card.known_identity,
+                        'text': f'cast {card.name}',
+                    },
+                })
+
+    for card in player.hand.of_types('instant'):
+        if card_can_be_cast_with_energy(game, player, card, available_energy):
+            actions.append({
+                'effects': [(cast_spell, (game, player, card), {})],
+                'description': {
+                    'action': 'play',
+                    'card_id': card.known_identity,
+                    'text': f'cast {card.name}',
+                },
+            })
+
+    for permanent in game.battlefield.controlled_by(player):
+        for ab_key, ability in enumerate(permanent.abilities):
+            if not isinstance(ability, ActivatableAbility) or ability.effect.is_energy_only():
+                continue
+            if (
+                    ability_costs_can_be_paid_with_energy(
+                        ability.cost, permanent, permanent.card, available_energy) and
+                    can_make_choices(game, ability.effect, player, permanent)):
+                actions.append({
+                    'effects': [
+                        (cost.pay, (permanent, permanent.card), {})
+                        for cost in ability.cost
+                    ] + [(activate_ability, (game, ability, ab_key, player, permanent), {})],
+                    'description': {
+                        'action': 'activate',
+                        'card_id': permanent.card.known_identity,
+                        'ab_key': ab_key,
+                        'text': f'activate {permanent.card.name}:{ability}',
+                    },
+                })
+    return actions
+
+def added_energy_from_effect(effect):
+    if not effect.is_energy_only():
+        return energy.ZERO
+    added_energy = energy.ZERO
+    for energy_text in re.findall(r'add ((?:\{(?:\d+|[RYBGWX])\})+) to', effect.unparse()):
+        parsed_energy = energy.Energy.parse(energy_text)
+        if parsed_energy is not None:
+            added_energy += parsed_energy
+    return added_energy
+
+def energy_actions_with_energy(game, player, available_energy):
+    actions = []
+    for permanent in game.battlefield.controlled_by(player):
+        for ab_key, ability in enumerate(permanent.abilities):
+            if not isinstance(ability, ActivatableAbility) or not ability.effect.is_energy_only():
+                continue
+            if (
+                    ability_costs_can_be_paid_with_energy(
+                        ability.cost, permanent, permanent.card, available_energy) and
+                    can_make_choices(game, ability.effect, player, permanent)):
+                actions.append({
+                    'effects': [
+                        (cost.pay, (permanent, permanent.card), {})
+                        for cost in ability.cost
+                    ] + [(activate_ability, (game, ability, ab_key, player, permanent), {})],
+                    'description': {
+                        'action': 'activate',
+                        'card_id': permanent.card.known_identity,
+                        'ab_key': ab_key,
+                        'text': f'activate {permanent.card.name}:{ability}',
+                    },
+                    'produced_energy': added_energy_from_effect(ability.effect),
+                    'energy_cost': energy_cost_for_ability(ability.cost),
+                })
+    return actions
+
+def potential_energy_after_energy_actions(game, player, available_energy):
+    used_actions = set()
+    while True:
+        found_action = False
+        for action in energy_actions_with_energy(game, player, available_energy):
+            signature = action_signature(action['description'])
+            if signature in used_actions:
+                continue
+            produced_energy = action['produced_energy']
+            energy_cost = action['energy_cost']
+            if produced_energy == energy.ZERO:
+                continue
+            available_energy = available_energy - energy_cost + produced_energy
+            used_actions.add(signature)
+            found_action = True
+        if not found_action:
+            return available_energy
+
 def player_action(game, player):
     choices = {}
     actions = {}
@@ -1045,37 +1196,47 @@ def player_action(game, player):
     else:
         pass_text = 'Pass, continue with %s' % NEXT_STEP[game.step]
 
-    add_choice(None, action='pass', text=pass_text)
+    add_choice(None, action='pass', text=pass_text, priority='normal', enabling=[])
 
-    if (player is game.active_player and
-        game.step in (STEP.PRECOMBAT_MAIN, STEP.POSTCOMBAT_MAIN) and
-        not game.stack):
-        if can_play_source(player):
-            for source in player.hand.sources:
-                add_choice([(play_source, (game, player, source), {})],
-                    action='play', card_id=source.known_identity, text=f'play {source.name}')
+    original_energy = player.energy_pool.energy
+    potential_energy = potential_energy_after_energy_actions(game, player, original_energy)
+    possible_action_specs = non_energy_actions_with_energy(game, player, original_energy)
+    potential_action_specs = non_energy_actions_with_energy(game, player, potential_energy)
+    possible_signatures = {
+        action_signature(spec['description'])
+        for spec in possible_action_specs
+    }
+    potential_signatures = {
+        action_signature(spec['description'])
+        for spec in potential_action_specs
+    }
+    newly_enabled_signatures = potential_signatures - possible_signatures
+    enabling_card_ids = sorted({
+        spec['description']['card_id']
+        for spec in potential_action_specs
+        if action_signature(spec['description']) in newly_enabled_signatures
+        and 'card_id' in spec['description']
+    })
+    enabling = [
+        {'card_id': card_id}
+        for card_id in enabling_card_ids
+    ]
 
-        for card in player.hand.of_types('creature', 'sorcery', 'enchantment'):
-            if (player.energy_pool.can_pay(card.cost.replace_variable(0)) and
-                    can_make_all_choices(game, effect_templates(card.effect), player, None)):
-                add_choice([(cast_spell, (game, player, card), {})],
-                    action='play', card_id=card.known_identity, text=f'cast {card.name}')
+    for spec in possible_action_specs:
+        add_choice(
+            spec['effects'],
+            priority='normal',
+            enabling=[],
+            **spec['description'])
 
-    for card in player.hand.of_types('instant'):
-        if (player.energy_pool.can_pay(card.cost.replace_variable(0)) and
-                can_make_all_choices(game, effect_templates(card.effect), player, None)):
-            add_choice([(cast_spell, (game, player, card), {})],
-                action='play', card_id=card.known_identity, text=f'cast {card.name}')
+    energy_priority = 'normal' if newly_enabled_signatures else 'low'
+    for spec in energy_actions_with_energy(game, player, original_energy):
+        add_choice(
+            spec['effects'],
+            priority=energy_priority,
+            enabling=enabling if newly_enabled_signatures else [],
+            **spec['description'])
 
-    for permanent in game.battlefield.controlled_by(player):
-        for ab_key, ability in enumerate(permanent.abilities):
-            if isinstance(ability, ActivatableAbility):
-                if (all(cost.can_pay(permanent, permanent.card) for cost in ability.cost) and
-                        can_make_choices(game, ability.effect, player, permanent)):
-                    add_choice([(cost.pay, (permanent, permanent.card), {})
-                        for cost in ability.cost] + [(activate_ability, (game, ability, ab_key, player, permanent), {})],
-                        action='activate', card_id=permanent.card.known_identity, ab_key=ab_key,
-                        text=f'activate {permanent.card.name}:{ability}')
     question = ChooseAction(game, player, choices, 'action')
     yield QuestionEvent(question)
     answer = game.answer

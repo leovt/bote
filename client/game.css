@@ -167,6 +167,10 @@ html, body, #main-grid {
   box-shadow: 0 0 15px 5px #4ef;
 }
 
+.card.low-priority {
+  box-shadow: 0 0 8px 2px #888;
+}
+
 .selectable {
   box-shadow: 0 0 15px 5px #f2f;
 }
