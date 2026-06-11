@@ -29,6 +29,10 @@
        <feOffset result="offOut" in="SourceAlpha" dx="3" dy="2" />
        <feBlend in="SourceGraphic" in2="offOut" mode="normal" />
      </filter>
+     <filter id="shadow2" x="0" y="0" width="200%" height="200%">
+       <feOffset result="offOut" in="SourceAlpha" dx="2" dy="1.5" />
+       <feBlend in="SourceGraphic" in2="offOut" mode="normal" />
+     </filter>
      <filter id='noise' x='0%' y='0%' width='100%' height='100%'>
        <feTurbulence baseFrequency=".06 .09" width="200%" height="200%" top="-50%" type="fractalNoise" numOctaves="4" seed="0" result="noise1" />
        <feColorMatrix type="matrix" values=
@@ -88,13 +92,17 @@
        x="22"
        y="385"
        >{{attribution}}</text>
+    <g id="textbox_bevel">
+      <path d="M18 222 H261 V225 H21 V365 H18 Z" fill="black" fill-opacity="0.28" />
+      <path d="M261 225 H264 V368 H21 V365 H261 Z" fill="white" fill-opacity="0.25" />
+    </g>
     <rect id="textbox"
        style="fill:#987100"
        width="240"
-       height="145"
+       height="140"
        x="21"
        y="225" />
-       <foreignObject x="21" y="225" width="240" height="145">
+       <foreignObject x="21" y="225" width="240" height="140">
          {% for rule in rule_lines %}
          <html:p class="attribute">{{rule}}</html:p>
          {% endfor %}
@@ -103,18 +111,17 @@
          {% endif %}
       </foreignObject>
     {% if stats %}
-    <rect x="205" y="355" width="63" height="35" fill="beige" />
-    <text id="stats"
-       style="font-size:28px"
-       x="261"
-       y="383"
+    <text id="stats" filter="url(#shadow)"
+       style="font-size:20px; font-weight:bold; fill:beige"
+       x="262"
+       y="388"
        text-anchor="end"
        >{{stats}}</text>
     {% endif %}
-    <text id="type" filter="url(#shadow)"
+    <text id="type" filter="url(#shadow2)"
        style="font-size:16px; font-family: Copperplate, Copperplate Gothic Light, serif; font-weight: regular; fill:white"
        x="22"
-       y="220">{{type}}</text>
+       y="218">{{type}}</text>
     <text id="name" filter="url(#shadow)"
           style="font-size:18px; font-family: Copperplate, Copperplate Gothic Light, serif; font-weight: bold; fill:white"
           x="21"
@@ -127,6 +134,11 @@
       {% endfor %}
     </g>
     {% endif %}
+
+    <g id="image_bevel">
+      <path d="M18 37 H261 V40 H21 V200 H18 Z" fill="black" fill-opacity="0.28" />
+      <path d="M261 40 H264 V203 H21 V200 H261 Z" fill="white" fill-opacity="0.25" />
+    </g>
 
     <image id="image"
       xlink:href="{{image_url}}"
