@@ -2,8 +2,10 @@ from flask import abort, jsonify, redirect, request, render_template
 
 from app import app, db
 from app.anonymous import (
+    current_display_name,
     display_name_for,
     ensure_player_id,
+    is_guest_display_name,
     touch_presence,
 )
 from app.models import Challenge, Deck, Table
@@ -73,11 +75,13 @@ def game(game_id):
         abort(403)
 
     if table.status == 'deck_selection':
+        display_name = current_display_name()
         return render_template(
             'choose_deck.html',
             game=table,
             player_id=player_id,
             display_name_for=display_name_for,
+            show_name_prompt=is_guest_display_name(display_name),
             pub_decks=_public_decks())
 
     if table.status not in ('running', 'ended'):

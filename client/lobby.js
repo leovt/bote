@@ -15,10 +15,26 @@ function logHttpError(context, httpRequest) {
 
 function save_name() {
   let input = document.getElementById('display-name');
+  return save_display_name(input.value);
+}
+
+function save_display_name(name, onSuccess, onError) {
   var httpRequest = new XMLHttpRequest();
   httpRequest.open("POST", `/session/name`);
   httpRequest.setRequestHeader('Content-Type', 'application/json');
-  httpRequest.send(JSON.stringify({name: input.value}));
+  httpRequest.addEventListener("load", function () {
+    if (httpRequest.status >= 400) {
+      if (onError) onError();
+      return;
+    }
+    var result = JSON.parse(httpRequest.responseText);
+    document.getElementById('display-name').value = result.display_name;
+    if (onSuccess) onSuccess(result.display_name);
+  });
+  httpRequest.addEventListener("error", function () {
+    if (onError) onError();
+  });
+  httpRequest.send(JSON.stringify({name: name}));
 }
 
 function create_invite() {
@@ -214,6 +230,28 @@ document.getElementById('display-name').addEventListener('keyup', function(event
   }
 });
 document.getElementById('display-name').addEventListener('blur', save_name);
+
+var nameOverlay = document.getElementById('name-overlay');
+if (nameOverlay) {
+  var overlayForm = document.getElementById('name-overlay-panel');
+  var overlayInput = document.getElementById('overlay-display-name');
+  var overlayError = document.getElementById('name-overlay-error');
+  overlayForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var name = overlayInput.value.trim();
+    if (!name) {
+      overlayError.textContent = 'Please enter a name.';
+      overlayInput.focus();
+      return;
+    }
+    save_display_name(name, function () {
+      nameOverlay.remove();
+    }, function () {
+      overlayError.textContent = 'Could not save the name. Please try again.';
+    });
+  });
+  overlayInput.focus();
+}
 
 read_msg();
 update_users();

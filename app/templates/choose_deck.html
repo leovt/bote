@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
+    {% if show_name_prompt %}
+    <div id="name-overlay" class="name-overlay">
+      <form id="name-overlay-panel" class="name-overlay-panel">
+        <h1>Choose your name</h1>
+        <p>Please pick a display name before joining the game.</p>
+        <label for="overlay-display-name">Display name</label>
+        <input id="overlay-display-name" value="" maxlength="32" autocomplete="nickname" autofocus>
+        <button type="submit">Join game</button>
+        <p id="name-overlay-error" class="name-overlay-error" aria-live="polite"></p>
+      </form>
+    </div>
+    {% endif %}
     <div>
       <label for="display-name">Your name:</label>
       <input id="display-name" value="{{ display_name_for(player_id) }}" maxlength="32">
@@ -66,16 +78,55 @@ function schedulePoll() {
   pollTimeout = window.setTimeout(pollStatus, 500);
 }
 
-function save_name() {
-  var input = document.getElementById('display-name');
+function save_display_name(name, onSuccess, onError) {
   var req = new XMLHttpRequest();
   req.open("POST", "/session/name");
   req.setRequestHeader('Content-Type', 'application/json');
-  req.send(JSON.stringify({name: input.value}));
+  req.addEventListener("load", function() {
+    if (req.status >= 400) {
+      if (onError) onError();
+      return;
+    }
+    var result = JSON.parse(req.responseText);
+    document.getElementById('display-name').value = result.display_name;
+    if (onSuccess) onSuccess(result.display_name);
+  });
+  req.addEventListener("error", function() {
+    if (onError) onError();
+  });
+  req.send(JSON.stringify({name: name}));
+}
+
+function save_name() {
+  var input = document.getElementById('display-name');
+  save_display_name(input.value);
 }
 var nameInput = document.getElementById('display-name');
 nameInput.addEventListener('blur', save_name);
 nameInput.addEventListener('keyup', function(e) { if (e.key === 'Enter') save_name(); });
+
+var nameOverlay = document.getElementById('name-overlay');
+if (nameOverlay) {
+  var overlayForm = document.getElementById('name-overlay-panel');
+  var overlayInput = document.getElementById('overlay-display-name');
+  var overlayError = document.getElementById('name-overlay-error');
+  overlayForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    var name = overlayInput.value.trim();
+    if (!name) {
+      overlayError.textContent = 'Please enter a name.';
+      overlayInput.focus();
+      return;
+    }
+    save_display_name(name, function() {
+      nameOverlay.remove();
+      pollStatus();
+    }, function() {
+      overlayError.textContent = 'Could not save the name. Please try again.';
+    });
+  });
+  overlayInput.focus();
+}
 
 function choose_deck(deck_id) {
   var req = new XMLHttpRequest();
