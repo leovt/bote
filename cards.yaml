@@ -466,7 +466,7 @@ cards:
       de: Fruchtbarer Boden
       ko: 비옥한 흙
     type: enchantment
-    effect: "when enchanted .source gets tapped: add {G} to your energy pool"
+    effect: "when your turn begins: add {G} to your energy pool"
     cost: '{G}'
 
     art:
