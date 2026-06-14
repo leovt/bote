@@ -6,8 +6,36 @@
   align-items: stretch;
 }
 
+#main-grid::before {
+  content: "";
+  grid-column: 4;
+  grid-row: 2 / span 9;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.22), transparent 1.5rem, transparent calc(100% - 1.5rem), rgba(0, 0, 0, 0.22)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.22), transparent 1.5rem, transparent calc(100% - 1.5rem), rgba(0, 0, 0, 0.22)),
+    url("vecteezy_felt-blue-soft-rough-textile-material-background-texture_15234621.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: inset 0 0 2rem 0.75rem rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
 html,
-body,
+body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background-image: url("texture-seamless-wood-5.jpg");
+  background-position: top left;
+  background-repeat: repeat;
+  background-size: 40%;
+}
+
 #main-grid {
   width: 100%;
   height: 100%;
@@ -23,7 +51,7 @@ body,
   grid-column: 1;
   grid-row: 1 / span 10;
   align-self: center;
-  background: olive;
+  background: transparent;
   position: relative;
   height: 100%;
   width: 100%;
@@ -75,22 +103,22 @@ body,
 
 #bf-theirs {
   grid-column: 4;
-  grid-row: 1 / span 3;
+  grid-row: 2 / span 3;
 }
 
 #combat {
   grid-column: 4;
-  grid-row: 4 / span 3;
+  grid-row: 5 / span 3;
 }
 
 #bf-mine {
   grid-column: 4;
-  grid-row: 7 / span 3;
+  grid-row: 8 / span 3;
 }
 
 #hand {
   grid-column: 4;
-  grid-row: 10 / span 2;
+  grid-row: 11 / span 2;
 }
 
 #debug {
@@ -161,7 +189,7 @@ body,
 
 
 #combat {
-  background: orange;
+  background: transparent;
   padding: 10px;
 }
 
@@ -170,7 +198,7 @@ body,
 }
 
 #stack {
-  background-color: lightblue;
+  background-color: transparent;
   display: flex;
   flex-direction: column-reverse;
   justify-content: center;
@@ -246,7 +274,7 @@ body,
 }
 
 .battlefield {
-  background: darkolivegreen;
+  background: transparent;
   overflow: clip;
   position: relative;
 }
@@ -263,24 +291,27 @@ body,
 /* styling of the message box */
 
 #msgbox {
-  padding: 5px;
-  background: beige;
+  padding: 1em;
+  background: transparent;
   overflow: hidden;
-  box-shadow: inset 2px 2px 2px burlywood;
 }
 
 
 #messages {
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.35);
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
   overflow-y: scroll;
+  font-size: 0.9em;
+  line-height: 1.2;
 }
 
 #messages li {
-  padding: 0.4rem 0.2rem;
+  padding: 0.15rem 0.2rem;
   margin: 0;
   max-width: 100%;
   word-wrap: break-word;
@@ -334,7 +365,7 @@ body,
     "gyd  gyd";
   grid-auto-columns: 30% auto;
   overflow: hidden;
-  background: bisque;
+  background: transparent;
 }
 
 .stats>div {
