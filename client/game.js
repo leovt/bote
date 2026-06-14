@@ -103,6 +103,14 @@ function renderZone(elementId, cards) {
   cards.forEach(card => zone.appendChild(cardElementFromSnapshot(card)));
 }
 
+function renderOpponentHand(cardCount) {
+  let hand = document.getElementById('op-hand');
+  clearElement(hand);
+  for (let i = 0; i < cardCount; i++) {
+    hand.appendChild(getBackfaceCardElement(`op-hand-card-${i}`));
+  }
+}
+
 const ENERGY_STYLE_MAP = [
   ['red',       { fill: 'lightpink', stroke: 'red' }],
   ['yellow',    { fill: 'cornsilk', stroke: 'gold' }],
@@ -372,7 +380,7 @@ function renderGameView(snapshot) {
   renderZone('hand', snapshot.zones[me.player_id].hand);
   renderZone('my-graveyard', snapshot.zones[me.player_id].graveyard);
   renderZone('op-graveyard', snapshot.zones[opponent.player_id].graveyard);
-  document.getElementById('op-hand').innerText = `${opponent.hand_count} cards`;
+  renderOpponentHand(opponent.hand_count);
   renderBattlefield(snapshot, me, 'bf-mine');
   renderBattlefield(snapshot, opponent, 'bf-theirs');
   renderStack(snapshot);
