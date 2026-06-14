@@ -34,7 +34,6 @@
     <div id="stepdial">
       {% include 'steps.svg' %}
     </div>
-    <div><button id="confirm">Confirm</button></div>
     <div>
       <input type="checkbox" id="autopass" checked></input>
       <label for="autopass">Pass when no other choice</label>
@@ -45,13 +44,19 @@
     <div id="my-name" class="name">{{ my_name }}</div>
     <div id="my-life" class="life">Life</div>
     <div id="my-energy" class="energy">Energy</div>
-    <div id="instruction"></div>
     <div id="my-graveyard" class="graveyard"></div>
   </div>
   <div id="stack"></div>
   <div id="op-hand"></div>
   <div id="bf-theirs" class="battlefield"></div>
-  <div id="combat">Combat Arena</div>
+  <div id="combat"></div>
+  <div id="instruction">
+    <p id="instruction-text"></p>
+    <div id="instruction-controls">
+      <button id="confirm">Confirm</button>
+      <div id="choose_x"></div>
+    </div>
+  </div>
   <div id="bf-mine" class="battlefield"></div>
   <div id="hand"></div>
   <div id="debug">

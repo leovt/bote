@@ -325,27 +325,49 @@ body {
 
 #instruction {
   visibility: hidden;
-  border: 1px solid black;
-  border-radius: 0.5rem;
-  padding: 0.4rem;
-  margin: 0.3rem;
-  max-width: 100%;
+  grid-column: 4;
+  grid-row: 5 / span 3;
+  place-self: center;
+  z-index: 20;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 0 1rem;
+  max-width: 80%;
   word-wrap: break-word;
   box-sizing: border-box;
-  grid-area: hand;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 0 1px 3px black;
+  pointer-events: none;
 }
 
 #instruction.active {
   visibility: visible;
-  background: orangered;
-  color: white;
+}
+
+#instruction-text {
+  margin: 0;
+}
+
+#instruction-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+#choose_x {
+  display: contents;
 }
 
 /* styling of the step indicator and confirm buttons */
 
 #stepconfirm {
   display: grid;
-  grid-template-rows: auto min-content min-content;
+  grid-template-rows: auto min-content;
 }
 
 #stepconfirm>div {
@@ -386,14 +408,37 @@ body {
 }
 
 .life {
-  transition: background 0.2s 0.8s ease-out, color 0.5s 1.0s ease-out;
   grid-area: life;
+  position: relative;
+  z-index: 0;
+  color: black;
+}
+
+.life::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: -1;
+  width: var(--life-width, 0%);
+  background: var(--life-color, green);
+  transition: width 0.3s ease-out, background 0.2s ease-out;
 }
 
 .life.hit {
-  transition: none;
-  background: red;
+  background: transparent;
   color: white;
+  animation: life-hit-flash 900ms ease-out;
+}
+
+@keyframes life-hit-flash {
+  0%,
+  70% {
+    background: rgba(255, 0, 0, 0.85);
+  }
+
+  100% {
+    background: transparent;
+  }
 }
 
 .energy {

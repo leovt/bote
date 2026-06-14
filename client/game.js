@@ -13,6 +13,8 @@ function setupCardPreview() {
 
 setupCardPreview();
 
+const LIFE_HIT_FLASH_MS = 900;
+
 function _getCardElement(card_id, url){
   var element = document.getElementById(card_id);
   if (!element) {
@@ -327,9 +329,15 @@ function renderStack(snapshot) {
   });
 }
 
+function setLifeDisplay(element, lifeTotal) {
+  element.innerText = `Life: ${lifeTotal}`;
+  element.style.setProperty('--life-width', `${Math.max(0, Math.min(lifeTotal, 30)) / 30 * 100}%`);
+  element.style.setProperty('--life-color', lifeTotal >= 10 ? 'green' : (lifeTotal < 5 ? 'red' : 'orange'));
+}
+
 function renderPlayerStats(player, prefix) {
   document.getElementById(`${prefix}-name`).innerText = player.name;
-  document.getElementById(`${prefix}-life`).innerText = `Life: ${player.life}`;
+  setLifeDisplay(document.getElementById(`${prefix}-life`), player.life);
   document.getElementById(`${prefix}-energy`).innerText = `Energy: ${player.energy.pool}`;
 }
 
@@ -570,9 +578,9 @@ const gameEventHandler = {
   PlayerDamageEvent: function(event) {
     write_message(`${event.player.name} received ${event.damage} damage.`);
     var element = document.getElementById(event.player.is_me ? 'my-life' : 'op-life');
-    element.innerText = `Life: ${event.new_total}`;
+    setLifeDisplay(element, event.new_total);
     element.classList.add('hit');
-    window.setTimeout( () => element.classList.remove('hit'), 0);
+    window.setTimeout(() => element.classList.remove('hit'), LIFE_HIT_FLASH_MS);
   },
 
   StepEvent: function(event) {
@@ -705,6 +713,15 @@ function make_input_with_label(type, value, name, label, checked){
   lbl.appendChild(document.createTextNode(label));
   span.appendChild(lbl);
   return span;
+}
+
+function targetElementForAction(action, question) {
+  if (action.type === 'player') {
+    return document.getElementById(
+      action.player_id == question.player.player_id ? 'my-avatar' : 'op-avatar'
+    );
+  }
+  return document.getElementById(action.card_id);
 }
 
 function make_reorderable_listitem(value, label) {
@@ -899,7 +916,8 @@ function build_question_ui(question){
   messages = {
     action: "Choose an action (click on a highlighted card) or pass (click on the dial)",
     target: "Choose the target",
-    discard: "Choose a card from your hand to discard"
+    discard: "Choose a card from your hand to discard",
+    choose_x: "Choose X"
   };
   write_instruction(messages[question.reason]);
   var choices = document.getElementById('choices');
@@ -940,32 +958,19 @@ function build_question_ui(question){
         card.onclick = makeOnclick(action_id);
       }
       if (action.action == 'target') {
-        let card;
-        if (action.type === 'player') {
-          let is_me = (action.player == question.player.name && question.player.is_me);
-          card = document.getElementById(is_me ? 'my-avatar' : 'op-avatar');
-        }
-        else {
-          card = document.getElementById(action.card_id);
-        }
+        let card = targetElementForAction(action, question);
         card.classList.add('selectable');
         if (action.priority == 'low') card.classList.add('low-priority');
         card.onclick = makeOnclick(action_id);
       }
       if (action.action == 'choose_x') {
         let menu = document.getElementById('choose_x');
-        if (!menu) {
-          menu = document.createElement('div');
-          menu.setAttribute('id', 'choose_x');
-          menu.setAttribute('class', 'menu');
-          document.body.appendChild(menu);
-        }
         let button = document.createElement('button');
         button.appendChild(document.createTextNode('Choose X = ' + action.value));
         var makeOnclick2 = function(action_id) {
           return function () {
             send_answer(action_id);
-            menu.parentNode.removeChild(menu);
+            clearElement(menu);
           };
         };
         button.onclick = makeOnclick2(action_id);
@@ -1088,6 +1093,12 @@ function cleanupChooseActionUI() {
       let card = document.getElementById(action.card_id);
       if (!card) return;
       card.classList.remove('discardable');
+      card.removeAttribute('onclick');
+    }
+    if (action.action == 'target') {
+      let card = targetElementForAction(action, question);
+      if (!card) return;
+      card.classList.remove('selectable', 'low-priority');
       card.removeAttribute('onclick');
     }
     if (action.action == 'activate') {
@@ -1281,14 +1292,14 @@ function make_ans_button(label, onclick){
 }
 
 function write_instruction(text){
-  let div = document.getElementById('instruction');
-  div.innerText = text;
-  div.classList.add('active');
+  document.getElementById('instruction-text').innerText = text || '';
+  document.getElementById('instruction').classList.add('active');
 }
 
 function clear_instruction(){
   let div = document.getElementById('instruction');
-  div.innerHTML = '';
+  document.getElementById('instruction-text').innerText = '';
+  clearElement(document.getElementById('choose_x'));
   div.classList.remove('active');
 }
 
