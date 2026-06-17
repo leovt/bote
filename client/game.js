@@ -338,7 +338,6 @@ function setLifeDisplay(element, lifeTotal) {
 function renderPlayerStats(player, prefix) {
   document.getElementById(`${prefix}-name`).innerText = player.name;
   setLifeDisplay(document.getElementById(`${prefix}-life`), player.life);
-  document.getElementById(`${prefix}-energy`).innerText = `Energy: ${player.energy.pool}`;
 }
 
 function renderQuestionFromSnapshot(snapshot) {
@@ -552,24 +551,18 @@ const gameEventHandler = {
   },
 
   AddEnergyEvent: function(event) {
-    document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
-            .innerText = `Energy: ${event.new_total}`;
     const bfId = event.player.is_me ? 'bf-mine' : 'bf-theirs';
     const nbSources = parseInt(document.getElementById(bfId).dataset.nbSources || '0', 10);
     renderEnergyBar(event.new_energy, nbSources, bfId);
   },
 
   PayEnergyEvent: function(event) {
-    document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
-            .innerText = `Energy: ${event.new_total}`;
     const bfId = event.player.is_me ? 'bf-mine' : 'bf-theirs';
     const nbSources = parseInt(document.getElementById(bfId).dataset.nbSources || '0', 10);
     renderEnergyBar(event.new_energy, nbSources, bfId);
   },
 
   ClearPoolEvent: function(event) {
-    document.getElementById(event.player.is_me ? 'my-energy' : 'op-energy')
-            .innerText = "Energy: {0}";
     const bfId = event.player.is_me ? 'bf-mine' : 'bf-theirs';
     const nbSources = parseInt(document.getElementById(bfId).dataset.nbSources || '0', 10);
     renderEnergyBar({total: 0, breakdown: {}}, nbSources, bfId);
