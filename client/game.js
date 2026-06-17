@@ -376,6 +376,14 @@ function renderQuestionFromSnapshot(snapshot) {
 }
 
 function renderGameView(snapshot) {
+  if (snapshot.status === 'ended') {
+    let message = document.getElementById('game-ended-message');
+    if (snapshot.result && snapshot.result.message) {
+      message.innerText = snapshot.result.message;
+    }
+    document.getElementById('game-ended-overlay').classList.add('active');
+  }
+
   let me = playerBySeat(snapshot, true);
   let opponent = playerBySeat(snapshot, false);
   if (!me || !opponent) {

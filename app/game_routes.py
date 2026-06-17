@@ -1,4 +1,4 @@
-from flask import abort, jsonify, redirect, request, render_template
+from flask import abort, jsonify, redirect, request, render_template, url_for
 
 from app import app, db
 from app.anonymous import (
@@ -9,7 +9,7 @@ from app.anonymous import (
     touch_presence,
 )
 from app.models import Challenge, Deck, Table
-from app.game_view import serialize_game_view
+from app.game_view import game_result_for, serialize_game_view
 
 from test_decks import AI_TEST_PLAYERS
 
@@ -90,7 +90,32 @@ def game(game_id):
     my_name = display_name_for(player_id)
     opponent = table.player2 if table.player1 == player_id else table.player1
     op_name = display_name_for(opponent)
-    return render_template('game.html', game=table, my_name=my_name, op_name=op_name)
+    viewer = _viewer_for_table(table)
+    result = game_result_for(table, viewer)
+    return render_template(
+        'game.html',
+        game=table,
+        my_name=my_name,
+        op_name=op_name,
+        ended_message=result['message'] if result else 'Game has ended',
+        rematch_url=url_for('rematch_game', game_id=table.id))
+
+
+@app.route('/game/<game_id>/rematch')
+def rematch_game(game_id):
+    table = _table_or_404(game_id)
+    player_id, _ = touch_presence()
+    if not table.has_player(player_id):
+        abort(403)
+
+    opponent = table.player2 if table.player1 == player_id else table.player1
+    new_table = Table(player1=player_id, player2=opponent, status='deck_selection')
+    ai_player = AI_TEST_PLAYERS.get(opponent)
+    if ai_player is not None:
+        new_table.deck2 = {str(art_id): count for art_id, count in ai_player['deck'].items()}
+    db.session.add(new_table)
+    db.session.commit()
+    return redirect(new_table.url())
 
 
 @app.route('/game/<game_id>/join')

@@ -67,6 +67,12 @@
   <div id="msgbox">
     <ul id="messages"></ul>
   </div>
+  <div id="game-ended-overlay" class="{{ 'active' if game.status == 'ended' else '' }}">
+    <div id="game-ended-panel">
+      <h1 id="game-ended-message">{{ ended_message }}</h1>
+      <a href="{{ rematch_url }}">Select Decks for Rematch with {{ op_name }}</a>
+    </div>
+  </div>
   </div>
 </body>
 <script src="{{ url_for('static', filename='game.js') }}"></script>

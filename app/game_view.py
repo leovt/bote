@@ -1,4 +1,24 @@
 from keywords import KEYWORDS
+from event import PlayerLosesEvent
+
+
+def game_result_for(frontend_game, viewer):
+    game = frontend_game.game
+    if frontend_game.status != 'ended' or game is None or viewer is None:
+        return None
+
+    for event in reversed(game.event_log):
+        if isinstance(event, PlayerLosesEvent):
+            if event.player_id == viewer.player_id:
+                return {
+                    'outcome': 'lost',
+                    'message': 'You lost the game',
+                }
+            return {
+                'outcome': 'won',
+                'message': 'Congratulations you won',
+            }
+    return None
 
 
 def _player_summary(game, player, viewer, name_for):
@@ -186,4 +206,5 @@ def serialize_game_view(frontend_game, viewer, name_for=lambda name: name):
         ],
         'question': question,
         'event_count': len(game.event_log),
+        'result': game_result_for(frontend_game, viewer),
     }

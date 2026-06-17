@@ -137,6 +137,31 @@ body {
   overflow: hidden;
 }
 
+#game-ended-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+#game-ended-overlay.active {
+  display: grid;
+}
+
+#game-ended-panel {
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.35), 0 0.5rem 2rem rgba(0, 0, 0, 0.35);
+  color: black;
+  text-align: center;
+}
+
+#game-ended-panel h1 {
+  margin: 0 0 1rem;
+}
+
 #bf-theirs {
   transform: rotate(180deg);
 }
