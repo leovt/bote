@@ -145,6 +145,11 @@ body {
   transform: rotate(90deg);
 }
 
+.battlefield .card.tap.flying,
+.battlefield .card.tap.firststrike {
+  animation: none;
+}
+
 .card {
   transition: transform 0.7s;
   display: inline-block;
