@@ -372,11 +372,10 @@ body {
 
 #stepconfirm {
   display: grid;
-  grid-template-rows: auto min-content;
+  grid-template-rows: auto;
 }
 
 #stepconfirm>div {
-  border: 1px solid green;
   overflow: hidden;
 }
 
@@ -392,9 +391,10 @@ body {
   grid-template-areas:
     "player"
     "life"
-    "gyd";
+    "gyd"
+    "autopass";
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(0, 1fr) min-content minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) min-content minmax(0, 1fr) min-content;
   gap: 0.25rem;
   overflow: visible;
   background: transparent;
@@ -495,7 +495,15 @@ body {
   padding: 1px;
   background-color: grey;
   background-image: url('graveyard.png');
-  background-size: 10%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+#autopass-control {
+  grid-area: autopass;
+  padding: 0.25rem;
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .graveyard>.card {
