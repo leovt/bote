@@ -162,6 +162,21 @@ body {
   margin: 0 0 1rem;
 }
 
+#image-credits {
+  position: fixed;
+  right: 0.5rem;
+  bottom: 0.35rem;
+  z-index: 10;
+  color: black;
+  font-size: 0.7rem;
+  line-height: 1;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.85);
+}
+
+#image-credits a {
+  color: inherit;
+}
+
 #bf-theirs {
   transform: rotate(180deg);
 }
